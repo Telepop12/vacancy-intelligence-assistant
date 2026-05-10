@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import io
 import sys
 from pathlib import Path
 
@@ -16,7 +15,7 @@ if hasattr(sys.stderr, "reconfigure"):
 import yaml
 
 from core.analyzer import analyze
-from core.models import CandidateProfile, SkillGroup
+from core.models import CandidateProfile, ScoringGroup
 from core.report import save_json, save_markdown, update_registry
 
 ROOT = Path(__file__).parent
@@ -33,18 +32,16 @@ _REC_ICONS = {
 
 def load_profile(path: Path) -> CandidateProfile:
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    skills_raw = data.get("skills", {})
-    industries = data.get("industries", {})
+    scoring_groups = {
+        name: ScoringGroup(weight=g["weight"], keywords=g.get("keywords", []))
+        for name, g in data.get("scoring_groups", {}).items()
+    }
+    red_flags = dict(data.get("red_flags", {}))
     return CandidateProfile(
         name=data["name"],
         target_roles=data.get("target_roles", []),
-        skills=SkillGroup(
-            critical=skills_raw.get("critical", []),
-            important=skills_raw.get("important", []),
-            technologies=skills_raw.get("technologies", []),
-        ),
-        industries_preferred=industries.get("preferred", []),
-        industries_negative=industries.get("negative", []),
+        scoring_groups=scoring_groups,
+        red_flags=red_flags,
         seniority_keywords=data.get("seniority_keywords", []),
     )
 

@@ -1,33 +1,59 @@
 from __future__ import annotations
 
-from core.models import CandidateProfile, Recommendation
+import re
 
-WEIGHT_CRITICAL = 3
-WEIGHT_IMPORTANT = 2
-WEIGHT_TECH = 1
+from core.models import CandidateProfile, Recommendation, ScoringGroup
 
 # Score thresholds
 THRESHOLD_APPLY = 70
 THRESHOLD_CLARIFY = 45
 
-# Penalty per matched negative-industry keyword
-INDUSTRY_PENALTY = 15
+# Fraction of group keywords that must match for the group to earn full weight.
+# Finding fewer yields proportional credit; finding more is capped at 1.0.
+_MATCH_THRESHOLD_RATIO = 0.5
+
+_RED_FLAG_MESSAGES: dict[str, str] = {
+    "junior_role":      "Вакансия позиционируется для junior/middle специалиста, не для руководителя",
+    "hands_on_only":    "Роль предполагает только исполнение без управленческого контура",
+    "sales_role":       "Роль сфокусирована на продажах, не на ИТ-управлении",
+    "industry_negative": "Нежелательная отрасль / формат компании",
+}
+
+
+# ---------------------------------------------------------------------------
+# Keyword matching (handles basic Russian morphology via stem trimming)
+# ---------------------------------------------------------------------------
+
+# Hyphen is intentionally absent from boundaries so "ит-стратегии" counts as
+# two tokens: "ит" and "стратегии".  This prevents "без" from matching inside
+# "кибербезопасности" while still matching compound ИТ-* terms.
+_WB_START = r'(?<![а-яёА-ЯЁa-zA-Z0-9])'
+_WB_END   = r'(?![а-яёА-ЯЁa-zA-Z0-9])'
+
+
+def _stem_in_text(stem: str, text: str) -> bool:
+    """Match stem with word-boundary awareness.
+
+    Short tokens (≤ 4 chars, e.g. prepositions) must be whole words.
+    Longer stems only need a word-start boundary (they're truncated word forms).
+    """
+    if len(stem) <= 4:
+        pattern = _WB_START + re.escape(stem) + _WB_END
+    else:
+        pattern = _WB_START + re.escape(stem)
+    return bool(re.search(pattern, text, re.IGNORECASE))
 
 
 def _keyword_hits(kw_lower: str, text_lower: str) -> bool:
-    """Check if keyword matches text, handling basic Russian morphology via stems."""
     if kw_lower in text_lower:
         return True
     words = kw_lower.split()
     if len(words) == 1:
-        # Single word: try trimming last 3 chars (covers most Russian suffixes/endings)
-        if len(kw_lower) > 6 and kw_lower[:-3] in text_lower:
-            return True
+        if len(kw_lower) > 6:
+            return _stem_in_text(kw_lower[:-3], text_lower)
     else:
-        # Multi-word: every word (or its stem) must appear in text
         stems = [w[:-3] if len(w) > 6 else w for w in words]
-        if all(s in text_lower for s in stems):
-            return True
+        return all(_stem_in_text(s, text_lower) for s in stems)
     return False
 
 
@@ -36,54 +62,63 @@ def find_matches(text: str, keywords: list[str]) -> list[str]:
     return [kw for kw in keywords if _keyword_hits(kw.lower(), text_lower)]
 
 
+# ---------------------------------------------------------------------------
+# Categorical group scoring
+# ---------------------------------------------------------------------------
+
+def _group_contribution(vacancy_text: str, group: ScoringGroup) -> tuple[float, list[str]]:
+    """Return (points earned, matched keywords) for one scoring group."""
+    if not group.keywords:
+        return 0.0, []
+    matches = find_matches(vacancy_text, group.keywords)
+    threshold = max(1, len(group.keywords) * _MATCH_THRESHOLD_RATIO)
+    ratio = min(1.0, len(matches) / threshold)
+    return group.weight * ratio, matches
+
+
 def calculate_score(
     vacancy_text: str,
     profile: CandidateProfile,
 ) -> tuple[int, list[str], list[str]]:
     """Return (score 0-100, matched_keywords, risk_messages)."""
-    critical_matches = find_matches(vacancy_text, profile.skills.critical)
-    important_matches = find_matches(vacancy_text, profile.skills.important)
-    tech_matches = find_matches(vacancy_text, profile.skills.technologies)
-
-    max_score = (
-        len(profile.skills.critical) * WEIGHT_CRITICAL
-        + len(profile.skills.important) * WEIGHT_IMPORTANT
-        + len(profile.skills.technologies) * WEIGHT_TECH
-    )
-    raw = (
-        len(critical_matches) * WEIGHT_CRITICAL
-        + len(important_matches) * WEIGHT_IMPORTANT
-        + len(tech_matches) * WEIGHT_TECH
-    )
-
-    score = int((raw / max_score) * 100) if max_score > 0 else 0
-    score = min(score, 100)
-
-    risks: list[str] = []
-
-    neg_matches = find_matches(vacancy_text, profile.industries_negative)
-    if neg_matches:
-        score = max(0, score - INDUSTRY_PENALTY * len(neg_matches))
-        risks.append(f"Нежелательная отрасль / формат компании: {', '.join(neg_matches)}")
-
-    missing_critical = [kw for kw in profile.skills.critical if kw not in critical_matches]
-    if missing_critical:
-        sample = ", ".join(missing_critical[:3])
-        risks.append(f"Ключевые компетенции не упомянуты в вакансии: {sample}")
-
-    if not vacancy_text.strip() or len(vacancy_text.split()) < 30:
-        risks.append("Текст вакансии слишком короткий — возможна неточная оценка")
-
-    # Deduplicate while preserving order (critical → important → tech)
+    total_points = 0.0
     seen: set[str] = set()
     all_matches: list[str] = []
-    for kw in critical_matches + important_matches + tech_matches:
-        if kw not in seen:
-            seen.add(kw)
-            all_matches.append(kw)
 
+    for group in profile.scoring_groups.values():
+        pts, group_matches = _group_contribution(vacancy_text, group)
+        total_points += pts
+        for kw in group_matches:
+            if kw not in seen:
+                seen.add(kw)
+                all_matches.append(kw)
+
+    score = min(100, int(total_points))
+    risks = _detect_risks(vacancy_text, profile)
     return score, all_matches, risks
 
+
+# ---------------------------------------------------------------------------
+# Risk / red-flag detection
+# ---------------------------------------------------------------------------
+
+def _detect_risks(vacancy_text: str, profile: CandidateProfile) -> list[str]:
+    risks: list[str] = []
+
+    for flag_name, keywords in profile.red_flags.items():
+        if find_matches(vacancy_text, keywords):
+            msg = _RED_FLAG_MESSAGES.get(flag_name, f"Red flag: {flag_name}")
+            risks.append(msg)
+
+    if len(vacancy_text.split()) < 30:
+        risks.append("Текст вакансии слишком короткий — возможна неточная оценка")
+
+    return risks
+
+
+# ---------------------------------------------------------------------------
+# Recommendation
+# ---------------------------------------------------------------------------
 
 def get_recommendation(score: int) -> Recommendation:
     if score >= THRESHOLD_APPLY:

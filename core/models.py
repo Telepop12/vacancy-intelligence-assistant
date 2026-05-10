@@ -12,19 +12,17 @@ class Recommendation(str, Enum):
 
 
 @dataclass
-class SkillGroup:
-    critical: list[str] = field(default_factory=list)
-    important: list[str] = field(default_factory=list)
-    technologies: list[str] = field(default_factory=list)
+class ScoringGroup:
+    weight: int
+    keywords: list[str] = field(default_factory=list)
 
 
 @dataclass
 class CandidateProfile:
     name: str
     target_roles: list[str]
-    skills: SkillGroup
-    industries_preferred: list[str]
-    industries_negative: list[str]
+    scoring_groups: dict[str, ScoringGroup]
+    red_flags: dict[str, list[str]]
     seniority_keywords: list[str]
 
 
