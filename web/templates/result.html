@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Результат анализа — Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">Анализ вакансий для CIO / CTO / CDTO</p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <div class="actions">
+      <a href="/" class="btn">← Новый анализ</a>
+      <a href="/output/{{ md_filename }}" class="btn" download>↓ Markdown</a>
+      <a href="/output/{{ json_filename }}" class="btn" download>↓ JSON</a>
+    </div>
+
+    <!-- Score + recommendation -->
+    <div class="card">
+      <h2>Результат анализа</h2>
+      <div class="score-row">
+        <div>
+          <div class="score-label">Match Score</div>
+          <div class="score-badge {{ score_color }}">{{ analysis.match_score }}</div>
+        </div>
+        <div>
+          <span class="rec-badge {{ score_color }}">{{ analysis.recommendation.value }}</span>
+          <div class="score-date">{{ analysis.analyzed_at.strftime('%d.%m.%Y %H:%M') }}</div>
+        </div>
+        <div class="score-bar-wrap">
+          <div class="score-bar {{ score_color }}" style="width: {{ analysis.match_score }}%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Key matches -->
+    <div class="card">
+      <h2>Ключевые совпадения с профилем</h2>
+      {% if analysis.key_matches %}
+      <ul class="match-list">
+        {% for kw in analysis.key_matches %}
+        <li>{{ kw }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="empty">Совпадений не обнаружено</p>
+      {% endif %}
+    </div>
+
+    <!-- Risks -->
+    <div class="card">
+      <h2>Риски и красные флаги</h2>
+      {% if analysis.risks %}
+      <ul class="risk-list">
+        {% for r in analysis.risks %}
+        <li>{{ r }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="no-risk">✓ Существенных рисков не выявлено</p>
+      {% endif %}
+    </div>
+
+    <!-- HR questions -->
+    <div class="card">
+      <h2>Вопросы к HR</h2>
+      <ol class="plain-list">
+        {% for q in analysis.hr_questions %}
+        <li>{{ q }}</li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    <!-- HR response letter -->
+    <div class="card">
+      <h2>Шаблон ответа HR</h2>
+      <pre class="hr-letter">{{ analysis.hr_response }}</pre>
+    </div>
+
+    <!-- Resume tips -->
+    <div class="card">
+      <h2>Рекомендации по адаптации резюме</h2>
+      <ul class="plain-list">
+        {% for tip in analysis.resume_tips %}
+        <li>{{ tip }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant — Web MVP</div>
+</footer>
+
+</body>
+</html>

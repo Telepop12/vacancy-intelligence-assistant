@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">Анализ вакансий для CIO / CTO / CDTO</p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    {% if error %}
+    <div class="error-box">{{ error }}</div>
+    {% endif %}
+
+    <div class="card">
+      <form method="post" action="/analyze">
+        <div class="field">
+          <label for="vacancy">Текст вакансии</label>
+          <textarea id="vacancy" name="vacancy_text" rows="18"
+            placeholder="Вставьте полный текст вакансии — название позиции, задачи, требования, условия…">{{ prefill or "" }}</textarea>
+        </div>
+        <button type="submit" class="btn-submit">Проанализировать</button>
+      </form>
+    </div>
+
+    <p class="hint">
+      Профиль кандидата: <strong>{{ profile_name }}</strong>
+    </p>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant — Web MVP</div>
+</footer>
+
+</body>
+</html>
