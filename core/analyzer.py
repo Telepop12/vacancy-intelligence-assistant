@@ -1,27 +1,49 @@
 """
 Public analyze() entry point — backward-compatible.
 
-Delegates to HybridAnalyzer (RuleBasedAnalyzer + LLM placeholders).
-
-To swap the underlying analyzer at runtime:
-    from core import analyzer as core_analyzer
-    from core.analyzers.rule_based import RuleBasedAnalyzer
-    core_analyzer._analyzer = RuleBasedAnalyzer()
-
-To connect an LLM backend:
-    from core.analyzers.hybrid import HybridAnalyzer
-    class ClaudeAnalyzer(HybridAnalyzer):
-        def _fill_llm_insights(self, analysis, vacancy_text, profile):
-            ...  # call Claude API here
-    core_analyzer._analyzer = ClaudeAnalyzer()
+Auto-detects ANTHROPIC_API_KEY (from environment or .env file) and uses
+ClaudeAnalyzer when available; falls back to HybridAnalyzer (placeholder
+LLM fields) when the key is absent or invalid.
 """
 from __future__ import annotations
 
-from core.analyzers.hybrid import HybridAnalyzer
+import os
+from pathlib import Path
+
 from core.models import CandidateProfile, VacancyAnalysis
 
-_analyzer: HybridAnalyzer = HybridAnalyzer()
+# ---------------------------------------------------------------------------
+# Load .env (if present) before checking for the API key
+# ---------------------------------------------------------------------------
 
+_env_path = Path(__file__).resolve().parent.parent / ".env"
+if _env_path.exists():
+    for _line in _env_path.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _k, _, _v = _line.partition("=")
+            os.environ.setdefault(_k.strip(), _v.strip())
+
+
+# ---------------------------------------------------------------------------
+# Build analyzer — ClaudeAnalyzer if API key present, else HybridAnalyzer
+# ---------------------------------------------------------------------------
+
+def _build_analyzer():
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if api_key and not api_key.startswith("sk-ant-ВАШ"):
+        from core.analyzers.claude_analyzer import ClaudeAnalyzer
+        return ClaudeAnalyzer(api_key=api_key)
+    from core.analyzers.hybrid import HybridAnalyzer
+    return HybridAnalyzer()
+
+
+_analyzer = _build_analyzer()
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
 
 def analyze(vacancy_text: str, profile: CandidateProfile) -> VacancyAnalysis:
     """
@@ -31,5 +53,5 @@ def analyze(vacancy_text: str, profile: CandidateProfile) -> VacancyAnalysis:
     return _analyzer.analyze(vacancy_text, profile)
 
 
-# Re-exported for backward compatibility (some modules import THRESHOLD_APPLY from here)
+# Re-exported for backward compatibility
 from core.scoring import THRESHOLD_APPLY  # noqa: E402
