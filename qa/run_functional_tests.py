@@ -220,6 +220,36 @@ def tc_weak_vacancy() -> TestResult:
     return TestResult("TC-08", "Weak vacancy → ПРОПУСТИТЬ", True, "Recommendation: ПРОПУСТИТЬ ✓", ms)
 
 
+def _extract_score(stdout: str) -> int | None:
+    """Parse the Match Score value from CLI stdout."""
+    for line in stdout.splitlines():
+        if "Match Score" in line and ":" in line:
+            try:
+                return int(line.split(":", 1)[1].strip().split("/")[0].strip())
+            except (ValueError, IndexError):
+                pass
+    return None
+
+
+def tc_ai_partner_vacancy() -> TestResult:
+    """TC-09: AI transformation lead → УТОЧНИТЬ (score 45–65)"""
+    t0 = time.monotonic()
+    code, out, err = _run(["--file", str(INPUTS_DIR / "ai_partner_vacancy.txt"), "--no-registry"])
+    ms = int((time.monotonic() - t0) * 1000)
+    if code != 0:
+        return TestResult("TC-09", "AI transformation → УТОЧНИТЬ (45–65)", False, f"Exit code {code}", ms, err)
+    if "УТОЧНИТЬ" not in out:
+        detail = " | ".join(l.strip() for l in out.splitlines() if "Score" in l or "Рекомен" in l)
+        return TestResult("TC-09", "AI transformation → УТОЧНИТЬ (45–65)", False,
+                          f"Expected УТОЧНИТЬ: {detail}", ms)
+    score = _extract_score(out)
+    if score is not None and not (45 <= score <= 65):
+        return TestResult("TC-09", "AI transformation → УТОЧНИТЬ (45–65)", False,
+                          f"УТОЧНИТЬ but score={score} outside 45–65", ms)
+    return TestResult("TC-09", "AI transformation → УТОЧНИТЬ (45–65)", True,
+                      f"УТОЧНИТЬ, score={score if score is not None else '?'}", ms)
+
+
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
@@ -233,6 +263,7 @@ ALL_TESTS = [
     tc_registry_updated,
     tc_strong_vacancy,
     tc_weak_vacancy,
+    tc_ai_partner_vacancy,
 ]
 
 

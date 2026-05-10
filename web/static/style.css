@@ -188,6 +188,34 @@ ol.plain-list li { list-style: decimal; }
   line-height: 1.75;
 }
 
+/* ── LLM insights card ── */
+.card-llm {
+  border-style: dashed;
+  opacity: .88;
+}
+.llm-badge {
+  display: inline-block;
+  padding: .1rem .5rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: .65rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--muted);
+  font-weight: 600;
+  vertical-align: middle;
+  margin-left: .5rem;
+}
+.llm-field {
+  margin-bottom: .7rem;
+  padding-bottom: .7rem;
+  border-bottom: 1px solid var(--border);
+}
+.llm-field:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.llm-label { font-size: .75rem; font-weight: 600; color: var(--muted); margin-bottom: .2rem; }
+.llm-value { font-size: .88rem; color: var(--muted); font-style: italic; }
+
 /* ── Error ── */
 .error-box {
   background: #fef2f2;

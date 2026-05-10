@@ -11,6 +11,27 @@ def _bullet_list(items: list[str]) -> str:
     return "\n".join(f"- {item}" for item in items) if items else "- —"
 
 
+def _llm_sections(analysis: VacancyAnalysis) -> list[str]:
+    """Return Markdown lines for LLM insight fields, or [] if none populated."""
+    fields = [
+        ("Семантическое резюме",            analysis.semantic_summary),
+        ("Соответствие уровню роли",         analysis.role_level_fit),
+        ("Баланс стратегия / операционка",   analysis.strategic_vs_operational_balance),
+        ("Соответствие целевой роли",         analysis.target_role_alignment),
+    ]
+    has_any = any(v for _, v in fields) or bool(analysis.authority_signals)
+    if not has_any:
+        return []
+
+    lines = ["", "## LLM-инсайты", ""]
+    for label, value in fields:
+        if value:
+            lines.append(f"**{label}:** {value}")
+    if analysis.authority_signals:
+        lines.append(f"**Сигналы полномочий:** {'; '.join(analysis.authority_signals)}")
+    return lines
+
+
 def save_markdown(analysis: VacancyAnalysis, output_dir: Path) -> Path:
     ts = analysis.analyzed_at.strftime("%Y%m%d_%H%M%S")
     path = output_dir / f"analysis_{ts}.md"
@@ -40,6 +61,7 @@ def save_markdown(analysis: VacancyAnalysis, output_dir: Path) -> Path:
         "",
         "## Рекомендации по адаптации резюме",
         _bullet_list(analysis.resume_tips),
+        *_llm_sections(analysis),
     ]
 
     path.write_text("\n".join(sections), encoding="utf-8")
@@ -60,6 +82,13 @@ def save_json(analysis: VacancyAnalysis, output_dir: Path) -> Path:
         "hr_questions": analysis.hr_questions,
         "hr_response": analysis.hr_response,
         "resume_tips": analysis.resume_tips,
+        "llm_insights": {
+            "role_level_fit":                   analysis.role_level_fit,
+            "strategic_vs_operational_balance":  analysis.strategic_vs_operational_balance,
+            "authority_signals":                 analysis.authority_signals,
+            "target_role_alignment":             analysis.target_role_alignment,
+            "semantic_summary":                  analysis.semantic_summary,
+        },
     }
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     return path

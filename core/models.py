@@ -38,3 +38,10 @@ class VacancyAnalysis:
     hr_response: str
     resume_tips: list[str]
     source_file: str | None = None
+    # LLM insight fields — populated by HybridAnalyzer or a real LLM adapter.
+    # Empty string means "not computed"; LLM_PENDING means "placeholder".
+    role_level_fit: str = ""
+    strategic_vs_operational_balance: str = ""
+    authority_signals: list[str] = field(default_factory=list)
+    target_role_alignment: str = ""
+    semantic_summary: str = ""
