@@ -24,7 +24,7 @@
       <a href="/output/{{ json_filename }}" class="btn" download>↓ JSON</a>
     </div>
 
-    <!-- Score + recommendation -->
+    <!-- ══ Score + recommendation ══ -->
     <div class="card">
       <h2>Результат анализа</h2>
       <div class="score-row">
@@ -45,31 +45,7 @@
       </div>
     </div>
 
-    <!-- Evolutionary Potential -->
-    {% if analysis.evolutionary_potential and analysis.evolutionary_potential != LLM_PENDING %}
-    <div class="card card-evo">
-      <h2>Эволюционный потенциал
-        <span class="evo-badge {{ evo_level }}">{{ analysis.evolutionary_potential }}</span>
-      </h2>
-
-      {% if analysis.career_strategy_comment and analysis.career_strategy_comment != LLM_PENDING %}
-      <p class="evo-comment">{{ analysis.career_strategy_comment }}</p>
-      {% endif %}
-
-      {% if analysis.strategic_opportunity_signals %}
-      <div class="evo-signals-wrap">
-        <div class="evo-signals-label">Сигналы возможности</div>
-        <ul class="signal-list">
-          {% for sig in analysis.strategic_opportunity_signals %}
-          <li>{{ sig }}</li>
-          {% endfor %}
-        </ul>
-      </div>
-      {% endif %}
-    </div>
-    {% endif %}
-
-    <!-- Decision Intelligence -->
+    <!-- ══ Decision Intelligence (full width) ══ -->
     {% set di_has_content = analysis.strategic_rationale and analysis.strategic_rationale != LLM_PENDING %}
     {% set di_has_lists = analysis.career_risks or analysis.career_opportunities or analysis.strategic_validation_questions %}
     {% set di_has_scenarios = (analysis.best_case_scenario and analysis.best_case_scenario != LLM_PENDING) or (analysis.worst_case_scenario and analysis.worst_case_scenario != LLM_PENDING) %}
@@ -124,9 +100,7 @@
       {% endif %}
 
       {% if analysis.strategic_validation_questions %}
-      <h3 style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.5rem;">
-        Стратегические вопросы для валидации
-      </h3>
+      <h3 class="di-subhead">Стратегические вопросы для валидации</h3>
       <ol class="validation-list">
         {% for q in analysis.strategic_validation_questions %}
         <li>{{ q }}</li>
@@ -136,61 +110,60 @@
     </div>
     {% endif %}
 
-    <!-- Key matches -->
-    <div class="card">
-      <h2>Ключевые совпадения с профилем</h2>
-      {% if analysis.key_matches %}
-      <ul class="match-list">
-        {% for kw in analysis.key_matches %}
-        <li>{{ kw }}</li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="empty">Совпадений не обнаружено</p>
+    <!-- ══ Evolutionary Potential (full width) ══ -->
+    {% if analysis.evolutionary_potential and analysis.evolutionary_potential != LLM_PENDING %}
+    <div class="card card-evo">
+      <h2>Эволюционный потенциал
+        <span class="evo-badge {{ evo_level }}">{{ analysis.evolutionary_potential }}</span>
+      </h2>
+
+      {% if analysis.career_strategy_comment and analysis.career_strategy_comment != LLM_PENDING %}
+      <p class="evo-comment">{{ analysis.career_strategy_comment }}</p>
+      {% endif %}
+
+      {% if analysis.strategic_opportunity_signals %}
+      <div class="evo-signals-wrap">
+        <div class="evo-signals-label">Сигналы возможности</div>
+        <ul class="signal-list">
+          {% for sig in analysis.strategic_opportunity_signals %}
+          <li>{{ sig }}</li>
+          {% endfor %}
+        </ul>
+      </div>
       {% endif %}
     </div>
+    {% endif %}
 
-    <!-- Risks -->
-    <div class="card">
-      <h2>Риски и красные флаги</h2>
-      {% if analysis.risks %}
-      <ul class="risk-list">
-        {% for r in analysis.risks %}
-        <li>{{ r }}</li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="no-risk">✓ Существенных рисков не выявлено</p>
-      {% endif %}
+    <!-- ══ Key matches + Risks — 2 columns ══ -->
+    <div class="row-2col">
+      <div class="card">
+        <h2>Ключевые совпадения с профилем</h2>
+        {% if analysis.key_matches %}
+        <ul class="match-list">
+          {% for kw in analysis.key_matches %}
+          <li>{{ kw }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty">Совпадений не обнаружено</p>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h2>Риски и красные флаги</h2>
+        {% if analysis.risks %}
+        <ul class="risk-list">
+          {% for r in analysis.risks %}
+          <li>{{ r }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="no-risk">✓ Существенных рисков не выявлено</p>
+        {% endif %}
+      </div>
     </div>
 
-    <!-- HR questions -->
-    <div class="card">
-      <h2>Вопросы к HR</h2>
-      <ol class="plain-list">
-        {% for q in analysis.hr_questions %}
-        <li>{{ q }}</li>
-        {% endfor %}
-      </ol>
-    </div>
-
-    <!-- HR response letter -->
-    <div class="card">
-      <h2>Шаблон ответа HR</h2>
-      <pre class="hr-letter">{{ analysis.hr_response }}</pre>
-    </div>
-
-    <!-- Resume tips -->
-    <div class="card">
-      <h2>Рекомендации по адаптации резюме</h2>
-      <ul class="plain-list">
-        {% for tip in analysis.resume_tips %}
-        <li>{{ tip }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-
-    <!-- LLM insights (shown when any field is populated) -->
+    <!-- ══ LLM insights (full width, secondary) ══ -->
     {% set llm_any = analysis.semantic_summary or analysis.role_level_fit
                      or analysis.strategic_vs_operational_balance
                      or analysis.target_role_alignment or analysis.authority_signals %}
@@ -238,6 +211,38 @@
       {% endif %}
     </div>
     {% endif %}
+
+    <!-- ══ Auxiliary section ══ -->
+    <div class="section-aux">
+      <div class="section-aux-label">Рабочие материалы</div>
+
+      <!-- HR questions + Resume tips — 2 columns -->
+      <div class="row-2col">
+        <div class="card">
+          <h2>Вопросы к HR</h2>
+          <ol class="plain-list">
+            {% for q in analysis.hr_questions %}
+            <li>{{ q }}</li>
+            {% endfor %}
+          </ol>
+        </div>
+
+        <div class="card">
+          <h2>Рекомендации по адаптации резюме</h2>
+          <ul class="plain-list">
+            {% for tip in analysis.resume_tips %}
+            <li>{{ tip }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <!-- HR response letter — full width -->
+      <div class="card">
+        <h2>Шаблон ответа HR</h2>
+        <pre class="hr-letter">{{ analysis.hr_response }}</pre>
+      </div>
+    </div>
 
   </div>
 </main>

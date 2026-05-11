@@ -261,8 +261,41 @@ ol.plain-list li { list-style: decimal; }
 .llm-label { font-size: .75rem; font-weight: 600; color: var(--muted); margin-bottom: .2rem; }
 .llm-value { font-size: .88rem; color: var(--muted); font-style: italic; }
 
+/* ── 2-column row layout ── */
+.row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.row-2col > .card { margin-bottom: 0; }
+@media (max-width: 620px) { .row-2col { grid-template-columns: 1fr; } }
+
+/* ── Auxiliary section separator ── */
+.section-aux { margin-top: .5rem; }
+.section-aux-label {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+.section-aux-label::before,
+.section-aux-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
 /* ── Decision Intelligence card ── */
 .card-di { border-left: 3px solid var(--primary); }
+
+.di-subhead {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  margin: .75rem 0 .4rem;
+}
 
 .di-rationale {
   font-size: .92rem;
