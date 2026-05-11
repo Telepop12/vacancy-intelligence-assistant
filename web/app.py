@@ -71,6 +71,19 @@ def _score_color(score: int) -> str:
     return "red"
 
 
+def _action_color(action: str) -> str:
+    return {
+        "ОТКЛИКАТЬСЯ":        "green",
+        "УТОЧНИТЬ":           "yellow",
+        "ЗАПУСТИТЬ В РАБОТУ": "launch",
+        "ПРОПУСТИТЬ":         "red",
+    }.get(action, "yellow")
+
+
+def _evo_level(potential: str) -> str:
+    return {"High": "high", "Medium": "medium", "Low": "low"}.get(potential, "low")
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -112,13 +125,18 @@ async def analyze_vacancy(
     json_path = save_json(analysis, OUTPUT_DIR)
     update_registry(analysis, REGISTRY)
 
+    display_action = analysis.recommended_action or analysis.recommendation.value
     return templates.TemplateResponse(
         request, "result.html",
         context={
-            "analysis":      analysis,
-            "score_color":   _score_color(analysis.match_score),
-            "md_filename":   md_path.name,
-            "json_filename": json_path.name,
+            "analysis":       analysis,
+            "score_color":    _score_color(analysis.match_score),
+            "md_filename":    md_path.name,
+            "json_filename":  json_path.name,
+            "display_action": display_action,
+            "action_color":   _action_color(display_action),
+            "evo_level":      _evo_level(analysis.evolutionary_potential),
+            "LLM_PENDING":    "Ожидает подключения LLM",
         },
     )
 

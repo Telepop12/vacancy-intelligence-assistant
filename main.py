@@ -24,9 +24,10 @@ DEFAULT_OUTPUT = ROOT / "output"
 REGISTRY_FILE = DEFAULT_OUTPUT / "registry.csv"
 
 _REC_ICONS = {
-    "ОТКЛИКАТЬСЯ": "✅",
-    "УТОЧНИТЬ":    "⚠️ ",
-    "ПРОПУСТИТЬ":  "🚫",
+    "ОТКЛИКАТЬСЯ":        "✅",
+    "УТОЧНИТЬ":           "⚠️ ",
+    "ЗАПУСТИТЬ В РАБОТУ": "🚀",
+    "ПРОПУСТИТЬ":         "🚫",
 }
 
 
@@ -63,10 +64,16 @@ def read_vacancy_interactive() -> str:
 
 def print_summary(analysis) -> None:
     sep = "─" * 55
-    icon = _REC_ICONS.get(analysis.recommendation.value, "")
+    # Prefer LLM-enhanced recommended_action when available
+    display = analysis.recommended_action or analysis.recommendation.value
+    icon = _REC_ICONS.get(display, "")
     print(f"\n{sep}")
     print(f"  Match Score  : {analysis.match_score} / 100")
-    print(f"  Рекомендация : {icon} {analysis.recommendation.value}")
+    print(f"  Рекомендация : {icon} {display}")
+    if display != analysis.recommendation.value:
+        print(f"  Rule-based   : {analysis.recommendation.value}")
+    if analysis.evolutionary_potential and analysis.evolutionary_potential not in ("", "Ожидает подключения LLM"):
+        print(f"  Эво.потенциал: {analysis.evolutionary_potential}")
     print(f"{sep}")
     if analysis.key_matches:
         top = ", ".join(analysis.key_matches[:6])

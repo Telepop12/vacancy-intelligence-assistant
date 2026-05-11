@@ -13,22 +13,42 @@ def _bullet_list(items: list[str]) -> str:
 
 def _llm_sections(analysis: VacancyAnalysis) -> list[str]:
     """Return Markdown lines for LLM insight fields, or [] if none populated."""
-    fields = [
-        ("Семантическое резюме",            analysis.semantic_summary),
-        ("Соответствие уровню роли",         analysis.role_level_fit),
-        ("Баланс стратегия / операционка",   analysis.strategic_vs_operational_balance),
-        ("Соответствие целевой роли",         analysis.target_role_alignment),
-    ]
-    has_any = any(v for _, v in fields) or bool(analysis.authority_signals)
-    if not has_any:
-        return []
+    lines: list[str] = []
 
-    lines = ["", "## LLM-инсайты", ""]
-    for label, value in fields:
-        if value:
-            lines.append(f"**{label}:** {value}")
-    if analysis.authority_signals:
-        lines.append(f"**Сигналы полномочий:** {'; '.join(analysis.authority_signals)}")
+    # Evolutionary Potential block
+    evo_fields = [
+        analysis.evolutionary_potential,
+        analysis.career_strategy_comment,
+        analysis.strategic_opportunity_signals,
+        analysis.recommended_action,
+    ]
+    if any(evo_fields):
+        lines += ["", "## Эволюционный потенциал", ""]
+        if analysis.evolutionary_potential:
+            lines.append(f"**Потенциал:** {analysis.evolutionary_potential}")
+        if analysis.recommended_action:
+            lines.append(f"**Рекомендованное действие:** {analysis.recommended_action}")
+        if analysis.career_strategy_comment:
+            lines += ["", analysis.career_strategy_comment]
+        if analysis.strategic_opportunity_signals:
+            lines += ["", "**Сигналы возможности:**"]
+            lines += [f"- {s}" for s in analysis.strategic_opportunity_signals]
+
+    # Semantic insights block
+    sem_fields = [
+        ("Семантическое резюме",          analysis.semantic_summary),
+        ("Соответствие уровню роли",       analysis.role_level_fit),
+        ("Баланс стратегия / операционка", analysis.strategic_vs_operational_balance),
+        ("Соответствие целевой роли",       analysis.target_role_alignment),
+    ]
+    if any(v for _, v in sem_fields) or analysis.authority_signals:
+        lines += ["", "## LLM-инсайты", ""]
+        for label, value in sem_fields:
+            if value:
+                lines.append(f"**{label}:** {value}")
+        if analysis.authority_signals:
+            lines.append(f"**Сигналы полномочий:** {'; '.join(analysis.authority_signals)}")
+
     return lines
 
 
@@ -83,11 +103,17 @@ def save_json(analysis: VacancyAnalysis, output_dir: Path) -> Path:
         "hr_response": analysis.hr_response,
         "resume_tips": analysis.resume_tips,
         "llm_insights": {
-            "role_level_fit":                   analysis.role_level_fit,
+            "semantic_summary":                  analysis.semantic_summary,
+            "role_level_fit":                    analysis.role_level_fit,
             "strategic_vs_operational_balance":  analysis.strategic_vs_operational_balance,
             "authority_signals":                 analysis.authority_signals,
             "target_role_alignment":             analysis.target_role_alignment,
-            "semantic_summary":                  analysis.semantic_summary,
+        },
+        "evolutionary_potential": {
+            "level":                             analysis.evolutionary_potential,
+            "strategic_opportunity_signals":     analysis.strategic_opportunity_signals,
+            "career_strategy_comment":           analysis.career_strategy_comment,
+            "recommended_action":                analysis.recommended_action,
         },
     }
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")

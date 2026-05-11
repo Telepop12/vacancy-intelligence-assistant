@@ -33,7 +33,10 @@
           <div class="score-badge {{ score_color }}">{{ analysis.match_score }}</div>
         </div>
         <div>
-          <span class="rec-badge {{ score_color }}">{{ analysis.recommendation.value }}</span>
+          <span class="rec-badge {{ action_color }}">{{ display_action }}</span>
+          {% if display_action != analysis.recommendation.value %}
+          <div class="rule-based-note">Rule-based: {{ analysis.recommendation.value }}</div>
+          {% endif %}
           <div class="score-date">{{ analysis.analyzed_at.strftime('%d.%m.%Y %H:%M') }}</div>
         </div>
         <div class="score-bar-wrap">
@@ -41,6 +44,30 @@
         </div>
       </div>
     </div>
+
+    <!-- Evolutionary Potential -->
+    {% if analysis.evolutionary_potential and analysis.evolutionary_potential != LLM_PENDING %}
+    <div class="card card-evo">
+      <h2>Эволюционный потенциал
+        <span class="evo-badge {{ evo_level }}">{{ analysis.evolutionary_potential }}</span>
+      </h2>
+
+      {% if analysis.career_strategy_comment and analysis.career_strategy_comment != LLM_PENDING %}
+      <p class="evo-comment">{{ analysis.career_strategy_comment }}</p>
+      {% endif %}
+
+      {% if analysis.strategic_opportunity_signals %}
+      <div class="evo-signals-wrap">
+        <div class="evo-signals-label">Сигналы возможности</div>
+        <ul class="signal-list">
+          {% for sig in analysis.strategic_opportunity_signals %}
+          <li>{{ sig }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
 
     <!-- Key matches -->
     <div class="card">

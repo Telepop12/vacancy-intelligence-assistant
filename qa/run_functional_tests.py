@@ -237,17 +237,35 @@ def tc_ai_partner_vacancy() -> TestResult:
     code, out, err = _run(["--file", str(INPUTS_DIR / "ai_partner_vacancy.txt"), "--no-registry"])
     ms = int((time.monotonic() - t0) * 1000)
     if code != 0:
-        return TestResult("TC-09", "AI transformation → УТОЧНИТЬ (45–65)", False, f"Exit code {code}", ms, err)
-    if "УТОЧНИТЬ" not in out:
+        return TestResult("TC-09", "AI transformation → не ПРОПУСТИТЬ (45–65)", False, f"Exit code {code}", ms, err)
+    # LLM may upgrade to ЗАПУСТИТЬ В РАБОТУ — both outcomes indicate recognised value
+    if "УТОЧНИТЬ" not in out and "ЗАПУСТИТЬ В РАБОТУ" not in out:
         detail = " | ".join(l.strip() for l in out.splitlines() if "Score" in l or "Рекомен" in l)
-        return TestResult("TC-09", "AI transformation → УТОЧНИТЬ (45–65)", False,
-                          f"Expected УТОЧНИТЬ: {detail}", ms)
+        return TestResult("TC-09", "AI transformation → не ПРОПУСТИТЬ (45–65)", False,
+                          f"Expected УТОЧНИТЬ or ЗАПУСТИТЬ В РАБОТУ: {detail}", ms)
     score = _extract_score(out)
     if score is not None and not (45 <= score <= 65):
-        return TestResult("TC-09", "AI transformation → УТОЧНИТЬ (45–65)", False,
-                          f"УТОЧНИТЬ but score={score} outside 45–65", ms)
-    return TestResult("TC-09", "AI transformation → УТОЧНИТЬ (45–65)", True,
-                      f"УТОЧНИТЬ, score={score if score is not None else '?'}", ms)
+        return TestResult("TC-09", "AI transformation → не ПРОПУСТИТЬ (45–65)", False,
+                          f"score={score} outside 45–65", ms)
+    rec = "ЗАПУСТИТЬ В РАБОТУ" if "ЗАПУСТИТЬ В РАБОТУ" in out else "УТОЧНИТЬ"
+    return TestResult("TC-09", "AI transformation → не ПРОПУСТИТЬ (45–65)", True,
+                      f"{rec}, score={score if score is not None else '?'}", ms)
+
+
+def tc_evolutionary_launch() -> TestResult:
+    """TC-10: AI CoE role → ЗАПУСТИТЬ В РАБОТУ (high evolutionary potential)"""
+    t0 = time.monotonic()
+    code, out, err = _run(["--file", str(INPUTS_DIR / "evolutionary_target_vacancy.txt"), "--no-registry"])
+    ms = int((time.monotonic() - t0) * 1000)
+    if code != 0:
+        return TestResult("TC-10", "AI CoE → ЗАПУСТИТЬ В РАБОТУ", False, f"Exit code {code}", ms, err)
+    if "ЗАПУСТИТЬ В РАБОТУ" not in out:
+        detail = " | ".join(l.strip() for l in out.splitlines() if "Score" in l or "Рекомен" in l or "Эво" in l)
+        return TestResult("TC-10", "AI CoE → ЗАПУСТИТЬ В РАБОТУ", False,
+                          f"Expected ЗАПУСТИТЬ В РАБОТУ: {detail}", ms)
+    score = _extract_score(out)
+    return TestResult("TC-10", "AI CoE → ЗАПУСТИТЬ В РАБОТУ", True,
+                      f"ЗАПУСТИТЬ В РАБОТУ, rule-based score={score if score is not None else '?'}", ms)
 
 
 # ---------------------------------------------------------------------------
@@ -264,6 +282,7 @@ ALL_TESTS = [
     tc_strong_vacancy,
     tc_weak_vacancy,
     tc_ai_partner_vacancy,
+    tc_evolutionary_launch,
 ]
 
 

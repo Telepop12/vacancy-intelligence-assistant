@@ -130,6 +130,7 @@ textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
 .rec-badge.green  { background: var(--success); }
 .rec-badge.yellow { background: var(--warning); }
 .rec-badge.red    { background: var(--danger);  }
+.rec-badge.launch { background: #7c3aed; }   /* purple — strategic opportunity */
 
 .score-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: .25rem; }
 .score-date { color: var(--muted); font-size: .82rem; margin-top: .3rem; }
@@ -186,6 +187,50 @@ ol.plain-list li { list-style: decimal; }
   font-family: inherit;
   font-size: .9rem;
   line-height: 1.75;
+}
+
+/* ── Rule-based note (shown when LLM overrides recommendation) ── */
+.rule-based-note {
+  font-size: .75rem;
+  color: var(--muted);
+  margin-top: .3rem;
+}
+
+/* ── Evolutionary Potential card ── */
+.card-evo { border-left: 3px solid #7c3aed; }
+
+.evo-badge {
+  display: inline-block;
+  padding: .15rem .65rem;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #fff;
+  vertical-align: middle;
+  margin-left: .5rem;
+}
+.evo-badge.high   { background: var(--success); }
+.evo-badge.medium { background: var(--warning); }
+.evo-badge.low    { background: var(--muted);   }
+
+.evo-comment {
+  font-size: .92rem;
+  line-height: 1.65;
+  color: var(--text);
+  margin-bottom: .85rem;
+}
+.evo-signals-wrap  { margin-top: .5rem; }
+.evo-signals-label { font-size: .75rem; font-weight: 600; color: var(--muted); margin-bottom: .4rem; }
+
+.signal-list { list-style: none; display: flex; flex-wrap: wrap; gap: .4rem; }
+.signal-list li {
+  background: #ede9fe;
+  color: #6d28d9;
+  padding: .22rem .65rem;
+  border-radius: 999px;
+  font-size: .82rem;
 }
 
 /* ── LLM insights card ── */

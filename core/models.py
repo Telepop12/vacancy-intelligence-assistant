@@ -6,9 +6,10 @@ from enum import Enum
 
 
 class Recommendation(str, Enum):
-    APPLY = "ОТКЛИКАТЬСЯ"
+    APPLY  = "ОТКЛИКАТЬСЯ"
     CLARIFY = "УТОЧНИТЬ"
-    SKIP = "ПРОПУСТИТЬ"
+    LAUNCH = "ЗАПУСТИТЬ В РАБОТУ"   # strategic opportunity, not direct fit
+    SKIP   = "ПРОПУСТИТЬ"
 
 
 @dataclass
@@ -45,3 +46,8 @@ class VacancyAnalysis:
     authority_signals: list[str] = field(default_factory=list)
     target_role_alignment: str = ""
     semantic_summary: str = ""
+    # Evolutionary Potential layer
+    evolutionary_potential: str = ""           # "High" | "Medium" | "Low"
+    strategic_opportunity_signals: list[str] = field(default_factory=list)
+    career_strategy_comment: str = ""
+    recommended_action: str = ""               # LLM-enhanced final rec (may be LAUNCH)

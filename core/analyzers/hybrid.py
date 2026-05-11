@@ -56,3 +56,8 @@ class HybridAnalyzer(BaseAnalyzer):
         analysis.authority_signals                = []
         analysis.target_role_alignment            = LLM_PENDING
         analysis.semantic_summary                 = LLM_PENDING
+        # Evolutionary Potential placeholders
+        analysis.evolutionary_potential           = LLM_PENDING
+        analysis.strategic_opportunity_signals    = []
+        analysis.career_strategy_comment          = LLM_PENDING
+        analysis.recommended_action               = analysis.recommendation.value  # mirrors rule-based
