@@ -130,7 +130,7 @@ textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
 .rec-badge.green  { background: var(--success); }
 .rec-badge.yellow { background: var(--warning); }
 .rec-badge.red    { background: var(--danger);  }
-.rec-badge.launch { background: #7c3aed; }   /* purple — strategic opportunity */
+.rec-badge.launch { background: #1d4ed8; }   /* blue — strategic opportunity */
 
 .score-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: .25rem; }
 .score-date { color: var(--muted); font-size: .82rem; margin-top: .3rem; }
@@ -197,7 +197,7 @@ ol.plain-list li { list-style: decimal; }
 }
 
 /* ── Evolutionary Potential card ── */
-.card-evo { border-left: 3px solid #7c3aed; }
+.card-evo { border-left: 3px solid #1d4ed8; }
 
 .evo-badge {
   display: inline-block;
@@ -260,6 +260,100 @@ ol.plain-list li { list-style: decimal; }
 .llm-field:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
 .llm-label { font-size: .75rem; font-weight: 600; color: var(--muted); margin-bottom: .2rem; }
 .llm-value { font-size: .88rem; color: var(--muted); font-style: italic; }
+
+/* ── Decision Intelligence card ── */
+.card-di { border-left: 3px solid var(--primary); }
+
+.di-rationale {
+  font-size: .92rem;
+  line-height: 1.7;
+  color: var(--text);
+  margin-bottom: 1rem;
+  padding: .75rem 1rem;
+  background: #eff6ff;
+  border-radius: var(--radius);
+  border-left: 3px solid var(--primary);
+}
+
+.di-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+@media (max-width: 600px) { .di-grid { grid-template-columns: 1fr; } }
+
+.di-col h3 {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  margin-bottom: .5rem;
+}
+
+.opportunity-list { list-style: none; padding: 0; }
+.opportunity-list li {
+  padding: .35rem .75rem;
+  background: #dcfce7;
+  border-left: 3px solid var(--success);
+  margin-bottom: .35rem;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: .86rem;
+}
+
+.di-risk-list { list-style: none; padding: 0; }
+.di-risk-list li {
+  padding: .35rem .75rem;
+  background: #fef2f2;
+  border-left: 3px solid var(--danger);
+  margin-bottom: .35rem;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: .86rem;
+}
+
+.scenario-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+@media (max-width: 600px) { .scenario-grid { grid-template-columns: 1fr; } }
+
+.scenario-box {
+  padding: .75rem 1rem;
+  border-radius: var(--radius);
+  font-size: .88rem;
+  line-height: 1.6;
+}
+.scenario-box.best  { background: #dcfce7; border: 1px solid #86efac; }
+.scenario-box.worst { background: #fef2f2; border: 1px solid #fca5a5; }
+.scenario-box .scenario-label {
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: .3rem;
+}
+.scenario-box.best  .scenario-label { color: var(--success); }
+.scenario-box.worst .scenario-label { color: var(--danger); }
+
+.validation-list { list-style: none; padding: 0; counter-reset: vq; }
+.validation-list li {
+  counter-increment: vq;
+  padding: .4rem 0 .4rem 1.8rem;
+  border-bottom: 1px solid var(--border);
+  font-size: .9rem;
+  position: relative;
+}
+.validation-list li::before {
+  content: counter(vq) ".";
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+  font-weight: 700;
+  font-size: .82rem;
+}
+.validation-list li:last-child { border-bottom: none; }
 
 /* ── Error ── */
 .error-box {

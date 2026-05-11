@@ -15,6 +15,35 @@ def _llm_sections(analysis: VacancyAnalysis) -> list[str]:
     """Return Markdown lines for LLM insight fields, or [] if none populated."""
     lines: list[str] = []
 
+    # Decision Intelligence block
+    di_fields = [
+        analysis.strategic_rationale,
+        analysis.career_risks,
+        analysis.career_opportunities,
+        analysis.best_case_scenario,
+        analysis.worst_case_scenario,
+        analysis.strategic_validation_questions,
+    ]
+    if any(di_fields):
+        lines += ["", "## Decision Intelligence", ""]
+        if analysis.strategic_rationale:
+            lines += [f"**Стратегическое обоснование:** {analysis.strategic_rationale}", ""]
+        if analysis.career_opportunities:
+            lines += ["**Карьерные возможности:**"]
+            lines += [f"- {o}" for o in analysis.career_opportunities]
+            lines.append("")
+        if analysis.career_risks:
+            lines += ["**Карьерные риски:**"]
+            lines += [f"- {r}" for r in analysis.career_risks]
+            lines.append("")
+        if analysis.best_case_scenario:
+            lines.append(f"**Best case:** {analysis.best_case_scenario}")
+        if analysis.worst_case_scenario:
+            lines.append(f"**Worst case:** {analysis.worst_case_scenario}")
+        if analysis.strategic_validation_questions:
+            lines += ["", "**Стратегические вопросы для валидации:**"]
+            lines += [f"{i+1}. {q}" for i, q in enumerate(analysis.strategic_validation_questions)]
+
     # Evolutionary Potential block
     evo_fields = [
         analysis.evolutionary_potential,
@@ -114,6 +143,14 @@ def save_json(analysis: VacancyAnalysis, output_dir: Path) -> Path:
             "strategic_opportunity_signals":     analysis.strategic_opportunity_signals,
             "career_strategy_comment":           analysis.career_strategy_comment,
             "recommended_action":                analysis.recommended_action,
+        },
+        "decision_intelligence": {
+            "strategic_rationale":               analysis.strategic_rationale,
+            "career_risks":                      analysis.career_risks,
+            "career_opportunities":              analysis.career_opportunities,
+            "best_case_scenario":                analysis.best_case_scenario,
+            "worst_case_scenario":               analysis.worst_case_scenario,
+            "strategic_validation_questions":    analysis.strategic_validation_questions,
         },
     }
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")

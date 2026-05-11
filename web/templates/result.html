@@ -69,6 +69,73 @@
     </div>
     {% endif %}
 
+    <!-- Decision Intelligence -->
+    {% set di_has_content = analysis.strategic_rationale and analysis.strategic_rationale != LLM_PENDING %}
+    {% set di_has_lists = analysis.career_risks or analysis.career_opportunities or analysis.strategic_validation_questions %}
+    {% set di_has_scenarios = (analysis.best_case_scenario and analysis.best_case_scenario != LLM_PENDING) or (analysis.worst_case_scenario and analysis.worst_case_scenario != LLM_PENDING) %}
+    {% if di_has_content or di_has_lists or di_has_scenarios %}
+    <div class="card card-di">
+      <h2>Decision Intelligence</h2>
+
+      {% if di_has_content %}
+      <div class="di-rationale">{{ analysis.strategic_rationale }}</div>
+      {% endif %}
+
+      {% if analysis.career_opportunities or analysis.career_risks %}
+      <div class="di-grid">
+        {% if analysis.career_opportunities %}
+        <div class="di-col">
+          <h3>Карьерные возможности</h3>
+          <ul class="opportunity-list">
+            {% for o in analysis.career_opportunities %}
+            <li>{{ o }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+        {% if analysis.career_risks %}
+        <div class="di-col">
+          <h3>Карьерные риски</h3>
+          <ul class="di-risk-list">
+            {% for r in analysis.career_risks %}
+            <li>{{ r }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if di_has_scenarios %}
+      <div class="scenario-grid">
+        {% if analysis.best_case_scenario and analysis.best_case_scenario != LLM_PENDING %}
+        <div class="scenario-box best">
+          <div class="scenario-label">Best case</div>
+          {{ analysis.best_case_scenario }}
+        </div>
+        {% endif %}
+        {% if analysis.worst_case_scenario and analysis.worst_case_scenario != LLM_PENDING %}
+        <div class="scenario-box worst">
+          <div class="scenario-label">Worst case</div>
+          {{ analysis.worst_case_scenario }}
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if analysis.strategic_validation_questions %}
+      <h3 style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.5rem;">
+        Стратегические вопросы для валидации
+      </h3>
+      <ol class="validation-list">
+        {% for q in analysis.strategic_validation_questions %}
+        <li>{{ q }}</li>
+        {% endfor %}
+      </ol>
+      {% endif %}
+    </div>
+    {% endif %}
+
     <!-- Key matches -->
     <div class="card">
       <h2>Ключевые совпадения с профилем</h2>

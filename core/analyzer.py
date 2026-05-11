@@ -50,7 +50,10 @@ def analyze(vacancy_text: str, profile: CandidateProfile) -> VacancyAnalysis:
     Analyze a vacancy against the candidate profile.
     Signature is stable — safe to call from CLI, Web UI, or tests.
     """
-    return _analyzer.analyze(vacancy_text, profile)
+    from core.recommendation_engine import synthesize
+    analysis = _analyzer.analyze(vacancy_text, profile)
+    synthesize(analysis)
+    return analysis
 
 
 # Re-exported for backward compatibility

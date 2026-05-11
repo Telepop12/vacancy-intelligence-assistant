@@ -268,6 +268,97 @@ def tc_evolutionary_launch() -> TestResult:
                       f"ЗАПУСТИТЬ В РАБОТУ, rule-based score={score if score is not None else '?'}", ms)
 
 
+def _parse_di_from_json(stdout: str) -> dict | None:
+    """Extract decision_intelligence block from the JSON report referenced in stdout."""
+    _, json_path = _parse_report_paths(stdout)
+    if not json_path or not json_path.exists():
+        return None
+    try:
+        data = json.loads(json_path.read_text(encoding="utf-8"))
+        return data.get("decision_intelligence")
+    except Exception:
+        return None
+
+
+def tc_di_launch_has_rationale() -> TestResult:
+    """TC-11: Low score + high evo → ЗАПУСТИТЬ + strategic_rationale present"""
+    t0 = time.monotonic()
+    code, out, err = _run(["--file", str(INPUTS_DIR / "evolutionary_target_vacancy.txt"), "--no-registry"])
+    ms = int((time.monotonic() - t0) * 1000)
+    if code != 0:
+        return TestResult("TC-11", "DI: ЗАПУСТИТЬ В РАБОТУ + strategic_rationale", False, f"Exit code {code}", ms, err)
+    if "ЗАПУСТИТЬ В РАБОТУ" not in out:
+        detail = " | ".join(l.strip() for l in out.splitlines() if "Score" in l or "Рекомен" in l)
+        return TestResult("TC-11", "DI: ЗАПУСТИТЬ В РАБОТУ + strategic_rationale", False,
+                          f"Expected ЗАПУСТИТЬ В РАБОТУ: {detail}", ms)
+    di = _parse_di_from_json(out)
+    if di is None:
+        return TestResult("TC-11", "DI: ЗАПУСТИТЬ В РАБОТУ + strategic_rationale", False,
+                          "decision_intelligence block missing from JSON", ms)
+    rationale = di.get("strategic_rationale", "")
+    if not rationale or rationale == "Ожидает подключения LLM":
+        return TestResult("TC-11", "DI: ЗАПУСТИТЬ В РАБОТУ + strategic_rationale", False,
+                          f"strategic_rationale empty or pending: {rationale!r}", ms)
+    return TestResult("TC-11", "DI: ЗАПУСТИТЬ В РАБОТУ + strategic_rationale", True,
+                      f"rationale={rationale[:60]}…", ms)
+
+
+def tc_di_clarify_has_risks_and_opportunities() -> TestResult:
+    """TC-12: Mixed signals → career_risks and career_opportunities populated"""
+    t0 = time.monotonic()
+    code, out, err = _run(["--file", str(INPUTS_DIR / "ai_partner_vacancy.txt"), "--no-registry"])
+    ms = int((time.monotonic() - t0) * 1000)
+    if code != 0:
+        return TestResult("TC-12", "DI: career_risks + career_opportunities present", False, f"Exit code {code}", ms, err)
+    # Should be УТОЧНИТЬ or ЗАПУСТИТЬ В РАБОТУ (not ПРОПУСТИТЬ)
+    if "ПРОПУСТИТЬ" in out and "ЗАПУСТИТЬ В РАБОТУ" not in out and "УТОЧНИТЬ" not in out:
+        return TestResult("TC-12", "DI: career_risks + career_opportunities present", False,
+                          "Unexpected ПРОПУСТИТЬ for borderline vacancy", ms)
+    di = _parse_di_from_json(out)
+    if di is None:
+        return TestResult("TC-12", "DI: career_risks + career_opportunities present", False,
+                          "decision_intelligence block missing from JSON", ms)
+    risks = di.get("career_risks", [])
+    opps = di.get("career_opportunities", [])
+    if not risks:
+        return TestResult("TC-12", "DI: career_risks + career_opportunities present", False,
+                          "career_risks is empty", ms)
+    if not opps:
+        return TestResult("TC-12", "DI: career_risks + career_opportunities present", False,
+                          "career_opportunities is empty", ms)
+    return TestResult("TC-12", "DI: career_risks + career_opportunities present", True,
+                      f"risks={len(risks)}, opportunities={len(opps)}", ms)
+
+
+def tc_di_apply_has_scenarios() -> TestResult:
+    """TC-13: High score + strong fit → ОТКЛИКАТЬСЯ + best/worst case present"""
+    t0 = time.monotonic()
+    code, out, err = _run(["--file", str(INPUTS_DIR / "strong_ai_vacancy.txt"), "--no-registry"])
+    ms = int((time.monotonic() - t0) * 1000)
+    if code != 0:
+        return TestResult("TC-13", "DI: ОТКЛИКАТЬСЯ + best/worst case", False, f"Exit code {code}", ms, err)
+    if "ОТКЛИКАТЬСЯ" not in out:
+        detail = " | ".join(l.strip() for l in out.splitlines() if "Score" in l or "Рекомен" in l)
+        return TestResult("TC-13", "DI: ОТКЛИКАТЬСЯ + best/worst case", False,
+                          f"Expected ОТКЛИКАТЬСЯ: {detail}", ms)
+    di = _parse_di_from_json(out)
+    if di is None:
+        return TestResult("TC-13", "DI: ОТКЛИКАТЬСЯ + best/worst case", False,
+                          "decision_intelligence block missing from JSON", ms)
+    best = di.get("best_case_scenario", "")
+    worst = di.get("worst_case_scenario", "")
+    pending = "Ожидает подключения LLM"
+    if not best or best == pending:
+        return TestResult("TC-13", "DI: ОТКЛИКАТЬСЯ + best/worst case", False,
+                          f"best_case_scenario empty or pending: {best!r}", ms)
+    if not worst or worst == pending:
+        return TestResult("TC-13", "DI: ОТКЛИКАТЬСЯ + best/worst case", False,
+                          f"worst_case_scenario empty or pending: {worst!r}", ms)
+    questions = di.get("strategic_validation_questions", [])
+    return TestResult("TC-13", "DI: ОТКЛИКАТЬСЯ + best/worst case", True,
+                      f"best/worst present, validation_questions={len(questions)}", ms)
+
+
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
@@ -283,6 +374,9 @@ ALL_TESTS = [
     tc_weak_vacancy,
     tc_ai_partner_vacancy,
     tc_evolutionary_launch,
+    tc_di_launch_has_rationale,
+    tc_di_clarify_has_risks_and_opportunities,
+    tc_di_apply_has_scenarios,
 ]
 
 

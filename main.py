@@ -62,9 +62,11 @@ def read_vacancy_interactive() -> str:
     return "\n".join(lines)
 
 
+_LLM_PENDING = "Ожидает подключения LLM"
+
+
 def print_summary(analysis) -> None:
-    sep = "─" * 55
-    # Prefer LLM-enhanced recommended_action when available
+    sep = "─" * 60
     display = analysis.recommended_action or analysis.recommendation.value
     icon = _REC_ICONS.get(display, "")
     print(f"\n{sep}")
@@ -72,7 +74,7 @@ def print_summary(analysis) -> None:
     print(f"  Рекомендация : {icon} {display}")
     if display != analysis.recommendation.value:
         print(f"  Rule-based   : {analysis.recommendation.value}")
-    if analysis.evolutionary_potential and analysis.evolutionary_potential not in ("", "Ожидает подключения LLM"):
+    if analysis.evolutionary_potential and analysis.evolutionary_potential not in ("", _LLM_PENDING):
         print(f"  Эво.потенциал: {analysis.evolutionary_potential}")
     print(f"{sep}")
     if analysis.key_matches:
@@ -82,6 +84,23 @@ def print_summary(analysis) -> None:
         print("  Риски        :")
         for r in analysis.risks:
             print(f"    • {r}")
+    # Decision Intelligence
+    if analysis.strategic_rationale and analysis.strategic_rationale not in ("", _LLM_PENDING):
+        print(f"{sep}")
+        rationale = analysis.strategic_rationale
+        # Wrap at ~58 chars for readability
+        words, line, lines = rationale.split(), "", []
+        for w in words:
+            if len(line) + len(w) + 1 > 57 and line:
+                lines.append(f"  {line}")
+                line = w
+            else:
+                line = f"{line} {w}".strip()
+        if line:
+            lines.append(f"  {line}")
+        print("  Обоснование  :")
+        for l in lines:
+            print(l)
     print(f"{sep}\n")
 
 

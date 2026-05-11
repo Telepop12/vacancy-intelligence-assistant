@@ -28,33 +28,29 @@ _USER_TEMPLATE = """\
 - Rule-based рекомендация: {recommendation}
 - Ключевые совпадения: {matches}
 
-Верни JSON с полями (все строковые значения на русском):
+Верни ТОЛЬКО валидный JSON (без markdown-обёртки, без пояснений):
 {{
   "semantic_summary": "2-3 предложения о сути роли и её соответствии профилю CIO/CDTO",
   "role_level_fit": "C-level позиция или нет? Конкретное обоснование.",
   "strategic_vs_operational_balance": "Примерный баланс стратегической / операционной работы.",
   "authority_signals": ["конкретный сигнал полномочий из текста"],
   "target_role_alignment": "Соответствие целевым ролям CIO/CTO/CDTO кандидата.",
-
   "evolutionary_potential": "High|Medium|Low",
-  "strategic_opportunity_signals": [
-    "конкретный сигнал потенциала из текста (visibility, ownership, ROI и т.д.)"
-  ],
-  "career_strategy_comment": "Почему роль может быть стратегически интересна несмотря на неполное совпадение (или почему нет). Риски и upside.",
+  "strategic_opportunity_signals": ["конкретный сигнал потенциала из текста"],
+  "career_strategy_comment": "Почему роль стратегически интересна или нет. 2-3 предложения.",
   "recommended_action": "ОТКЛИКАТЬСЯ|УТОЧНИТЬ|ЗАПУСТИТЬ В РАБОТУ|ПРОПУСТИТЬ"
 }}
 
 Логика evolutionary_potential:
-- High: 3+ сильных сигнала из: прямой доступ к CEO/owner/board, ownership AI-инициативы с нуля,
-  measurable ROI, кросс-функциональное влияние на всю компанию, ранняя стадия AI adoption в крупной организации
-- Medium: 1-2 таких сигнала
+- High: 3+ сигнала: прямой доступ к CEO/board, ownership AI с нуля, measurable ROI, кросс-функц. влияние, ранняя стадия AI в крупной организации
+- Medium: 1-2 сигнала
 - Low: нет значимых сигналов
 
 Логика recommended_action:
-- ОТКЛИКАТЬСЯ: rule-based дал ОТКЛИКАТЬСЯ (score ≥70) — не понижай без веской причины
-- ЗАПУСТИТЬ В РАБОТУ: rule-based дал УТОЧНИТЬ или ПРОПУСТИТЬ, НО evolutionary_potential=High
-- УТОЧНИТЬ: rule-based УТОЧНИТЬ и evolutionary_potential не High
-- ПРОПУСТИТЬ: rule-based ПРОПУСТИТЬ и нет значимого эволюционного потенциала"""
+- ОТКЛИКАТЬСЯ: rule-based ≥70 — не понижай без веской причины
+- ЗАПУСТИТЬ В РАБОТУ: rule-based УТОЧНИТЬ/ПРОПУСТИТЬ, НО evolutionary_potential=High
+- УТОЧНИТЬ: rule-based УТОЧНИТЬ и evo не High
+- ПРОПУСТИТЬ: rule-based ПРОПУСТИТЬ и нет evo потенциала"""
 
 
 class ClaudeAnalyzer(HybridAnalyzer):
@@ -109,12 +105,18 @@ class ClaudeAnalyzer(HybridAnalyzer):
         client = anthropic.Anthropic(api_key=self._api_key)
         response = client.messages.create(
             model=self._model,
-            max_tokens=1500,
+            max_tokens=2000,
             system=_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": prompt}],
         )
 
         raw = response.content[0].text.strip()
+        # Strip markdown code-block wrapper if Claude added one
+        if raw.startswith("```"):
+            lines = raw.split("\n")
+            raw = "\n".join(lines[1:])
+            if raw.endswith("```"):
+                raw = raw[: raw.rfind("```")].rstrip()
         start = raw.find("{")
         end = raw.rfind("}") + 1
         if start >= 0 and end > start:

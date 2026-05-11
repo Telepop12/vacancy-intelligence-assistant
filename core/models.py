@@ -51,3 +51,10 @@ class VacancyAnalysis:
     strategic_opportunity_signals: list[str] = field(default_factory=list)
     career_strategy_comment: str = ""
     recommended_action: str = ""               # LLM-enhanced final rec (may be LAUNCH)
+    # Decision Intelligence layer
+    strategic_rationale: str = ""
+    career_risks: list[str] = field(default_factory=list)
+    career_opportunities: list[str] = field(default_factory=list)
+    best_case_scenario: str = ""
+    worst_case_scenario: str = ""
+    strategic_validation_questions: list[str] = field(default_factory=list)

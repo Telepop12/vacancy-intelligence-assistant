@@ -61,3 +61,10 @@ class HybridAnalyzer(BaseAnalyzer):
         analysis.strategic_opportunity_signals    = []
         analysis.career_strategy_comment          = LLM_PENDING
         analysis.recommended_action               = analysis.recommendation.value  # mirrors rule-based
+        # Decision Intelligence placeholders
+        analysis.strategic_rationale              = LLM_PENDING
+        analysis.career_risks                     = []
+        analysis.career_opportunities             = []
+        analysis.best_case_scenario               = LLM_PENDING
+        analysis.worst_case_scenario              = LLM_PENDING
+        analysis.strategic_validation_questions   = []
