@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resume Intelligence — Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page-wrapper">
+<aside class="sidebar"></aside>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">Анализ вакансий для CIO / CTO / CDTO
+      &nbsp;·&nbsp; <a href="/resume" style="color:rgba(255,255,255,.75);text-decoration:none;">Resume Intelligence</a>
+    </p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    {% if error %}
+    <div class="error-box">{{ error }}</div>
+    {% endif %}
+
+    <div class="card">
+      <h2>Resume Intelligence</h2>
+      <p style="font-size:.9rem;color:var(--muted);margin-bottom:1.25rem;">
+        Загрузите резюме — система построит executive intelligence profile:
+        strategic positioning, AI narrative, trajectory analysis, strongest assets.
+      </p>
+
+      <form method="post" action="/resume/analyze" enctype="multipart/form-data">
+
+        <div class="field">
+          <label for="resume_file">Загрузить резюме <span class="hint-inline">.docx · .pdf · .txt · .md</span></label>
+          <input type="file" id="resume_file" name="resume_file"
+                 accept=".docx,.pdf,.txt,.md" class="file-input">
+        </div>
+
+        <div class="field" style="margin-top:1.25rem;">
+          <label for="resume_text">…или вставить текст резюме</label>
+          <textarea id="resume_text" name="resume_text" rows="14"
+            placeholder="Вставьте полный текст резюме (опыт работы, достижения, навыки)…"></textarea>
+          <p class="hint">Файл имеет приоритет над текстом</p>
+        </div>
+
+        <button type="submit" class="btn-submit">Анализировать резюме</button>
+      </form>
+    </div>
+
+    <p class="hint" style="margin-top:.5rem;">
+      <a href="/" class="btn">← Анализ вакансий</a>
+    </p>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant — Resume Intelligence Layer</div>
+</footer>
+</div>
+</body>
+</html>

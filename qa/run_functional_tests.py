@@ -489,6 +489,98 @@ def tc_di_apply_has_scenarios() -> TestResult:
 
 
 # ---------------------------------------------------------------------------
+# TC-20..24 — Resume Intelligence Layer
+# ---------------------------------------------------------------------------
+
+def tc_resume_large_cv() -> TestResult:
+    """TC-20: Large executive CV -> ResumeProfile populated, no errors"""
+    from agents.resume_intelligence import analyze_resume
+    t0 = time.monotonic()
+    text = (INPUTS_DIR / "sample_resume.txt").read_text(encoding="utf-8")
+    try:
+        profile = analyze_resume(text, source_file="sample_resume.txt", source_type="txt")
+    except Exception as exc:
+        ms = int((time.monotonic() - t0) * 1000)
+        return TestResult("TC-20", "Resume: large CV -> ResumeProfile created", False, str(exc), ms)
+    ms = int((time.monotonic() - t0) * 1000)
+    if not profile.technology_domains:
+        return TestResult("TC-20", "Resume: large CV -> ResumeProfile created", False,
+                          "technology_domains empty", ms)
+    if profile.years_experience < 5:
+        return TestResult("TC-20", "Resume: large CV -> ResumeProfile created", False,
+                          f"years_experience too low: {profile.years_experience}", ms)
+    return TestResult("TC-20", "Resume: large CV -> ResumeProfile created", True,
+                      f"years={profile.years_experience}, domains={len(profile.technology_domains)}, "
+                      f"ai_signals={len(profile.ai_signals)}", ms)
+
+
+def tc_resume_ai_signals() -> TestResult:
+    """TC-21: Executive CV with AI experience -> ai_signals detected"""
+    from agents.resume_intelligence import analyze_resume
+    t0 = time.monotonic()
+    text = (INPUTS_DIR / "sample_resume.txt").read_text(encoding="utf-8")
+    profile = analyze_resume(text)
+    ms = int((time.monotonic() - t0) * 1000)
+    if len(profile.ai_signals) < 3:
+        return TestResult("TC-21", "Resume: AI signals detected (>=3)", False,
+                          f"Only {len(profile.ai_signals)} AI signals: {profile.ai_signals}", ms)
+    return TestResult("TC-21", "Resume: AI signals detected (>=3)", True,
+                      f"{len(profile.ai_signals)} signals: {', '.join(profile.ai_signals[:4])}", ms)
+
+
+def tc_resume_trajectory() -> TestResult:
+    """TC-22: Executive CV -> trajectory_markers or ai_positioning populated"""
+    from agents.resume_intelligence import analyze_resume, PositioningLevel
+    t0 = time.monotonic()
+    text = (INPUTS_DIR / "sample_resume.txt").read_text(encoding="utf-8")
+    profile = analyze_resume(text)
+    ms = int((time.monotonic() - t0) * 1000)
+    has_trajectory = bool(profile.trajectory_markers)
+    has_ai_level   = profile.ai_positioning_level != PositioningLevel.LOW
+    if not has_trajectory and not has_ai_level:
+        return TestResult("TC-22", "Resume: trajectory or AI level detected", False,
+                          f"trajectory={profile.trajectory_markers}, "
+                          f"ai_level={profile.ai_positioning_level}", ms)
+    return TestResult("TC-22", "Resume: trajectory or AI level detected", True,
+                      f"trajectory={profile.trajectory_markers[:2]}, "
+                      f"ai_level={profile.ai_positioning_level.value}", ms)
+
+
+def tc_resume_weak_ai_positioning() -> TestResult:
+    """TC-23: CV with minimal AI mentions -> ai_positioning_level LOW"""
+    from agents.resume_intelligence import analyze_resume, PositioningLevel
+    t0 = time.monotonic()
+    text = (
+        "Иванов Пётр\nНачальник отдела ИТ, 2015-2024\n"
+        "ООО «Стройсервис», 500 сотрудников\n"
+        "Обязанности: поддержка пользователей, замена оборудования.\n"
+        "Образование: МГТУ, 2010.\n"
+    )
+    profile = analyze_resume(text)
+    ms = int((time.monotonic() - t0) * 1000)
+    if profile.ai_positioning_level != PositioningLevel.LOW:
+        return TestResult("TC-23", "Resume: minimal AI -> ai_positioning=LOW", False,
+                          f"Expected LOW, got {profile.ai_positioning_level.value}", ms)
+    return TestResult("TC-23", "Resume: minimal AI -> ai_positioning=LOW", True,
+                      "Correctly detected LOW AI positioning", ms)
+
+
+def tc_resume_strong_transformation() -> TestResult:
+    """TC-24: Executive CV with transformation focus -> transformation_positioning HIGH/MEDIUM"""
+    from agents.resume_intelligence import analyze_resume, PositioningLevel
+    t0 = time.monotonic()
+    text = (INPUTS_DIR / "sample_resume.txt").read_text(encoding="utf-8")
+    profile = analyze_resume(text)
+    ms = int((time.monotonic() - t0) * 1000)
+    if profile.transformation_positioning_level == PositioningLevel.LOW:
+        return TestResult("TC-24", "Resume: strong transformation -> not LOW level", False,
+                          f"Got LOW despite signals: {profile.transformation_experience[:3]}", ms)
+    return TestResult("TC-24", "Resume: strong transformation -> not LOW level", True,
+                      f"level={profile.transformation_positioning_level.value}, "
+                      f"signals={len(profile.transformation_experience)}", ms)
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 
@@ -512,6 +604,11 @@ ALL_TESTS = [
     tc_intake_broken_json,
     tc_intake_missing_title,
     tc_intake_low_confidence_short,
+    tc_resume_large_cv,
+    tc_resume_ai_signals,
+    tc_resume_trajectory,
+    tc_resume_weak_ai_positioning,
+    tc_resume_strong_transformation,
 ]
 
 

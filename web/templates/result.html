@@ -7,11 +7,15 @@
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+<div class="page-wrapper">
+<aside class="sidebar"></aside>
 
 <header>
   <div class="container">
     <h1>Vacancy Intelligence Assistant</h1>
-    <p class="sub">Анализ вакансий для CIO / CTO / CDTO</p>
+    <p class="sub">Анализ вакансий для CIO / CTO / CDTO
+      &nbsp;·&nbsp; <a href="/resume" style="color:rgba(255,255,255,.75);text-decoration:none;">Resume Intelligence</a>
+    </p>
   </div>
 </header>
 
@@ -92,6 +96,55 @@
         </div>
       </div>
     </div>
+
+    <!-- ══ LLM insights (full width) ══ -->
+    {% set llm_any = analysis.semantic_summary or analysis.role_level_fit
+                     or analysis.strategic_vs_operational_balance
+                     or analysis.target_role_alignment or analysis.authority_signals %}
+    {% if llm_any %}
+    <div class="card card-llm">
+      <h2>LLM-инсайты <span class="llm-badge">placeholder</span></h2>
+
+      {% if analysis.semantic_summary %}
+      <div class="llm-field">
+        <div class="llm-label">Семантическое резюме</div>
+        <div class="llm-value">{{ analysis.semantic_summary }}</div>
+      </div>
+      {% endif %}
+
+      {% if analysis.role_level_fit %}
+      <div class="llm-field">
+        <div class="llm-label">Соответствие уровню роли</div>
+        <div class="llm-value">{{ analysis.role_level_fit }}</div>
+      </div>
+      {% endif %}
+
+      {% if analysis.strategic_vs_operational_balance %}
+      <div class="llm-field">
+        <div class="llm-label">Баланс стратегия / операционка</div>
+        <div class="llm-value">{{ analysis.strategic_vs_operational_balance }}</div>
+      </div>
+      {% endif %}
+
+      {% if analysis.target_role_alignment %}
+      <div class="llm-field">
+        <div class="llm-label">Соответствие целевой роли</div>
+        <div class="llm-value">{{ analysis.target_role_alignment }}</div>
+      </div>
+      {% endif %}
+
+      {% if analysis.authority_signals %}
+      <div class="llm-field">
+        <div class="llm-label">Сигналы полномочий</div>
+        <ul class="plain-list">
+          {% for sig in analysis.authority_signals %}
+          <li>{{ sig }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
 
     <!-- ══ Decision Intelligence (full width) ══ -->
     {% set di_has_content = analysis.strategic_rationale and analysis.strategic_rationale != LLM_PENDING %}
@@ -211,55 +264,6 @@
       </div>
     </div>
 
-    <!-- ══ LLM insights (full width, secondary) ══ -->
-    {% set llm_any = analysis.semantic_summary or analysis.role_level_fit
-                     or analysis.strategic_vs_operational_balance
-                     or analysis.target_role_alignment or analysis.authority_signals %}
-    {% if llm_any %}
-    <div class="card card-llm">
-      <h2>LLM-инсайты <span class="llm-badge">placeholder</span></h2>
-
-      {% if analysis.semantic_summary %}
-      <div class="llm-field">
-        <div class="llm-label">Семантическое резюме</div>
-        <div class="llm-value">{{ analysis.semantic_summary }}</div>
-      </div>
-      {% endif %}
-
-      {% if analysis.role_level_fit %}
-      <div class="llm-field">
-        <div class="llm-label">Соответствие уровню роли</div>
-        <div class="llm-value">{{ analysis.role_level_fit }}</div>
-      </div>
-      {% endif %}
-
-      {% if analysis.strategic_vs_operational_balance %}
-      <div class="llm-field">
-        <div class="llm-label">Баланс стратегия / операционка</div>
-        <div class="llm-value">{{ analysis.strategic_vs_operational_balance }}</div>
-      </div>
-      {% endif %}
-
-      {% if analysis.target_role_alignment %}
-      <div class="llm-field">
-        <div class="llm-label">Соответствие целевой роли</div>
-        <div class="llm-value">{{ analysis.target_role_alignment }}</div>
-      </div>
-      {% endif %}
-
-      {% if analysis.authority_signals %}
-      <div class="llm-field">
-        <div class="llm-label">Сигналы полномочий</div>
-        <ul class="plain-list">
-          {% for sig in analysis.authority_signals %}
-          <li>{{ sig }}</li>
-          {% endfor %}
-        </ul>
-      </div>
-      {% endif %}
-    </div>
-    {% endif %}
-
     <!-- ══ Auxiliary section ══ -->
     <div class="section-aux">
       <div class="section-aux-label">Рабочие материалы</div>
@@ -299,5 +303,6 @@
   <div class="container">Vacancy Intelligence Assistant — Web MVP</div>
 </footer>
 
+</div><!-- /page-wrapper -->
 </body>
 </html>

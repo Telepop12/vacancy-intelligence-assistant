@@ -20,6 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from agents.intake import from_file, from_html, from_json, from_text, from_url
+from agents.resume_intelligence import ResumeProfile, analyze_resume, load_resume
 from core.analyzer import analyze
 from core.models import CandidateProfile, ScoringGroup
 from core.report import save_json, save_markdown, update_registry
@@ -187,6 +188,62 @@ async def analyze_vacancy(
             "LLM_PENDING":       "Ожидает подключения LLM",
         },
     )
+
+
+def _positioning_css(level: str) -> str:
+    return {"HIGH": "green", "MEDIUM": "yellow", "LOW": "red"}.get(level, "yellow")
+
+
+# ---------------------------------------------------------------------------
+# Resume Intelligence routes
+# ---------------------------------------------------------------------------
+
+@app.get("/resume", response_class=HTMLResponse)
+async def resume_page(request: Request):
+    return templates.TemplateResponse(request, "resume.html", context={})
+
+
+@app.post("/resume/analyze", response_class=HTMLResponse)
+async def resume_analyze(
+    request: Request,
+    resume_text: str = Form(default=""),
+    resume_file: Optional[UploadFile] = File(default=None),
+):
+    text, src_type, src_name = "", "text", "paste"
+
+    if resume_file and resume_file.filename:
+        suffix = Path(resume_file.filename).suffix.lower()
+        if suffix not in {".txt", ".md", ".docx", ".pdf"}:
+            return templates.TemplateResponse(request, "resume.html", context={
+                "error": f"Неподдерживаемый формат: {suffix}. Принимаются .txt .md .docx .pdf",
+            })
+        import tempfile
+        content = await resume_file.read()
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp.write(content)
+            tmp_path = Path(tmp.name)
+        try:
+            text, src_type = load_resume(tmp_path)
+            src_name = resume_file.filename
+        except Exception as exc:
+            return templates.TemplateResponse(request, "resume.html", context={
+                "error": f"Ошибка чтения файла: {exc}",
+            })
+        finally:
+            tmp_path.unlink(missing_ok=True)
+    elif resume_text.strip():
+        text, src_type, src_name = resume_text.strip(), "text", "paste"
+    else:
+        return templates.TemplateResponse(request, "resume.html", context={
+            "error": "Загрузите файл резюме или вставьте текст.",
+        })
+
+    profile = analyze_resume(text, source_file=src_name, source_type=src_type)
+
+    return templates.TemplateResponse(request, "resume_result.html", context={
+        "profile":   profile,
+        "p_css":     _positioning_css,
+    })
 
 
 @app.get("/output/{filename}")

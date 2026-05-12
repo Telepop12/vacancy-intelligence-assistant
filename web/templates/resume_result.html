@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resume Intelligence — Результат</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page-wrapper">
+<aside class="sidebar"></aside>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">Анализ вакансий для CIO / CTO / CDTO
+      &nbsp;·&nbsp; <a href="/resume" style="color:rgba(255,255,255,.75);text-decoration:none;">Resume Intelligence</a>
+    </p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <div class="actions">
+      <a href="/resume" class="btn">← Новый анализ резюме</a>
+      <a href="/" class="btn">Анализ вакансии</a>
+    </div>
+
+    <!-- ══ Executive Summary + Strategic Positioning ══ -->
+    <div class="card card-resume-hero">
+      <h2>Executive Intelligence Profile</h2>
+      {% if profile.professional_archetype %}
+      <div class="archetype-badge">{{ profile.professional_archetype }}</div>
+      {% endif %}
+
+      {% if profile.executive_summary %}
+      <p class="resume-summary">{{ profile.executive_summary }}</p>
+      {% endif %}
+
+      {% if profile.strategic_positioning %}
+      <div class="positioning-statement">
+        <span class="positioning-label">Strategic Positioning</span>
+        <p>{{ profile.strategic_positioning }}</p>
+      </div>
+      {% endif %}
+
+      <div class="resume-meta">
+        {% if profile.years_experience %}
+        <span class="meta-chip">~{{ profile.years_experience }} лет стажа</span>
+        {% endif %}
+        {% if profile.leadership_scope %}
+        <span class="meta-chip">{{ profile.leadership_scope }} scope</span>
+        {% endif %}
+        {% if profile.organizational_scale %}
+        <span class="meta-chip">{{ profile.organizational_scale }}</span>
+        {% endif %}
+        {% if profile.source_file %}
+        <span class="meta-chip muted">{{ profile.source_file }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ══ Positioning Dashboard ══ -->
+    <div class="card">
+      <h2>Positioning Dashboard</h2>
+      <div class="dashboard-grid">
+        {% set indicators = [
+          ("AI Positioning",             profile.ai_positioning_level.value),
+          ("Transformation Positioning", profile.transformation_positioning_level.value),
+          ("Executive Positioning",      profile.executive_positioning_level.value),
+          ("Operational Depth",          profile.operational_depth_level.value),
+          ("Strategic Visibility",       profile.strategic_visibility_level.value),
+        ] %}
+        {% for label, level in indicators %}
+        <div class="dashboard-item">
+          <div class="dashboard-label">{{ label }}</div>
+          <div class="dashboard-bar-wrap">
+            <div class="dashboard-bar {{ p_css(level) }}"
+                 style="width:{% if level == 'HIGH' %}100%{% elif level == 'MEDIUM' %}55%{% else %}20%{% endif %}">
+            </div>
+          </div>
+          <span class="dashboard-badge {{ p_css(level) }}">{{ level }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ══ Trajectory + Strongest Assets ══ -->
+    <div class="row-2col">
+      <div class="card">
+        <h2>Trajectory Analysis</h2>
+        {% if profile.trajectory_markers %}
+        <ul class="trajectory-list">
+          {% for t in profile.trajectory_markers %}
+          <li>{{ t }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty">—</p>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h2>Strongest Assets</h2>
+        {% if profile.strongest_assets %}
+        <ul class="asset-list">
+          {% for a in profile.strongest_assets %}
+          <li>{{ a }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty">—</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ══ AI Signals + Transformation ══ -->
+    <div class="row-2col">
+      <div class="card">
+        <h2>AI Signals
+          <span class="signal-count-badge {{ p_css(profile.ai_positioning_level.value) }}">
+            {{ profile.ai_signals | length }}
+          </span>
+        </h2>
+        {% if profile.ai_signals %}
+        <ul class="signal-tag-list">
+          {% for s in profile.ai_signals %}
+          <li>{{ s }}</li>
+          {% endfor %}
+        </ul>
+        {% if profile.evidence.get('ai_signals') %}
+        <details class="evidence-details">
+          <summary>Evidence fragments</summary>
+          {% for ev in profile.evidence['ai_signals'] %}
+          <p class="evidence-fragment">{{ ev }}</p>
+          {% endfor %}
+        </details>
+        {% endif %}
+        {% else %}
+        <p class="empty">AI signals не обнаружены</p>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h2>Transformation Signals
+          <span class="signal-count-badge {{ p_css(profile.transformation_positioning_level.value) }}">
+            {{ profile.transformation_experience | length }}
+          </span>
+        </h2>
+        {% if profile.transformation_experience %}
+        <ul class="signal-tag-list transform">
+          {% for t in profile.transformation_experience %}
+          <li>{{ t }}</li>
+          {% endfor %}
+        </ul>
+        {% if profile.evidence.get('transformation') %}
+        <details class="evidence-details">
+          <summary>Evidence fragments</summary>
+          {% for ev in profile.evidence['transformation'] %}
+          <p class="evidence-fragment">{{ ev }}</p>
+          {% endfor %}
+        </details>
+        {% endif %}
+        {% else %}
+        <p class="empty">Transformation signals не обнаружены</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ══ Weak Visibility Areas ══ -->
+    {% if profile.weak_visibility_areas %}
+    <div class="card card-weak">
+      <h2>Weak Visibility Areas
+        <span style="font-size:.75rem;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;">
+          — что есть в опыте, но слабо видно в CV
+        </span>
+      </h2>
+      <ul class="weak-list">
+        {% for w in profile.weak_visibility_areas %}
+        <li>{{ w }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <!-- ══ Technology Domains + Governance ══ -->
+    <div class="row-2col">
+      <div class="card">
+        <h2>Technology Domains</h2>
+        {% if profile.technology_domains %}
+        <ul class="match-list">
+          {% for d in profile.technology_domains %}
+          <li>{{ d }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty">—</p>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h2>Governance Signals</h2>
+        {% if profile.governance_signals %}
+        <ul class="signal-tag-list gov">
+          {% for g in profile.governance_signals %}
+          <li>{{ g }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty">—</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ══ Industries + Business Signals ══ -->
+    {% if profile.industries or profile.business_signals %}
+    <div class="row-2col">
+      {% if profile.industries %}
+      <div class="card">
+        <h2>Industries</h2>
+        <ul class="match-list">
+          {% for i in profile.industries %}
+          <li>{{ i }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% if profile.business_signals %}
+      <div class="card">
+        <h2>Business Impact Signals</h2>
+        <ul class="signal-tag-list biz">
+          {% for b in profile.business_signals %}
+          <li>{{ b }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- ══ Confidence notes ══ -->
+    {% if profile.confidence_notes %}
+    <p class="hint" style="margin-top:.5rem;">
+      ⚠ {{ profile.confidence_notes | join(' · ') }}
+    </p>
+    {% endif %}
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant — Resume Intelligence Layer</div>
+</footer>
+</div>
+</body>
+</html>
