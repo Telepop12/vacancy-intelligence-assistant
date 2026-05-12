@@ -58,3 +58,13 @@ class VacancyAnalysis:
     best_case_scenario: str = ""
     worst_case_scenario: str = ""
     strategic_validation_questions: list[str] = field(default_factory=list)
+    # Intake layer — populated by agents/intake.py
+    intake_source_type: str = ""
+    intake_source_name: str = ""
+    intake_confidence: str = ""
+    intake_confidence_notes: list[str] = field(default_factory=list)
+    intake_detected_title: str = ""
+    intake_detected_company: str = ""
+    intake_detected_location: str = ""
+    intake_detected_salary: str = ""
+    intake_url: str = ""

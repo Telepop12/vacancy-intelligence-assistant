@@ -24,6 +24,54 @@
       <a href="/output/{{ json_filename }}" class="btn" download>↓ JSON</a>
     </div>
 
+    <!-- ══ Vacancy Intake summary ══ -->
+    {% if analysis.intake_source_type %}
+    <div class="card card-intake">
+      <h2>Vacancy Intake</h2>
+      <div class="intake-grid">
+        <div class="intake-field">
+          <span class="intake-label">Source</span>
+          <span class="intake-value">{{ analysis.intake_source_type }}
+            {% if analysis.intake_source_name and analysis.intake_source_name != analysis.intake_source_type %}
+            · <span class="intake-name">{{ analysis.intake_source_name }}</span>
+            {% endif %}
+          </span>
+        </div>
+        {% if analysis.intake_detected_company %}
+        <div class="intake-field">
+          <span class="intake-label">Company</span>
+          <span class="intake-value">{{ analysis.intake_detected_company }}</span>
+        </div>
+        {% endif %}
+        {% if analysis.intake_detected_title %}
+        <div class="intake-field">
+          <span class="intake-label">Title</span>
+          <span class="intake-value">{{ analysis.intake_detected_title }}</span>
+        </div>
+        {% endif %}
+        {% if analysis.intake_detected_location %}
+        <div class="intake-field">
+          <span class="intake-label">Location</span>
+          <span class="intake-value">{{ analysis.intake_detected_location }}</span>
+        </div>
+        {% endif %}
+        {% if analysis.intake_detected_salary %}
+        <div class="intake-field">
+          <span class="intake-label">Salary</span>
+          <span class="intake-value">{{ analysis.intake_detected_salary }}</span>
+        </div>
+        {% endif %}
+        <div class="intake-field">
+          <span class="intake-label">Confidence</span>
+          <span class="intake-confidence-badge {{ confidence_color }}">{{ analysis.intake_confidence }}</span>
+          {% if analysis.intake_confidence_notes %}
+          <span class="intake-notes">{{ analysis.intake_confidence_notes | join(' · ') }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
     <!-- ══ Score + recommendation ══ -->
     <div class="card">
       <h2>Результат анализа</h2>

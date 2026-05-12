@@ -14,6 +14,7 @@ if hasattr(sys.stderr, "reconfigure"):
 
 import yaml
 
+from agents.intake import from_file as intake_file, from_text as intake_text
 from core.analyzer import analyze
 from core.models import CandidateProfile, ScoringGroup
 from core.report import save_json, save_markdown, update_registry
@@ -140,21 +141,19 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     args = build_parser().parse_args()
 
-    # --- resolve vacancy text ---
-    source_file: str | None = None
+    # --- resolve vacancy via intake pipeline ---
     if args.file:
-        if not args.file.exists():
-            print(f"Ошибка: файл не найден — {args.file}", file=sys.stderr)
+        vacancy = intake_file(args.file)
+        if not vacancy.normalized_text.strip():
+            msg = vacancy.confidence_notes[0] if vacancy.confidence_notes else "Файл пустой или не поддерживается"
+            print(f"Ошибка: {msg}", file=sys.stderr)
             sys.exit(1)
-        vacancy_text = args.file.read_text(encoding="utf-8")
-        source_file = str(args.file)
     elif not sys.stdin.isatty():
-        vacancy_text = sys.stdin.read()
-        source_file = "stdin"
+        vacancy = intake_text(sys.stdin.read(), source_name="stdin")
     else:
-        vacancy_text = read_vacancy_interactive()
+        vacancy = intake_text(read_vacancy_interactive(), source_name="interactive")
 
-    if not vacancy_text.strip():
+    if not vacancy.normalized_text.strip():
         print("Ошибка: текст вакансии пуст.", file=sys.stderr)
         sys.exit(1)
 
@@ -166,8 +165,9 @@ def main() -> None:
 
     # --- analyze ---
     print(f"Анализирую вакансию (профиль: {profile.name})…")
-    analysis = analyze(vacancy_text, profile)
-    analysis.source_file = source_file
+    analysis = analyze(vacancy, profile)
+    if vacancy.intake_confidence.value != "HIGH" and vacancy.confidence_notes:
+        print(f"  Качество intake: {vacancy.intake_confidence.value} — {'; '.join(vacancy.confidence_notes)}")
 
     # --- save reports ---
     args.output.mkdir(parents=True, exist_ok=True)

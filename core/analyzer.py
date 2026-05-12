@@ -45,14 +45,37 @@ _analyzer = _build_analyzer()
 # Public API
 # ---------------------------------------------------------------------------
 
-def analyze(vacancy_text: str, profile: CandidateProfile) -> VacancyAnalysis:
+def analyze(vacancy, profile: CandidateProfile) -> VacancyAnalysis:
     """
     Analyze a vacancy against the candidate profile.
-    Signature is stable — safe to call from CLI, Web UI, or tests.
+
+    Accepts either a VacancyInput (preferred) or a raw str (backward-compat).
+    Raw strings are automatically wrapped via the intake pipeline.
     """
+    from agents.intake import VacancyInput, from_text
     from core.recommendation_engine import synthesize
-    analysis = _analyzer.analyze(vacancy_text, profile)
+
+    if isinstance(vacancy, str):
+        vacancy = from_text(vacancy)
+
+    analysis = _analyzer.analyze(vacancy.normalized_text or vacancy.raw_text, profile)
     synthesize(analysis)
+
+    # Populate intake fields on the analysis result
+    analysis.intake_source_type     = vacancy.source_type.value
+    analysis.intake_source_name     = vacancy.source_name
+    analysis.intake_confidence      = vacancy.intake_confidence.value
+    analysis.intake_confidence_notes = vacancy.confidence_notes
+    analysis.intake_detected_title   = vacancy.title
+    analysis.intake_detected_company = vacancy.company
+    analysis.intake_detected_location = vacancy.location
+    analysis.intake_detected_salary  = vacancy.salary
+    analysis.intake_url              = vacancy.url
+
+    # Keep source_file in sync for backward compat
+    if not analysis.source_file:
+        analysis.source_file = vacancy.source_name
+
     return analysis
 
 

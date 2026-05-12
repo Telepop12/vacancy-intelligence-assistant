@@ -152,6 +152,17 @@ def save_json(analysis: VacancyAnalysis, output_dir: Path) -> Path:
             "worst_case_scenario":               analysis.worst_case_scenario,
             "strategic_validation_questions":    analysis.strategic_validation_questions,
         },
+        "intake": {
+            "source_type":       analysis.intake_source_type,
+            "source_name":       analysis.intake_source_name,
+            "confidence":        analysis.intake_confidence,
+            "confidence_notes":  analysis.intake_confidence_notes,
+            "detected_title":    analysis.intake_detected_title,
+            "detected_company":  analysis.intake_detected_company,
+            "detected_location": analysis.intake_detected_location,
+            "detected_salary":   analysis.intake_detected_salary,
+            "url":               analysis.intake_url,
+        },
     }
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     return path

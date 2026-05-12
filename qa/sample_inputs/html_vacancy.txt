@@ -1,0 +1,24 @@
+<html>
+<head><title>CTO — TechCorp</title></head>
+<body>
+<h1>Chief Technology Officer (CTO)</h1>
+<p>Компания: <strong>TechCorp</strong></p>
+<p>Локация: Москва, гибрид</p>
+<div class="description">
+  <h2>Обязанности</h2>
+  <ul>
+    <li>Формирование и реализация технической стратегии компании</li>
+    <li>Управление командой разработки (50+ человек)</li>
+    <li>Внедрение AI/ML в продуктовую разработку</li>
+    <li>Взаимодействие с советом директоров по технологическому вектору</li>
+  </ul>
+  <h2>Требования</h2>
+  <ul>
+    <li>Опыт CTO/VP Engineering от 3 лет</li>
+    <li>Экспертиза в cloud-архитектуре, микросервисах</li>
+    <li>Опыт масштабирования команд и продуктов</li>
+  </ul>
+</div>
+<script>ga('send', 'pageview');</script>
+</body>
+</html>

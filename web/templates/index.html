@@ -23,12 +23,59 @@
     {% endif %}
 
     <div class="card">
-      <form method="post" action="/analyze">
+      <form method="post" action="/analyze" enctype="multipart/form-data">
+        <input type="hidden" name="source_type" id="source_type_hidden" value="text">
+
+        <!-- Primary input: vacancy text -->
         <div class="field">
           <label for="vacancy">Текст вакансии</label>
-          <textarea id="vacancy" name="vacancy_text" rows="18"
+          <textarea id="vacancy" name="vacancy_text" rows="16"
             placeholder="Вставьте полный текст вакансии — название позиции, задачи, требования, условия…">{{ prefill or "" }}</textarea>
         </div>
+
+        <!-- Optional inputs toggle -->
+        <details class="intake-options">
+          <summary class="intake-options-toggle">Дополнительные параметры</summary>
+          <div class="intake-options-body">
+
+            <div class="row-2col intake-row">
+              <!-- File upload -->
+              <div class="field">
+                <label for="vacancy_file">Загрузить файл <span class="hint-inline">.txt · .md · .json</span></label>
+                <input type="file" id="vacancy_file" name="vacancy_file"
+                       accept=".txt,.md,.json" class="file-input">
+                <p class="hint">Если загружен файл — текст выше игнорируется</p>
+              </div>
+
+              <!-- URL -->
+              <div class="field">
+                <label for="vacancy_url">URL вакансии <span class="hint-inline">stub</span></label>
+                <input type="url" id="vacancy_url" name="vacancy_url"
+                       placeholder="https://hh.ru/vacancy/…" class="url-input"
+                       value="">
+                <p class="hint">Парсинг URL — в разработке. Пока вставьте текст вручную.</p>
+              </div>
+            </div>
+
+            <!-- Source type selector -->
+            <div class="field">
+              <label>Формат текста</label>
+              <div class="source-type-group">
+                <label class="radio-option">
+                  <input type="radio" name="source_type" value="text" checked> Обычный текст
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="source_type" value="html"> HTML
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="source_type" value="json"> JSON
+                </label>
+              </div>
+            </div>
+
+          </div>
+        </details>
+
         <button type="submit" class="btn-submit">Проанализировать</button>
       </form>
     </div>

@@ -9,14 +9,17 @@ Run via Docker:
 """
 from __future__ import annotations
 
+import tempfile
 from pathlib import Path
+from typing import Optional
 
 import yaml
-from fastapi import FastAPI, Form, HTTPException, Request
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from agents.intake import from_file, from_html, from_json, from_text, from_url
 from core.analyzer import analyze
 from core.models import CandidateProfile, ScoringGroup
 from core.report import save_json, save_markdown, update_registry
@@ -84,6 +87,10 @@ def _evo_level(potential: str) -> str:
     return {"High": "high", "Medium": "medium", "Low": "low"}.get(potential, "low")
 
 
+def _confidence_color(confidence: str) -> str:
+    return {"HIGH": "green", "MEDIUM": "yellow", "LOW": "red"}.get(confidence, "yellow")
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -105,20 +112,60 @@ async def index(request: Request):
 @app.post("/analyze", response_class=HTMLResponse)
 async def analyze_vacancy(
     request: Request,
-    vacancy_text: str = Form(...),
+    vacancy_text: str = Form(default=""),
+    vacancy_url:  str = Form(default=""),
+    source_type:  str = Form(default="text"),
+    vacancy_file: Optional[UploadFile] = File(default=None),
 ):
-    if not vacancy_text.strip():
+    # ── Build VacancyInput via intake pipeline ──
+    vacancy = None
+
+    # Priority: uploaded file > URL > text area
+    if vacancy_file and vacancy_file.filename:
+        suffix = Path(vacancy_file.filename).suffix.lower()
+        if suffix not in {".txt", ".md", ".json"}:
+            return templates.TemplateResponse(
+                request, "index.html",
+                context={
+                    "profile_name": _profile.name,
+                    "error": f"Неподдерживаемый тип файла: {suffix}. Принимаются .txt, .md, .json",
+                },
+            )
+        content = await vacancy_file.read()
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp.write(content)
+            tmp_path = Path(tmp.name)
+        try:
+            vacancy = from_file(tmp_path)
+            vacancy.source_name = vacancy_file.filename
+        finally:
+            tmp_path.unlink(missing_ok=True)
+
+    elif vacancy_url.strip():
+        vacancy = from_url(vacancy_url.strip())
+
+    elif vacancy_text.strip():
+        if source_type == "html":
+            vacancy = from_html(vacancy_text.strip())
+        elif source_type == "json":
+            vacancy = from_json(vacancy_text.strip())
+        else:
+            vacancy = from_text(vacancy_text.strip())
+
+    if not vacancy or not vacancy.normalized_text.strip():
+        error = "Текст вакансии не может быть пустым"
+        if vacancy and vacancy.confidence_notes:
+            error = vacancy.confidence_notes[0]
         return templates.TemplateResponse(
             request, "index.html",
             context={
                 "profile_name": _profile.name,
-                "error": "Текст вакансии не может быть пустым",
+                "error": error,
                 "prefill": vacancy_text,
             },
         )
 
-    analysis = analyze(vacancy_text.strip(), _profile)
-    analysis.source_file = "web"
+    analysis = analyze(vacancy, _profile)
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     md_path   = save_markdown(analysis, OUTPUT_DIR)
@@ -129,14 +176,15 @@ async def analyze_vacancy(
     return templates.TemplateResponse(
         request, "result.html",
         context={
-            "analysis":       analysis,
-            "score_color":    _score_color(analysis.match_score),
-            "md_filename":    md_path.name,
-            "json_filename":  json_path.name,
-            "display_action": display_action,
-            "action_color":   _action_color(display_action),
-            "evo_level":      _evo_level(analysis.evolutionary_potential),
-            "LLM_PENDING":    "Ожидает подключения LLM",
+            "analysis":          analysis,
+            "score_color":       _score_color(analysis.match_score),
+            "md_filename":       md_path.name,
+            "json_filename":     json_path.name,
+            "display_action":    display_action,
+            "action_color":      _action_color(display_action),
+            "evo_level":         _evo_level(analysis.evolutionary_potential),
+            "confidence_color":  _confidence_color(analysis.intake_confidence),
+            "LLM_PENDING":       "Ожидает подключения LLM",
         },
     )
 

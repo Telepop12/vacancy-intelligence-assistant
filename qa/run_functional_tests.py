@@ -30,6 +30,10 @@ OUTPUT_DIR = ROOT / "output"
 REGISTRY = OUTPUT_DIR / "registry.csv"
 PYTHON = sys.executable
 
+# Ensure project root is on sys.path for direct module imports in unit-style tests
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 REQUIRED_MD_SECTIONS = [
     "Match Score",
     "Ключевые совпадения",
@@ -268,6 +272,131 @@ def tc_evolutionary_launch() -> TestResult:
                       f"ЗАПУСТИТЬ В РАБОТУ, rule-based score={score if score is not None else '?'}", ms)
 
 
+def _parse_intake_from_json(stdout: str) -> dict | None:
+    """Extract intake block from the JSON report referenced in stdout."""
+    _, json_path = _parse_report_paths(stdout)
+    if not json_path or not json_path.exists():
+        return None
+    try:
+        data = json.loads(json_path.read_text(encoding="utf-8"))
+        return data.get("intake")
+    except Exception:
+        return None
+
+
+# ---------------------------------------------------------------------------
+# TC-14..19 — Intake & Normalization Layer
+# ---------------------------------------------------------------------------
+
+def tc_intake_text_source() -> TestResult:
+    """TC-14: Raw text intake → source_type='text', confidence present in JSON"""
+    t0 = time.monotonic()
+    code, out, err = _run(["--file", str(ROOT / "data" / "sample_vacancy.txt"), "--no-registry"])
+    ms = int((time.monotonic() - t0) * 1000)
+    if code != 0:
+        return TestResult("TC-14", "Intake: text source → JSON has intake block", False, f"Exit code {code}", ms, err)
+    intake = _parse_intake_from_json(out)
+    if intake is None:
+        return TestResult("TC-14", "Intake: text source → JSON has intake block", False,
+                          "intake block missing from JSON", ms)
+    confidence = intake.get("confidence", "")
+    source = intake.get("source_type", "")
+    if not source:
+        return TestResult("TC-14", "Intake: text source → JSON has intake block", False,
+                          "source_type missing from intake block", ms)
+    return TestResult("TC-14", "Intake: text source → JSON has intake block", True,
+                      f"source={source}, confidence={confidence}", ms)
+
+
+def tc_intake_file_source() -> TestResult:
+    """TC-15: .txt file intake → source_type='file' in JSON"""
+    t0 = time.monotonic()
+    code, out, err = _run(["--file", str(INPUTS_DIR / "strong_ai_vacancy.txt"), "--no-registry"])
+    ms = int((time.monotonic() - t0) * 1000)
+    if code != 0:
+        return TestResult("TC-15", "Intake: file source_type='file'", False, f"Exit code {code}", ms, err)
+    intake = _parse_intake_from_json(out)
+    if intake is None:
+        return TestResult("TC-15", "Intake: file source_type='file'", False,
+                          "intake block missing from JSON", ms)
+    source = intake.get("source_type", "")
+    if source != "file":
+        return TestResult("TC-15", "Intake: file source_type='file'", False,
+                          f"Expected source_type='file', got: {source!r}", ms)
+    return TestResult("TC-15", "Intake: file source_type='file'", True,
+                      f"source_type=file, name={intake.get('source_name', '?')}", ms)
+
+
+def tc_intake_html_normalization() -> TestResult:
+    """TC-16: HTML input → tags stripped, clean normalized_text"""
+    from agents.intake import from_html
+    t0 = time.monotonic()
+    sample_html = (
+        "<h1>CTO / Директор по технологиям</h1>"
+        "<p>Компания: <b>TechCorp</b></p>"
+        "<ul><li>Управление командой разработки</li>"
+        "<li>Внедрение&nbsp;AI/ML</li></ul>"
+        "<script>ga('send','pageview')</script>"
+    )
+    vi = from_html(sample_html)
+    ms = int((time.monotonic() - t0) * 1000)
+    if "<" in vi.normalized_text:
+        return TestResult("TC-16", "Intake: HTML → tags stripped", False,
+                          f"HTML tags found in normalized_text: {vi.normalized_text[:100]}", ms)
+    if "&nbsp;" in vi.normalized_text:
+        return TestResult("TC-16", "Intake: HTML → tags stripped", False,
+                          "HTML entity &nbsp; not unescaped", ms)
+    if "ga(" in vi.normalized_text:
+        return TestResult("TC-16", "Intake: HTML → tags stripped", False,
+                          "Script content leaked into normalized_text", ms)
+    return TestResult("TC-16", "Intake: HTML → tags stripped", True,
+                      f"Clean: {vi.normalized_text[:70]!r}", ms)
+
+
+def tc_intake_broken_json() -> TestResult:
+    """TC-17: Broken JSON → graceful error, confidence=LOW"""
+    from agents.intake import from_json, IntakeConfidence
+    t0 = time.monotonic()
+    broken = '{ "title": "CTO", "description": "Management of team\n  invalid...'
+    vi = from_json(broken)
+    ms = int((time.monotonic() - t0) * 1000)
+    if vi.intake_confidence != IntakeConfidence.LOW:
+        return TestResult("TC-17", "Intake: broken JSON → confidence=LOW", False,
+                          f"Expected LOW, got {vi.intake_confidence}", ms)
+    if not vi.confidence_notes:
+        return TestResult("TC-17", "Intake: broken JSON → confidence=LOW", False,
+                          "confidence_notes empty — error not reported", ms)
+    return TestResult("TC-17", "Intake: broken JSON → confidence=LOW", True,
+                      f"note={vi.confidence_notes[0][:60]}", ms)
+
+
+def tc_intake_missing_title() -> TestResult:
+    """TC-18: Short vacancy without title → confidence LOW or MEDIUM"""
+    from agents.intake import from_text, IntakeConfidence
+    t0 = time.monotonic()
+    text = "Ищем сотрудника. Опыт от 1 года. Зарплата обсуждается."
+    vi = from_text(text)
+    ms = int((time.monotonic() - t0) * 1000)
+    if vi.intake_confidence == IntakeConfidence.HIGH:
+        return TestResult("TC-18", "Intake: missing title → not HIGH confidence", False,
+                          f"Expected LOW/MEDIUM for incomplete text, got HIGH", ms)
+    return TestResult("TC-18", "Intake: missing title → not HIGH confidence", True,
+                      f"confidence={vi.intake_confidence.value}, notes={vi.confidence_notes}", ms)
+
+
+def tc_intake_low_confidence_short() -> TestResult:
+    """TC-19: Very short text → confidence=LOW"""
+    from agents.intake import from_text, IntakeConfidence
+    t0 = time.monotonic()
+    vi = from_text("ИТ специалист нужен срочно")
+    ms = int((time.monotonic() - t0) * 1000)
+    if vi.intake_confidence != IntakeConfidence.LOW:
+        return TestResult("TC-19", "Intake: very short text → confidence=LOW", False,
+                          f"Expected LOW, got {vi.intake_confidence.value}", ms)
+    return TestResult("TC-19", "Intake: very short text → confidence=LOW", True,
+                      f"LOW, notes={len(vi.confidence_notes)} issue(s)", ms)
+
+
 def _parse_di_from_json(stdout: str) -> dict | None:
     """Extract decision_intelligence block from the JSON report referenced in stdout."""
     _, json_path = _parse_report_paths(stdout)
@@ -377,6 +506,12 @@ ALL_TESTS = [
     tc_di_launch_has_rationale,
     tc_di_clarify_has_risks_and_opportunities,
     tc_di_apply_has_scenarios,
+    tc_intake_text_source,
+    tc_intake_file_source,
+    tc_intake_html_normalization,
+    tc_intake_broken_json,
+    tc_intake_missing_title,
+    tc_intake_low_confidence_short,
 ]
 
 
