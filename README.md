@@ -164,9 +164,54 @@ profile = analyze_resume(text, source_file="resume.docx", source_type=src_type)
 | Operational Depth | ≥3 scope сигнала (команда, бюджет) | 1-2 | 0 |
 | Strategic Visibility | ≥4 business impact сигнала | 2-3 | <2 |
 
+### Executive Framing Analysis
+
+Система оценивает **язык CV** — операционный vs стратегический:
+
+| Level | Описание |
+|---|---|
+| `operational` | Преобладает: сопровождение, поддержка, мониторинг, help desk |
+| `technical` | Технический язык без executive framing |
+| `managerial` | Управленческий, но не стратегический |
+| `executive` | Стратегический язык, результаты, ownership |
+| `strategic` | Board-level язык, P&L, трансформация, governance |
+
+Executive Framing Score (0–100) = доля executive language signals из всех detected.
+
+### Executive Reframing Opportunities
+
+LLM предлагает 3 конкретных примера как переформулировать operational язык в executive framing:
+
+```
+Было: "внедрён мониторинг серверов"
+Suggested: "создана observability platform для обеспечения непрерывности критичных бизнес-процессов"
+Reason: executive framing акцентирует business impact, а не техническую задачу
+```
+
+### Composite Organizational Scale
+
+2000+ сотрудников больше не определяется как "mid". Используется cumulative scoring:
+
+| Signal | +pts |
+|---|---|
+| 10,000+ employees | +4 |
+| 5,000+ employees | +3 |
+| 2,000+ employees | +2 |
+| Holding / group structure | +2 |
+| PMO / project portfolio | +1 |
+| Multi-site / distributed | +1 |
+| Complex ERP landscape (3+ systems) | +1 |
+| Board / governance level | +1 |
+
+`enterprise` ≥ 3 pts · `holding` ≥ 6 pts
+
+### Industry Detection v2
+
+Контекстная фильтрация устраняет false positives: если keyword появляется рядом с "для заказчика", "клиент", "поставщик для" — индустрия не засчитывается.
+
 ### Explainability
 
-Каждый вывод подкреплён `evidence` — конкретными фрагментами из CV. В Web UI раскрываются "Evidence fragments" под каждым блоком сигналов.
+Каждый вывод подкреплён `evidence` — конкретными фрагментами из CV. В Web UI раскрываются "Evidence fragments" под каждым блоком сигналов. Scale показывает rationale с enumerated signals.
 
 ### Поддерживаемые форматы
 

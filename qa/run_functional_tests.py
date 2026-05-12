@@ -581,6 +581,112 @@ def tc_resume_strong_transformation() -> TestResult:
 
 
 # ---------------------------------------------------------------------------
+# TC-25..29 — Refinement Sprint: scale, framing, industry cleanup
+# ---------------------------------------------------------------------------
+
+def tc_resume_enterprise_scale() -> TestResult:
+    """TC-25: 2000+ employees + PMO + ERP landscape -> enterprise scale"""
+    from agents.resume_intelligence import _detect_scale_composite
+    t0 = time.monotonic()
+    text = (
+        "ГК РусПром (производственный холдинг, 4500 сотрудников)\n"
+        "Отвечал за портфель проектов PMO из 25 инициатив\n"
+        "ERP-ландшафт: 1С ERP, SAP S/4HANA, Oracle EBS, MES-система\n"
+        "Прямое подчинение CEO, участие в совете директоров\n"
+        "Два ЦОД, disaster recovery, критичная инфраструктура"
+    )
+    scale, signals, rationale = _detect_scale_composite(text)
+    ms = int((time.monotonic() - t0) * 1000)
+    if scale not in ("enterprise", "holding"):
+        return TestResult("TC-25", "Scale: 2000+ + PMO -> enterprise/holding", False,
+                          f"Got '{scale}', signals={signals}", ms)
+    return TestResult("TC-25", "Scale: 2000+ + PMO -> enterprise/holding", True,
+                      f"scale={scale}, rationale={rationale[:60]}", ms)
+
+
+def tc_resume_operational_framing() -> TestResult:
+    """TC-26: Operational CV -> framing level not strategic/executive"""
+    from agents.resume_intelligence import _analyze_executive_framing
+    t0 = time.monotonic()
+    text = (
+        "Администрирование серверов Windows Server 2019\n"
+        "Техническая поддержка пользователей (Help Desk, 1 линия)\n"
+        "Настройка оборудования Cisco, HP\n"
+        "Мониторинг серверов через Zabbix, uptime 99.5%\n"
+        "Устранение неисправностей сетевого оборудования\n"
+        "Обслуживание ИТ-инфраструктуры офиса"
+    )
+    level, score, op_sigs, ex_sigs = _analyze_executive_framing(text)
+    ms = int((time.monotonic() - t0) * 1000)
+    if level in ("strategic", "executive"):
+        return TestResult("TC-26", "Framing: operational CV -> not strategic/executive", False,
+                          f"Got {level} (score={score})", ms)
+    return TestResult("TC-26", "Framing: operational CV -> not strategic/executive", True,
+                      f"level={level}, score={score}/100, op={len(op_sigs)}, ex={len(ex_sigs)}", ms)
+
+
+def tc_resume_no_false_telecom() -> TestResult:
+    """TC-27: Vendor context -> no false telecom/finance industry"""
+    from agents.resume_intelligence import _detect_industries_v2
+    t0 = time.monotonic()
+    text = (
+        "Реализовал проект внедрения 1С ERP для заказчика из телеком-отрасли.\n"
+        "Обслуживание клиентов банковского сектора.\n"
+        "Поставщик решений для операторов связи.\n"
+        "Основная деятельность компании — системная интеграция."
+    )
+    industries, _ = _detect_industries_v2(text)
+    ms = int((time.monotonic() - t0) * 1000)
+    false_positives = [i for i in industries if i in ("Телеком", "Банки/Финансы")]
+    if false_positives:
+        return TestResult("TC-27", "Industry: vendor context -> no false telecom/finance", False,
+                          f"False positives: {false_positives}", ms)
+    return TestResult("TC-27", "Industry: vendor context -> no false telecom/finance", True,
+                      f"Industries={industries} (no false positives)", ms)
+
+
+def tc_resume_executive_language() -> TestResult:
+    """TC-28: Strategic CV -> executive_language_signals >= 3"""
+    from agents.resume_intelligence import _analyze_executive_framing
+    t0 = time.monotonic()
+    text = (
+        "Разработал стратегию цифровой трансформации холдинга на 5 лет.\n"
+        "Защищал roadmap и бюджетирование перед советом директоров.\n"
+        "Ownership трансформационной программы: ROI 340% за 3 года.\n"
+        "Кросс-функциональное взаимодействие с CFO, COO, CEO.\n"
+        "Построение операционной модели ИТ с P&L ответственностью.\n"
+        "Governance framework, digital agenda, business impact."
+    )
+    level, score, op_sigs, ex_sigs = _analyze_executive_framing(text)
+    ms = int((time.monotonic() - t0) * 1000)
+    if len(ex_sigs) < 3:
+        return TestResult("TC-28", "Framing: strategic text -> exec signals >= 3", False,
+                          f"Only {len(ex_sigs)} exec signals: {ex_sigs}", ms)
+    return TestResult("TC-28", "Framing: strategic text -> exec signals >= 3", True,
+                      f"level={level}, score={score}, ex_sigs={len(ex_sigs)}", ms)
+
+
+def tc_resume_hidden_ai() -> TestResult:
+    """TC-29: Single AI mention -> ai_positioning not HIGH"""
+    from agents.resume_intelligence import analyze_resume, PositioningLevel
+    t0 = time.monotonic()
+    text = (
+        "Иванов Сергей\nДиректор по ИТ, 2018-2026\n"
+        "ООО «Промтех», 3000 сотрудников, производство\n"
+        "Внедрение ERP 1С, построение ИТ-инфраструктуры.\n"
+        "Пилотное внедрение AI-помощника для операторов.\n"
+        "Управление командой 40 человек, бюджет 200 млн руб."
+    )
+    profile = analyze_resume(text)
+    ms = int((time.monotonic() - t0) * 1000)
+    if profile.ai_positioning_level == PositioningLevel.HIGH:
+        return TestResult("TC-29", "AI: single mention -> not HIGH positioning", False,
+                          f"Got HIGH, signals={profile.ai_signals}", ms)
+    return TestResult("TC-29", "AI: single mention -> not HIGH positioning", True,
+                      f"ai_level={profile.ai_positioning_level.value}, signals={len(profile.ai_signals)}", ms)
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 
@@ -609,7 +715,117 @@ ALL_TESTS = [
     tc_resume_trajectory,
     tc_resume_weak_ai_positioning,
     tc_resume_strong_transformation,
+    tc_resume_enterprise_scale,
+    tc_resume_operational_framing,
+    tc_resume_no_false_telecom,
+    tc_resume_executive_language,
+    tc_resume_hidden_ai,
 ]
+
+def tc_resume_enterprise_scale() -> TestResult:
+    """TC-25: 2000+ employees + PMO + ERP landscape -> enterprise scale"""
+    from agents.resume_intelligence import _detect_scale_composite
+    t0 = time.monotonic()
+    text = (
+        "ГК РусПром (производственный холдинг, 4500 сотрудников)\n"
+        "Отвечал за портфель проектов PMO из 25 инициатив\n"
+        "ERP-ландшафт: 1С ERP, SAP S/4HANA, Oracle EBS, MES-система\n"
+        "Прямое подчинение CEO, участие в совете директоров\n"
+        "Два ЦОД, disaster recovery, критичная инфраструктура"
+    )
+    scale, signals, rationale = _detect_scale_composite(text)
+    ms = int((time.monotonic() - t0) * 1000)
+    if scale not in ("enterprise", "holding"):
+        return TestResult("TC-25", "Scale: 2000+ + PMO → enterprise/holding", False,
+                          f"Got '{scale}', signals={signals}", ms)
+    return TestResult("TC-25", "Scale: 2000+ + PMO → enterprise/holding", True,
+                      f"scale={scale}, rationale={rationale[:60]}", ms)
+
+
+def tc_resume_operational_framing() -> TestResult:
+    """TC-26: Operational CV -> framing level not strategic/executive"""
+    from agents.resume_intelligence import _analyze_executive_framing
+    t0 = time.monotonic()
+    text = (
+        "Администрирование серверов Windows Server 2019\n"
+        "Техническая поддержка пользователей (Help Desk, 1 линия)\n"
+        "Настройка оборудования Cisco, HP\n"
+        "Мониторинг серверов через Zabbix, uptime 99.5%\n"
+        "Устранение неисправностей сетевого оборудования\n"
+        "Обслуживание ИТ-инфраструктуры офиса"
+    )
+    level, score, op_sigs, ex_sigs = _analyze_executive_framing(text)
+    ms = int((time.monotonic() - t0) * 1000)
+    if level in ("strategic", "executive"):
+        return TestResult("TC-26", "Framing: operational CV → not strategic/executive", False,
+                          f"Got {level} (score={score}), op_sigs={op_sigs}, ex_sigs={ex_sigs}", ms)
+    return TestResult("TC-26", "Framing: operational CV → not strategic/executive", True,
+                      f"level={level}, score={score}/100, op={len(op_sigs)}, ex={len(ex_sigs)}", ms)
+
+
+def tc_resume_no_false_telecom() -> TestResult:
+    """TC-27: Industry cleanup — vendor context does not trigger telecom"""
+    from agents.resume_intelligence import _detect_industries_v2
+    t0 = time.monotonic()
+    # Text about implementing IT systems FOR a telecom client (vendor, not employer)
+    text = (
+        "Реализовал проект внедрения 1С ERP для заказчика из телеком-отрасли.\n"
+        "Обслуживание клиентов банковского сектора.\n"
+        "Поставщик решений для операторов связи.\n"
+        "Основная деятельность компании — системная интеграция."
+    )
+    industries, _ = _detect_industries_v2(text)
+    ms = int((time.monotonic() - t0) * 1000)
+    false_positives = [i for i in industries if i in ("Телеком", "Банки/Финансы")]
+    if false_positives:
+        return TestResult("TC-27", "Industry: vendor context → no false telecom/finance", False,
+                          f"False positives detected: {false_positives}", ms)
+    return TestResult("TC-27", "Industry: vendor context → no false telecom/finance", True,
+                      f"Industries detected: {industries} (no false positives)", ms)
+
+
+def tc_resume_executive_language() -> TestResult:
+    """TC-28: Strategic CV -> executive_language_signals present"""
+    from agents.resume_intelligence import _analyze_executive_framing
+    t0 = time.monotonic()
+    text = (
+        "Разработал стратегию цифровой трансформации холдинга на 5 лет.\n"
+        "Защищал roadmap и бюджетирование перед советом директоров.\n"
+        "Ownership трансформационной программы: ROI 340% за 3 года.\n"
+        "Кросс-функциональное взаимодействие с CFO, COO, CEO.\n"
+        "Построение операционной модели ИТ с P&L ответственностью.\n"
+        "Governance framework, digital agenda, business impact."
+    )
+    level, score, op_sigs, ex_sigs = _analyze_executive_framing(text)
+    ms = int((time.monotonic() - t0) * 1000)
+    if len(ex_sigs) < 3:
+        return TestResult("TC-28", "Framing: strategic text → executive signals ≥3", False,
+                          f"Only {len(ex_sigs)} exec signals: {ex_sigs}", ms)
+    return TestResult("TC-28", "Framing: strategic text → executive signals ≥3", True,
+                      f"level={level}, score={score}, ex_signals={len(ex_sigs)}: {', '.join(ex_sigs[:3])}", ms)
+
+
+def tc_resume_hidden_ai() -> TestResult:
+    """TC-29: AI initiatives in sample CV -> ai_positioning not HIGH (hidden/understated)"""
+    from agents.resume_intelligence import analyze_resume, PositioningLevel
+    t0 = time.monotonic()
+    # CV with AI mentioned briefly without detail — should not be HIGH
+    text = (
+        "Иванов Сергей\nДиректор по ИТ, 2018-2026\n"
+        "ООО «Промтех», 3000 сотрудников, производство\n"
+        "Внедрение ERP 1С, построение ИТ-инфраструктуры.\n"
+        "Пилотное внедрение AI-помощника для операторов.\n"
+        "Управление командой 40 человек, бюджет 200 млн руб."
+    )
+    profile = analyze_resume(text)
+    ms = int((time.monotonic() - t0) * 1000)
+    # AI is mentioned once (pilot) — should be LOW or MEDIUM, not HIGH
+    if profile.ai_positioning_level == PositioningLevel.HIGH:
+        return TestResult("TC-29", "AI: single mention → not HIGH positioning", False,
+                          f"Got HIGH despite minimal AI: signals={profile.ai_signals}", ms)
+    return TestResult("TC-29", "AI: single mention → not HIGH positioning", True,
+                      f"ai_level={profile.ai_positioning_level.value}, "
+                      f"signals={len(profile.ai_signals)}", ms)
 
 
 def run_all() -> list[TestResult]:

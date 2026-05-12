@@ -53,12 +53,25 @@
         <span class="meta-chip">{{ profile.leadership_scope }} scope</span>
         {% endif %}
         {% if profile.organizational_scale %}
-        <span class="meta-chip">{{ profile.organizational_scale }}</span>
+        <span class="meta-chip" title="{{ profile.organizational_scale_rationale }}">
+          {{ profile.organizational_scale }}
+          {% if profile.organizational_scale_rationale %}
+          <span class="meta-tip">?</span>
+          {% endif %}
+        </span>
+        {% endif %}
+        {% if profile.executive_framing_level %}
+        <span class="meta-chip framing-{{ profile.executive_framing_level }}">
+          {{ profile.executive_framing_level }} framing
+        </span>
         {% endif %}
         {% if profile.source_file %}
         <span class="meta-chip muted">{{ profile.source_file }}</span>
         {% endif %}
       </div>
+      {% if profile.organizational_scale_rationale %}
+      <p class="scale-rationale">{{ profile.organizational_scale_rationale }}</p>
+      {% endif %}
     </div>
 
     <!-- ══ Positioning Dashboard ══ -->
@@ -167,6 +180,73 @@
         {% endif %}
       </div>
     </div>
+
+    <!-- ══ Executive Framing Analysis ══ -->
+    {% if profile.executive_framing_level %}
+    <div class="card card-framing">
+      <h2>Executive Framing Analysis</h2>
+      <div class="framing-row">
+        <div class="framing-score-wrap">
+          <div class="framing-label">Executive Language Score</div>
+          <div class="framing-bar-bg">
+            <div class="framing-bar" style="width:{{ profile.executive_framing_score }}%"></div>
+          </div>
+          <div class="framing-score-num">{{ profile.executive_framing_score }}/100</div>
+        </div>
+        <div class="framing-level-badge framing-{{ profile.executive_framing_level }}">
+          {{ profile.executive_framing_level }}
+        </div>
+      </div>
+      {% if profile.operational_language_signals or profile.executive_language_signals %}
+      <div class="row-2col" style="margin-top:.75rem;margin-bottom:0;">
+        <div>
+          <div class="framing-sig-label op">Operational language detected</div>
+          {% if profile.operational_language_signals %}
+          <ul class="signal-tag-list" style="margin-top:.3rem;">
+            {% for s in profile.operational_language_signals %}
+            <li style="background:#fee2e2;color:#991b1b;">{{ s }}</li>
+            {% endfor %}
+          </ul>
+          {% else %}<p class="empty">—</p>{% endif %}
+        </div>
+        <div>
+          <div class="framing-sig-label ex">Executive language detected</div>
+          {% if profile.executive_language_signals %}
+          <ul class="signal-tag-list" style="margin-top:.3rem;">
+            {% for s in profile.executive_language_signals %}
+            <li style="background:#dcfce7;color:#14532d;">{{ s }}</li>
+            {% endfor %}
+          </ul>
+          {% else %}<p class="empty">—</p>{% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- ══ Executive Reframing Opportunities ══ -->
+    {% if profile.executive_reframing_opportunities %}
+    <div class="card card-reframe">
+      <h2>Executive Reframing Opportunities
+        <span style="font-size:.75rem;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;">
+          — тот же опыт, executive язык
+        </span>
+      </h2>
+      {% for opp in profile.executive_reframing_opportunities %}
+      <div class="reframe-item">
+        <div class="reframe-original">
+          <span class="reframe-label">Было:</span> {{ opp.original }}
+        </div>
+        <div class="reframe-suggested">
+          <span class="reframe-label">Suggested:</span> {{ opp.suggested }}
+        </div>
+        {% if opp.reason %}
+        <div class="reframe-reason">{{ opp.reason }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
 
     <!-- ══ Weak Visibility Areas ══ -->
     {% if profile.weak_visibility_areas %}

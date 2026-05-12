@@ -697,6 +697,62 @@ details[open] .intake-options-toggle::before { content: "－ "; }
   font-size: .88rem;
 }
 
+/* ── Scale rationale ── */
+.scale-rationale { font-size:.75rem; color:var(--muted); margin-top:.4rem; font-style:italic; }
+.meta-tip {
+  display:inline-block; width:13px; height:13px; border-radius:50%;
+  background:var(--muted); color:#fff; font-size:.6rem; font-weight:700;
+  text-align:center; line-height:13px; margin-left:.2rem; cursor:help;
+}
+
+/* ── Framing chip colors ── */
+.meta-chip.framing-operational { background:#fee2e2; color:#991b1b; }
+.meta-chip.framing-technical   { background:#fef3c7; color:#92400e; }
+.meta-chip.framing-managerial  { background:#fef9c3; color:#713f12; }
+.meta-chip.framing-executive   { background:#dcfce7; color:#14532d; }
+.meta-chip.framing-strategic   { background:#dbeafe; color:#1e3a8a; }
+
+/* ── Executive Framing card ── */
+.card-framing { border-left: 3px solid var(--warning); }
+
+.framing-row { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:.5rem; }
+.framing-score-wrap { flex:1; min-width:200px; }
+.framing-label { font-size:.72rem; font-weight:600; color:var(--muted); margin-bottom:.3rem; text-transform:uppercase; letter-spacing:.05em; }
+.framing-bar-bg { background:var(--border); border-radius:999px; height:8px; overflow:hidden; margin-bottom:.3rem; }
+.framing-bar { height:100%; border-radius:999px; background:var(--primary); }
+.framing-score-num { font-size:.8rem; color:var(--muted); }
+
+.framing-level-badge {
+  padding:.3rem .9rem; border-radius:999px;
+  font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+}
+.framing-level-badge.framing-operational { background:#fee2e2; color:#991b1b; }
+.framing-level-badge.framing-technical   { background:#fef3c7; color:#92400e; }
+.framing-level-badge.framing-managerial  { background:#fef9c3; color:#713f12; }
+.framing-level-badge.framing-executive   { background:#dcfce7; color:#14532d; }
+.framing-level-badge.framing-strategic   { background:#dbeafe; color:#1e3a8a; }
+
+.framing-sig-label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+.framing-sig-label.op { color:#991b1b; }
+.framing-sig-label.ex { color:#14532d; }
+
+/* ── Reframing Opportunities card ── */
+.card-reframe { border-left: 3px solid var(--primary); }
+
+.reframe-item {
+  padding:.75rem;
+  background:var(--bg);
+  border-radius:var(--radius);
+  margin-bottom:.6rem;
+}
+.reframe-item:last-child { margin-bottom:0; }
+.reframe-original  { font-size:.86rem; color:var(--muted); margin-bottom:.35rem; }
+.reframe-suggested { font-size:.9rem; color:var(--text); font-weight:500; margin-bottom:.3rem; }
+.reframe-reason    { font-size:.78rem; color:var(--muted); font-style:italic; }
+.reframe-label     { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; margin-right:.3rem; }
+.reframe-original  .reframe-label { color:#991b1b; }
+.reframe-suggested .reframe-label { color:var(--success); }
+
 /* ── Error ── */
 .error-box {
   background: #fef2f2;
