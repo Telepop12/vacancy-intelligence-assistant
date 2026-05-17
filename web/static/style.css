@@ -753,6 +753,63 @@ details[open] .intake-options-toggle::before { content: "－ "; }
 .reframe-original  .reframe-label { color:#991b1b; }
 .reframe-suggested .reframe-label { color:var(--success); }
 
+/* ══ Career Match ══ */
+
+.card-match-hero { border-left: 3px solid var(--primary); }
+
+.dual-score-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+.dual-score-block { flex: 1; min-width: 160px; }
+.dual-score-divider {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--muted);
+  align-self: center;
+  padding: 0 .25rem;
+}
+.score-sublabel { font-size: .72rem; color: var(--muted); margin-top: .25rem; }
+
+.match-summary {
+  font-size: .93rem;
+  line-height: 1.7;
+  color: var(--text);
+  padding: .75rem 1rem;
+  background: #eff6ff;
+  border-left: 3px solid var(--primary);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin-bottom: .75rem;
+}
+
+.card-trajectory { border-left: 3px solid var(--warning); }
+.trajectory-text {
+  font-size: .92rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.competency-list { list-style: none; padding: 0; }
+.competency-list li {
+  padding: .4rem .75rem;
+  background: #ede9fe;
+  border-left: 3px solid #7c3aed;
+  margin-bottom: .35rem;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: .88rem;
+  line-height: 1.5;
+}
+
+.card-final-rec { border-left: 3px solid var(--success); }
+.final-rec-text {
+  font-size: .93rem;
+  line-height: 1.75;
+  color: var(--text);
+}
+
 /* ── Error ── */
 .error-box {
   background: #fef2f2;

@@ -687,6 +687,82 @@ def tc_resume_hidden_ai() -> TestResult:
 
 
 # ---------------------------------------------------------------------------
+# TC-30..32 — Career Match Layer
+# ---------------------------------------------------------------------------
+
+def tc_career_match_basic() -> TestResult:
+    """TC-30: Career match returns CareerMatchResult with both scores"""
+    from agents.career_match import career_match, CareerMatchResult
+    from agents.intake import from_text as intake_text
+    from agents.resume_intelligence import analyze_resume
+    t0 = time.monotonic()
+    resume_text = (INPUTS_DIR / "sample_resume.txt").read_text(encoding="utf-8")
+    vacancy_text = (INPUTS_DIR / "strong_ai_vacancy.txt").read_text(encoding="utf-8")
+    resume_profile = analyze_resume(resume_text)
+    vacancy = intake_text(vacancy_text)
+    try:
+        result = career_match(vacancy=vacancy, resume=resume_profile,
+                              keyword_score=75, keyword_rec="ОТКЛИКАТЬСЯ")
+    except Exception as exc:
+        ms = int((time.monotonic() - t0) * 1000)
+        return TestResult("TC-30", "Career Match: returns CareerMatchResult", False, str(exc), ms)
+    ms = int((time.monotonic() - t0) * 1000)
+    if not isinstance(result, CareerMatchResult):
+        return TestResult("TC-30", "Career Match: returns CareerMatchResult", False,
+                          f"Wrong type: {type(result)}", ms)
+    if result.career_match_score == 0 and not result.confidence_notes:
+        return TestResult("TC-30", "Career Match: returns CareerMatchResult", False,
+                          "career_match_score=0 and no confidence notes", ms)
+    return TestResult("TC-30", "Career Match: returns CareerMatchResult", True,
+                      f"career_match={result.career_match_score}, keyword={result.keyword_score}, "
+                      f"rec={result.recommendation_label}", ms)
+
+
+def tc_career_match_transferable() -> TestResult:
+    """TC-31: Career match detects transferable competencies"""
+    from agents.career_match import career_match
+    from agents.intake import from_text as intake_text
+    from agents.resume_intelligence import analyze_resume
+    t0 = time.monotonic()
+    resume_text = (INPUTS_DIR / "sample_resume.txt").read_text(encoding="utf-8")
+    vacancy_text = (INPUTS_DIR / "evolutionary_target_vacancy.txt").read_text(encoding="utf-8")
+    resume_profile = analyze_resume(resume_text)
+    vacancy = intake_text(vacancy_text)
+    result = career_match(vacancy=vacancy, resume=resume_profile,
+                          keyword_score=23, keyword_rec="ПРОПУСТИТЬ")
+    ms = int((time.monotonic() - t0) * 1000)
+    if not result.transferable_competencies:
+        return TestResult("TC-31", "Career Match: transferable competencies present", False,
+                          "transferable_competencies is empty", ms)
+    return TestResult("TC-31", "Career Match: transferable competencies present", True,
+                      f"{len(result.transferable_competencies)} competencies, "
+                      f"career_match={result.career_match_score} vs keyword=23", ms)
+
+
+def tc_career_match_upgrades_score() -> TestResult:
+    """TC-32: Career match score > keyword score for experienced CIO on strategic vacancy"""
+    from agents.career_match import career_match
+    from agents.intake import from_text as intake_text
+    from agents.resume_intelligence import analyze_resume
+    t0 = time.monotonic()
+    resume_text = (INPUTS_DIR / "sample_resume.txt").read_text(encoding="utf-8")
+    vacancy_text = (INPUTS_DIR / "evolutionary_target_vacancy.txt").read_text(encoding="utf-8")
+    keyword_score = 23  # rule-based says ПРОПУСТИТЬ
+    resume_profile = analyze_resume(resume_text)
+    vacancy = intake_text(vacancy_text)
+    result = career_match(vacancy=vacancy, resume=resume_profile,
+                          keyword_score=keyword_score, keyword_rec="ПРОПУСТИТЬ")
+    ms = int((time.monotonic() - t0) * 1000)
+    # Career match should recognize transferable value and score higher than keyword
+    if result.career_match_score <= keyword_score and not result.confidence_notes:
+        return TestResult("TC-32", "Career Match: score > keyword for experienced CIO", False,
+                          f"career_match={result.career_match_score} not > keyword={keyword_score}", ms)
+    return TestResult("TC-32", "Career Match: score > keyword for experienced CIO", True,
+                      f"career_match={result.career_match_score} > keyword={keyword_score}, "
+                      f"rec={result.recommendation_label}", ms)
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 
@@ -720,6 +796,9 @@ ALL_TESTS = [
     tc_resume_no_false_telecom,
     tc_resume_executive_language,
     tc_resume_hidden_ai,
+    tc_career_match_basic,
+    tc_career_match_transferable,
+    tc_career_match_upgrades_score,
 ]
 
 def tc_resume_enterprise_scale() -> TestResult:

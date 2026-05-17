@@ -19,6 +19,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from agents.career_match import career_match
 from agents.intake import from_file, from_html, from_json, from_text, from_url
 from agents.resume_intelligence import ResumeProfile, analyze_resume, load_resume
 from core.analyzer import analyze
@@ -243,6 +244,98 @@ async def resume_analyze(
     return templates.TemplateResponse(request, "resume_result.html", context={
         "profile":   profile,
         "p_css":     _positioning_css,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Career Match routes
+# ---------------------------------------------------------------------------
+
+@app.get("/match", response_class=HTMLResponse)
+async def match_page(request: Request):
+    return templates.TemplateResponse(request, "match.html", context={})
+
+
+@app.post("/match/analyze", response_class=HTMLResponse)
+async def match_analyze(
+    request: Request,
+    vacancy_text: str = Form(default=""),
+    resume_text:  str = Form(default=""),
+    vacancy_file: Optional[UploadFile] = File(default=None),
+    resume_file:  Optional[UploadFile] = File(default=None),
+):
+    errors: list[str] = []
+
+    # ── Resolve vacancy ──
+    vacancy = None
+    if vacancy_file and vacancy_file.filename:
+        content = await vacancy_file.read()
+        suffix = Path(vacancy_file.filename).suffix.lower()
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp.write(content)
+            tmp_path = Path(tmp.name)
+        try:
+            vacancy = from_file(tmp_path)
+            vacancy.source_name = vacancy_file.filename
+        finally:
+            tmp_path.unlink(missing_ok=True)
+    elif vacancy_text.strip():
+        vacancy = from_text(vacancy_text.strip())
+
+    if not vacancy or not vacancy.normalized_text.strip():
+        errors.append("Вставьте текст вакансии или загрузите файл")
+
+    # ── Resolve resume ──
+    resume_profile = None
+    if resume_file and resume_file.filename:
+        suffix = Path(resume_file.filename).suffix.lower()
+        if suffix not in {".txt", ".md", ".docx", ".pdf"}:
+            errors.append(f"Неподдерживаемый формат резюме: {suffix}")
+        else:
+            content = await resume_file.read()
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+                tmp.write(content)
+                tmp_path = Path(tmp.name)
+            try:
+                text, src_type = load_resume(tmp_path)
+                resume_profile = analyze_resume(text, source_file=resume_file.filename,
+                                                source_type=src_type)
+            except Exception as exc:
+                errors.append(f"Ошибка чтения резюме: {exc}")
+            finally:
+                tmp_path.unlink(missing_ok=True)
+    elif resume_text.strip():
+        resume_profile = analyze_resume(resume_text.strip(), source_type="text")
+
+    if not resume_profile:
+        errors.append("Загрузите резюме или вставьте его текст")
+
+    if errors:
+        return templates.TemplateResponse(request, "match.html", context={
+            "errors": errors,
+            "prefill_vacancy": vacancy_text,
+            "prefill_resume": resume_text,
+        })
+
+    # ── Keyword scoring (existing pipeline) ──
+    vacancy_analysis = analyze(vacancy, _profile)
+
+    # ── Career match (LLM, resume-aware) ──
+    match_result = career_match(
+        vacancy=vacancy,
+        resume=resume_profile,
+        keyword_score=vacancy_analysis.match_score,
+        keyword_rec=vacancy_analysis.recommended_action or vacancy_analysis.recommendation.value,
+    )
+
+    return templates.TemplateResponse(request, "match_result.html", context={
+        "match":          match_result,
+        "analysis":       vacancy_analysis,
+        "resume":         resume_profile,
+        "score_color":    _score_color(match_result.career_match_score),
+        "kw_color":       _score_color(match_result.keyword_score),
+        "action_color":   _action_color(match_result.recommendation_label),
+        "p_css":          _positioning_css,
     })
 
 

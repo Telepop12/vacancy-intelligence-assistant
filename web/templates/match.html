@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Career Match — Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page-wrapper">
+<aside class="sidebar"></aside>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">
+      <a href="/" style="color:rgba(255,255,255,.75);text-decoration:none;">Анализ вакансий</a>
+      &nbsp;·&nbsp;
+      <a href="/resume" style="color:rgba(255,255,255,.75);text-decoration:none;">Resume Intelligence</a>
+      &nbsp;·&nbsp; Career Match
+    </p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    {% if errors %}
+    {% for e in errors %}
+    <div class="error-box">{{ e }}</div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="card">
+      <h2>Career Match Analysis</h2>
+      <p style="font-size:.9rem;color:var(--muted);margin-bottom:1.25rem;">
+        Глубокий анализ соответствия вакансии с учётом полной карьерной траектории:
+        transferable competencies, скрытая релевантность, стратегический fit.
+      </p>
+
+      <form method="post" action="/match/analyze" enctype="multipart/form-data">
+        <div class="row-2col">
+          <div class="field">
+            <label>Вакансия</label>
+            <textarea name="vacancy_text" rows="14"
+              placeholder="Вставьте текст вакансии…">{{ prefill_vacancy or "" }}</textarea>
+            <p class="hint">или</p>
+            <input type="file" name="vacancy_file" accept=".txt,.md,.json" class="file-input">
+          </div>
+          <div class="field">
+            <label>Резюме <span class="hint-inline">.docx · .pdf · .txt · .md</span></label>
+            <textarea name="resume_text" rows="14"
+              placeholder="Вставьте текст резюме…">{{ prefill_resume or "" }}</textarea>
+            <p class="hint">или</p>
+            <input type="file" name="resume_file"
+                   accept=".docx,.pdf,.txt,.md" class="file-input">
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit">Запустить Career Match</button>
+      </form>
+    </div>
+
+    <div class="actions">
+      <a href="/" class="btn">← Анализ вакансий</a>
+      <a href="/resume" class="btn">Resume Intelligence</a>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant — Career Match Layer</div>
+</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Career Match — Результат</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page-wrapper">
+<aside class="sidebar"></aside>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">
+      <a href="/" style="color:rgba(255,255,255,.75);text-decoration:none;">Анализ вакансий</a>
+      &nbsp;·&nbsp;
+      <a href="/resume" style="color:rgba(255,255,255,.75);text-decoration:none;">Resume Intelligence</a>
+      &nbsp;·&nbsp; Career Match
+    </p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <div class="actions">
+      <a href="/match" class="btn">← Новый Career Match</a>
+      <a href="/" class="btn">Анализ вакансий</a>
+    </div>
+
+    <!-- ══ Dual Score Hero ══ -->
+    <div class="card card-match-hero">
+      <h2>Career Match Result</h2>
+      <div class="dual-score-row">
+
+        <div class="dual-score-block">
+          <div class="score-label">Career Match Score</div>
+          <div class="score-badge {{ score_color }}">{{ match.career_match_score }}</div>
+          <div class="score-bar-wrap" style="margin-top:.5rem;">
+            <div class="score-bar {{ score_color }}" style="width:{{ match.career_match_score }}%"></div>
+          </div>
+          <div style="margin-top:.4rem;">
+            <span class="rec-badge {{ action_color }}">{{ match.recommendation_label }}</span>
+          </div>
+          <div class="score-sublabel">LLM · full career analysis</div>
+        </div>
+
+        <div class="dual-score-divider">vs</div>
+
+        <div class="dual-score-block">
+          <div class="score-label">Keyword Score</div>
+          <div class="score-badge {{ kw_color }}">{{ match.keyword_score }}</div>
+          <div class="score-bar-wrap" style="margin-top:.5rem;">
+            <div class="score-bar {{ kw_color }}" style="width:{{ match.keyword_score }}%"></div>
+          </div>
+          <div style="margin-top:.4rem;">
+            <span class="rec-badge {{ action_color(match.keyword_rec) }}">{{ match.keyword_rec }}</span>
+          </div>
+          <div class="score-sublabel">Rule-based · keyword matching</div>
+        </div>
+
+      </div>
+
+      {% if match.executive_summary %}
+      <div class="match-summary">{{ match.executive_summary }}</div>
+      {% endif %}
+
+      <div class="score-date">{{ match.analysis_timestamp.strftime('%d.%m.%Y %H:%M') }}
+        {% if resume.source_file %} · {{ resume.source_file }}{% endif %}
+      </div>
+    </div>
+
+    <!-- ══ Trajectory Analysis ══ -->
+    {% if match.trajectory_analysis %}
+    <div class="card card-trajectory">
+      <h2>Trajectory Analysis</h2>
+      <p class="trajectory-text">{{ match.trajectory_analysis }}</p>
+    </div>
+    {% endif %}
+
+    <!-- ══ Transferable Competencies + Strategic Strengths ══ -->
+    <div class="row-2col">
+      <div class="card">
+        <h2>Transferable Competencies</h2>
+        {% if match.transferable_competencies %}
+        <ul class="competency-list">
+          {% for c in match.transferable_competencies %}
+          <li>{{ c }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty">—</p>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h2>Strategic Strengths</h2>
+        {% if match.strategic_strengths %}
+        <ul class="asset-list">
+          {% for s in match.strategic_strengths %}
+          <li>{{ s }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty">—</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ══ Risks & Gaps ══ -->
+    {% if match.risks_and_gaps %}
+    <div class="card">
+      <h2>Risks & Gaps</h2>
+      <ul class="risk-list">
+        {% for r in match.risks_and_gaps %}
+        <li>{{ r }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <!-- ══ Final Recommendation ══ -->
+    {% if match.final_recommendation %}
+    <div class="card card-final-rec">
+      <h2>Заключение executive-рекрутера</h2>
+      <p class="final-rec-text">{{ match.final_recommendation }}</p>
+    </div>
+    {% endif %}
+
+    <!-- ══ Candidate snapshot ══ -->
+    <div class="section-aux">
+      <div class="section-aux-label">Профиль кандидата (из Resume Intelligence)</div>
+      <div class="row-2col">
+        <div class="card">
+          <h2>Positioning Dashboard</h2>
+          <div class="dashboard-grid">
+            {% set indicators = [
+              ("AI Positioning",             resume.ai_positioning_level.value),
+              ("Transformation",             resume.transformation_positioning_level.value),
+              ("Executive",                  resume.executive_positioning_level.value),
+              ("Operational Depth",          resume.operational_depth_level.value),
+              ("Strategic Visibility",       resume.strategic_visibility_level.value),
+            ] %}
+            {% for label, level in indicators %}
+            <div class="dashboard-item">
+              <div class="dashboard-label">{{ label }}</div>
+              <div class="dashboard-bar-wrap">
+                <div class="dashboard-bar {{ p_css(level) }}"
+                     style="width:{% if level == 'HIGH' %}100%{% elif level == 'MEDIUM' %}55%{% else %}20%{% endif %}"></div>
+              </div>
+              <span class="dashboard-badge {{ p_css(level) }}">{{ level }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Key Signals</h2>
+          {% if resume.technology_domains %}
+          <div class="match-list" style="margin-bottom:.6rem;">
+            {% for d in resume.technology_domains %}
+            <span class="match-list" style="display:inline-block;padding:.2rem .6rem;background:#dbeafe;color:#1e40af;border-radius:999px;font-size:.8rem;margin:.15rem;">{{ d }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if resume.industries %}
+          <div style="margin-top:.5rem;font-size:.78rem;color:var(--muted);">
+            Отрасли: {{ resume.industries | join(', ') }}
+          </div>
+          {% endif %}
+          {% if resume.organizational_scale_rationale %}
+          <div style="margin-top:.4rem;font-size:.78rem;color:var(--muted);">
+            {{ resume.organizational_scale_rationale }}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% if match.confidence_notes %}
+    <p class="hint">⚠ {{ match.confidence_notes | join(' · ') }}</p>
+    {% endif %}
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant — Career Match Layer</div>
+</footer>
+</div>
+</body>
+</html>
