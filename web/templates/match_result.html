@@ -17,12 +17,12 @@
 
     <div class="cockpit-scores">
       <div class="cockpit-score-block">
-        <div class="cockpit-score-label">Career Match</div>
+        <div class="cockpit-score-label">Карьерный матч</div>
         <div class="cockpit-score-num {{ score_color }}">{{ match.career_match_score }}</div>
       </div>
       <div class="cockpit-vs">vs</div>
       <div class="cockpit-score-block">
-        <div class="cockpit-score-label">Keyword</div>
+        <div class="cockpit-score-label">Ключевые слова</div>
         <div class="cockpit-score-num {{ kw_color }}">{{ match.keyword_score }}</div>
       </div>
     </div>
@@ -31,7 +31,7 @@
       <span class="cockpit-rec-badge {{ action_color(match.recommendation_label) }}">
         {{ match.recommendation_label }}
       </span>
-      <div class="cockpit-rec-label">LLM · full career</div>
+      <div class="cockpit-rec-label">ИИ · полный анализ карьеры</div>
     </div>
 
     <div class="cockpit-dots">
@@ -80,17 +80,17 @@
     <div class="itab-panel active" id="tab-idash">
       <div class="dash-grid interview-dash">
         <div class="dash-card dash-summary">
-          <div class="dash-card-header">📋 Executive Summary</div>
+          <div class="dash-card-header">📋 Обзор кандидата</div>
           <div class="dash-card-preview">{{ match.executive_summary }}</div>
           <button class="dash-more-btn" onclick="showTab('iconclusion')">Подробнее →</button>
         </div>
         <div class="dash-card dash-trajectory">
-          <div class="dash-card-header">📈 Trajectory</div>
+          <div class="dash-card-header">📈 Карьерная траектория</div>
           <div class="dash-card-preview">{{ match.trajectory_analysis }}</div>
           <button class="dash-more-btn" onclick="gotoSection('sec-trajectory','iconclusion')">Подробнее →</button>
         </div>
         <div class="dash-card dash-strengths">
-          <div class="dash-card-header">💪 Strategic Strengths</div>
+          <div class="dash-card-header">💪 Сильные стороны</div>
           <div class="dash-card-preview">
             {% for s in match.strategic_strengths[:3] %}
             <div class="dash-item strength">{{ s }}</div>
@@ -99,7 +99,7 @@
           <button class="dash-more-btn" onclick="showTab('istrengths')">Подробнее →</button>
         </div>
         <div class="dash-card dash-competencies">
-          <div class="dash-card-header">↔ Transferable Competencies</div>
+          <div class="dash-card-header">↔ Переносимые компетенции</div>
           <div class="dash-card-preview">
             {% for c in match.transferable_competencies[:3] %}
             <div class="dash-item competency">{{ c }}</div>
@@ -108,7 +108,7 @@
           <button class="dash-more-btn" onclick="showTab('icompetencies')">Подробнее →</button>
         </div>
         <div class="dash-card dash-risks">
-          <div class="dash-card-header">⚠️ Risks & Gaps</div>
+          <div class="dash-card-header">⚠️ Риски и пробелы</div>
           <div class="dash-card-preview">
             {% for r in match.risks_and_gaps[:3] %}
             <div class="dash-item risk">{{ r }}</div>
@@ -126,7 +126,7 @@
 
     <!-- STRENGTHS -->
     <div class="itab-panel" id="tab-istrengths">
-      <div class="itab-section-title">Strategic Strengths — используй в разговоре</div>
+      <div class="itab-section-title">Сильные стороны — используй в разговоре</div>
       <div class="itab-cards-grid">
         {% for s in match.strategic_strengths %}
         <div class="itab-card strength">{{ s }}</div>
@@ -136,7 +136,7 @@
 
     <!-- RISKS -->
     <div class="itab-panel" id="tab-irisks">
-      <div class="itab-section-title">Risks & Gaps — готовься к этим вопросам</div>
+      <div class="itab-section-title">Риски и пробелы — готовься к этим вопросам</div>
       <div class="itab-cards-list">
         {% for r in match.risks_and_gaps %}
         <div class="itab-card risk">{{ r }}</div>
@@ -146,7 +146,7 @@
 
     <!-- COMPETENCIES -->
     <div class="itab-panel" id="tab-icompetencies">
-      <div class="itab-section-title">Transferable Competencies — аргументы для нестандартных вопросов</div>
+      <div class="itab-section-title">Переносимые компетенции — аргументы для нестандартных вопросов</div>
       <div class="itab-cards-grid">
         {% for c in match.transferable_competencies %}
         <div class="itab-card competency">{{ c }}</div>
@@ -229,7 +229,7 @@
           {% endif %}
         </div>
         <div>
-          <div class="itab-section-title">Positioning Dashboard</div>
+          <div class="itab-section-title">Панель позиционирования</div>
           <div class="itab-dashboard">
             {% for label, level in [
               ("AI Positioning",   resume.ai_positioning_level.value),
@@ -292,15 +292,15 @@
       </div>
 
       <nav class="analyst-nav-list">
-        <a class="anav-link active" onclick="showSection('sec-dashboard')">🏠 Dashboard</a>
-        <a class="anav-link" onclick="showSection('sec-summary')">📋 Summary</a>
-        <a class="anav-link" onclick="showSection('sec-strengths')">💪 Strengths</a>
-        <a class="anav-link" onclick="showSection('sec-risks')">⚠️ Risks</a>
-        <a class="anav-link" onclick="showSection('sec-competencies')">↔ Competencies</a>
-        <a class="anav-link" onclick="showSection('sec-trajectory')">📈 Trajectory</a>
+        <a class="anav-link active" onclick="showSection('sec-dashboard')">🏠 Главная панель</a>
+        <a class="anav-link" onclick="showSection('sec-summary')">📋 Обзор</a>
+        <a class="anav-link" onclick="showSection('sec-strengths')">💪 Сильные стороны</a>
+        <a class="anav-link" onclick="showSection('sec-risks')">⚠️ Риски</a>
+        <a class="anav-link" onclick="showSection('sec-competencies')">↔ Компетенции</a>
+        <a class="anav-link" onclick="showSection('sec-trajectory')">📈 Траектория</a>
         <a class="anav-link" onclick="showSection('sec-resume')">📄 Резюме</a>
         <a class="anav-link" onclick="showSection('sec-prep')">📋 Подготовка</a>
-        <a class="anav-link" onclick="showSection('sec-conclusion')">✅ Conclusion</a>
+        <a class="anav-link" onclick="showSection('sec-conclusion')">✅ Заключение</a>
       </nav>
 
       <div class="analyst-meta">
@@ -314,17 +314,17 @@
       <div class="asec" id="sec-dashboard">
         <div class="dash-grid">
           <div class="dash-card dash-summary">
-            <div class="dash-card-header">📋 Executive Summary</div>
+            <div class="dash-card-header">📋 Обзор кандидата</div>
             <div class="dash-card-preview">{{ match.executive_summary }}</div>
             <button class="dash-more-btn" onclick="showSection('sec-summary')">Подробнее →</button>
           </div>
           <div class="dash-card dash-trajectory">
-            <div class="dash-card-header">📈 Trajectory</div>
+            <div class="dash-card-header">📈 Карьерная траектория</div>
             <div class="dash-card-preview">{{ match.trajectory_analysis }}</div>
             <button class="dash-more-btn" onclick="showSection('sec-trajectory')">Подробнее →</button>
           </div>
           <div class="dash-card dash-strengths">
-            <div class="dash-card-header">💪 Strategic Strengths</div>
+            <div class="dash-card-header">💪 Сильные стороны</div>
             <div class="dash-card-preview">
               {% for s in match.strategic_strengths[:3] %}
               <div class="dash-item strength">{{ s }}</div>
@@ -333,7 +333,7 @@
             <button class="dash-more-btn" onclick="showSection('sec-strengths')">Подробнее →</button>
           </div>
           <div class="dash-card dash-competencies">
-            <div class="dash-card-header">↔ Transferable Competencies</div>
+            <div class="dash-card-header">↔ Переносимые компетенции</div>
             <div class="dash-card-preview">
               {% for c in match.transferable_competencies[:3] %}
               <div class="dash-item competency">{{ c }}</div>
@@ -342,7 +342,7 @@
             <button class="dash-more-btn" onclick="showSection('sec-competencies')">Подробнее →</button>
           </div>
           <div class="dash-card dash-risks">
-            <div class="dash-card-header">⚠️ Risks & Gaps</div>
+            <div class="dash-card-header">⚠️ Риски и пробелы</div>
             <div class="dash-card-preview">
               {% for r in match.risks_and_gaps[:3] %}
               <div class="dash-item risk">{{ r }}</div>
@@ -359,35 +359,35 @@
       </div>
 
       <div class="asec hidden" id="sec-summary">
-        <h2 class="asec-title">Executive Summary</h2>
+        <h2 class="asec-title">Обзор кандидата</h2>
         {% if match.executive_summary %}
         <p class="match-summary">{{ match.executive_summary }}</p>
         {% endif %}
       </div>
 
       <div class="asec hidden" id="sec-strengths">
-        <h2 class="asec-title">Strategic Strengths</h2>
+        <h2 class="asec-title">Сильные стороны</h2>
         {% for s in match.strategic_strengths %}
         <div class="itab-card strength" style="margin-bottom:.5rem;">{{ s }}</div>
         {% endfor %}
       </div>
 
       <div class="asec hidden" id="sec-risks">
-        <h2 class="asec-title">Risks & Gaps</h2>
+        <h2 class="asec-title">Риски и пробелы</h2>
         {% for r in match.risks_and_gaps %}
         <div class="itab-card risk" style="margin-bottom:.5rem;">{{ r }}</div>
         {% endfor %}
       </div>
 
       <div class="asec hidden" id="sec-competencies">
-        <h2 class="asec-title">Transferable Competencies</h2>
+        <h2 class="asec-title">Переносимые компетенции</h2>
         {% for c in match.transferable_competencies %}
         <div class="itab-card competency" style="margin-bottom:.5rem;">{{ c }}</div>
         {% endfor %}
       </div>
 
       <div class="asec hidden" id="sec-trajectory">
-        <h2 class="asec-title">Trajectory Analysis</h2>
+        <h2 class="asec-title">Анализ карьерной траектории</h2>
         {% if match.trajectory_analysis %}
         <p class="trajectory-text">{{ match.trajectory_analysis }}</p>
         {% endif %}

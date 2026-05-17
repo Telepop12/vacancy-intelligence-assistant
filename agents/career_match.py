@@ -55,6 +55,12 @@ class CareerMatchResult:
 # ---------------------------------------------------------------------------
 
 _SYSTEM_PROMPT = """\
+Отвечай исключительно на деловом русском языке. Избегай английского профессионального жаргона.
+Используй русские аналоги: «сильные стороны» вместо «strengths», «переносимые компетенции» вместо
+«transferable competencies», «риски и пробелы» вместо «risks and gaps», «карьерная траектория»
+вместо «career trajectory», «анализ» вместо «analysis», «позиционирование» вместо «positioning».
+Общепринятые термины (AI, ERP, MLOps, ROI, P&L, KPI, CEO, CIO, M&A) допустимы.
+
 Ты — эксперт по оценке кандидатов уровня Executive и Top Management, специализирующийся на ролях:
 CIO / CTO / CISO / AI Transformation / Digital Transformation / Enterprise IT Leadership /
 Technology Strategy / Innovation Management / Organizational Transformation.

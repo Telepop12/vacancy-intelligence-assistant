@@ -29,7 +29,7 @@
 
     <!-- ══ Executive Summary + Strategic Positioning ══ -->
     <div class="card card-resume-hero">
-      <h2>Executive Intelligence Profile</h2>
+      <h2>Карьерный профиль (Executive Intelligence)</h2>
       {% if profile.professional_archetype %}
       <div class="archetype-badge">{{ profile.professional_archetype }}</div>
       {% endif %}
@@ -76,7 +76,7 @@
 
     <!-- ══ Positioning Dashboard ══ -->
     <div class="card">
-      <h2>Positioning Dashboard</h2>
+      <h2>Панель позиционирования</h2>
       <div class="dashboard-grid">
         {% set indicators = [
           ("AI Positioning",             profile.ai_positioning_level.value),
@@ -102,7 +102,7 @@
     <!-- ══ Trajectory + Strongest Assets ══ -->
     <div class="row-2col">
       <div class="card">
-        <h2>Trajectory Analysis</h2>
+        <h2>Анализ карьерной траектории</h2>
         {% if profile.trajectory_markers %}
         <ul class="trajectory-list">
           {% for t in profile.trajectory_markers %}
@@ -115,7 +115,7 @@
       </div>
 
       <div class="card">
-        <h2>Strongest Assets</h2>
+        <h2>Ключевые сильные стороны</h2>
         {% if profile.strongest_assets %}
         <ul class="asset-list">
           {% for a in profile.strongest_assets %}
@@ -131,7 +131,7 @@
     <!-- ══ AI Signals + Transformation ══ -->
     <div class="row-2col">
       <div class="card">
-        <h2>AI Signals
+        <h2>AI-сигналы
           <span class="signal-count-badge {{ p_css(profile.ai_positioning_level.value) }}">
             {{ profile.ai_signals | length }}
           </span>
@@ -156,7 +156,7 @@
       </div>
 
       <div class="card">
-        <h2>Transformation Signals
+        <h2>Сигналы трансформации
           <span class="signal-count-badge {{ p_css(profile.transformation_positioning_level.value) }}">
             {{ profile.transformation_experience | length }}
           </span>
@@ -184,10 +184,10 @@
     <!-- ══ Executive Framing Analysis ══ -->
     {% if profile.executive_framing_level %}
     <div class="card card-framing">
-      <h2>Executive Framing Analysis</h2>
+      <h2>Анализ управленческой подачи (Executive Framing)</h2>
       <div class="framing-row">
         <div class="framing-score-wrap">
-          <div class="framing-label">Executive Language Score</div>
+          <div class="framing-label">Оценка управленческого языка</div>
           <div class="framing-bar-bg">
             <div class="framing-bar" style="width:{{ profile.executive_framing_score }}%"></div>
           </div>
@@ -200,7 +200,7 @@
       {% if profile.operational_language_signals or profile.executive_language_signals %}
       <div class="row-2col" style="margin-top:.75rem;margin-bottom:0;">
         <div>
-          <div class="framing-sig-label op">Operational language detected</div>
+          <div class="framing-sig-label op">Операционный язык</div>
           {% if profile.operational_language_signals %}
           <ul class="signal-tag-list" style="margin-top:.3rem;">
             {% for s in profile.operational_language_signals %}
@@ -210,7 +210,7 @@
           {% else %}<p class="empty">—</p>{% endif %}
         </div>
         <div>
-          <div class="framing-sig-label ex">Executive language detected</div>
+          <div class="framing-sig-label ex">Управленческий язык</div>
           {% if profile.executive_language_signals %}
           <ul class="signal-tag-list" style="margin-top:.3rem;">
             {% for s in profile.executive_language_signals %}
@@ -227,9 +227,9 @@
     <!-- ══ Executive Reframing Opportunities ══ -->
     {% if profile.executive_reframing_opportunities %}
     <div class="card card-reframe">
-      <h2>Executive Reframing Opportunities
+      <h2>Возможности переформулировки
         <span style="font-size:.75rem;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;">
-          — тот же опыт, executive язык
+          — тот же опыт, управленческий язык
         </span>
       </h2>
       {% for opp in profile.executive_reframing_opportunities %}
@@ -238,7 +238,7 @@
           <span class="reframe-label">Было:</span> {{ opp.original }}
         </div>
         <div class="reframe-suggested">
-          <span class="reframe-label">Suggested:</span> {{ opp.suggested }}
+          <span class="reframe-label">Рекомендуется:</span> {{ opp.suggested }}
         </div>
         {% if opp.reason %}
         <div class="reframe-reason">{{ opp.reason }}</div>
@@ -251,9 +251,9 @@
     <!-- ══ Weak Visibility Areas ══ -->
     {% if profile.weak_visibility_areas %}
     <div class="card card-weak">
-      <h2>Weak Visibility Areas
+      <h2>Слабые места в подаче
         <span style="font-size:.75rem;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;">
-          — что есть в опыте, но слабо видно в CV
+          — что есть в опыте, но слабо видно в резюме
         </span>
       </h2>
       <ul class="weak-list">
@@ -267,7 +267,7 @@
     <!-- ══ Technology Domains + Governance ══ -->
     <div class="row-2col">
       <div class="card">
-        <h2>Technology Domains</h2>
+        <h2>Технологические домены</h2>
         {% if profile.technology_domains %}
         <ul class="match-list">
           {% for d in profile.technology_domains %}
@@ -280,7 +280,7 @@
       </div>
 
       <div class="card">
-        <h2>Governance Signals</h2>
+        <h2>Управление и соответствие (Governance)</h2>
         {% if profile.governance_signals %}
         <ul class="signal-tag-list gov">
           {% for g in profile.governance_signals %}
@@ -308,7 +308,7 @@
       {% endif %}
       {% if profile.business_signals %}
       <div class="card">
-        <h2>Business Impact Signals</h2>
+        <h2>Сигналы бизнес-влияния</h2>
         <ul class="signal-tag-list biz">
           {% for b in profile.business_signals %}
           <li>{{ b }}</li>
