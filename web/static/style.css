@@ -753,6 +753,223 @@ details[open] .intake-options-toggle::before { content: "－ "; }
 .reframe-original  .reframe-label { color:#991b1b; }
 .reframe-suggested .reframe-label { color:var(--success); }
 
+/* ══════════════════════════════════════
+   COCKPIT BAR
+══════════════════════════════════════ */
+.cockpit-bar {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: #0f172a;
+  color: #fff;
+  border-bottom: 1px solid #1e293b;
+}
+.cockpit-inner {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: .6rem 1.75rem;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+/* Scores */
+.cockpit-scores { display: flex; align-items: center; gap: .6rem; flex-shrink: 0; }
+.cockpit-score-block { text-align: center; }
+.cockpit-score-label { font-size: .6rem; text-transform: uppercase; letter-spacing: .06em; color: #94a3b8; }
+.cockpit-score-num {
+  font-size: 1.5rem; font-weight: 800; line-height: 1;
+  padding: .1rem .4rem; border-radius: 6px;
+}
+.cockpit-score-num.green  { color: #4ade80; }
+.cockpit-score-num.yellow { color: #fbbf24; }
+.cockpit-score-num.red    { color: #f87171; }
+.cockpit-vs { font-size: .75rem; color: #475569; font-weight: 600; }
+
+/* Recommendation */
+.cockpit-rec { flex-shrink: 0; }
+.cockpit-rec-badge {
+  display: inline-block; padding: .3rem .85rem;
+  border-radius: 999px; font-size: .82rem; font-weight: 700;
+  color: #fff;
+}
+.cockpit-rec-label { font-size: .6rem; color: #64748b; margin-top: .15rem; text-align: center; }
+
+/* Positioning dots */
+.cockpit-dots { display: flex; gap: .75rem; flex-shrink: 0; }
+.cockpit-dot-item { display: flex; flex-direction: column; align-items: center; gap: .15rem; }
+.cockpit-dot { width: 12px; height: 12px; border-radius: 50%; }
+.cockpit-dot.green  { background: #4ade80; box-shadow: 0 0 6px #4ade8088; }
+.cockpit-dot.yellow { background: #fbbf24; box-shadow: 0 0 6px #fbbf2488; }
+.cockpit-dot.red    { background: #f87171; box-shadow: 0 0 6px #f8717188; }
+.cockpit-dot-label  { font-size: .55rem; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+
+/* Mode toggle */
+.cockpit-mode-toggle { display: flex; gap: .3rem; margin-left: auto; flex-shrink: 0; }
+.mode-btn {
+  padding: .3rem .85rem; border-radius: 999px; border: 1px solid #334155;
+  background: transparent; color: #94a3b8; font-size: .78rem; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.mode-btn.active  { background: var(--primary); color: #fff; border-color: var(--primary); }
+.mode-btn:hover:not(.active) { border-color: #64748b; color: #cbd5e1; }
+
+.cockpit-back {
+  font-size: .78rem; color: #64748b; text-decoration: none; flex-shrink: 0;
+}
+.cockpit-back:hover { color: #94a3b8; }
+
+
+/* ══════════════════════════════════════
+   INTERVIEW MODE
+══════════════════════════════════════ */
+.match-mode-interview .analyst-view  { display: none; }
+.match-mode-interview .interview-view { display: block; }
+
+.interview-view { height: calc(100vh - 54px); display: flex; flex-direction: column; }
+
+/* Tab nav */
+.itab-nav {
+  display: flex;
+  gap: 0;
+  background: #fff;
+  border-bottom: 2px solid var(--border);
+  flex-shrink: 0;
+}
+.itab-btn {
+  padding: .65rem 1.25rem;
+  background: none; border: none; border-bottom: 2px solid transparent;
+  margin-bottom: -2px; font-size: .88rem; font-weight: 600;
+  color: var(--muted); cursor: pointer; transition: all .12s;
+  white-space: nowrap;
+}
+.itab-btn.active   { color: var(--primary); border-bottom-color: var(--primary); }
+.itab-btn:hover:not(.active) { color: var(--text); background: var(--bg); }
+
+/* Tab panels */
+.itab-panels { flex: 1; overflow: hidden; }
+.itab-panel  { display: none; height: 100%; overflow-y: auto; padding: 1.25rem 2rem; }
+.itab-panel.active { display: block; }
+
+.itab-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  height: 100%;
+}
+@media (max-width: 800px) { .itab-2col { grid-template-columns: 1fr; } }
+
+.itab-section-title {
+  font-size: .68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--muted); margin-bottom: .6rem;
+}
+.itab-text { font-size: .92rem; line-height: 1.75; color: var(--text); }
+.itab-text.conclusion {
+  background: #f0fdf4; border-left: 3px solid var(--success);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: .75rem 1rem; font-size: .92rem; line-height: 1.7;
+}
+
+/* Cards grid */
+.itab-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .6rem;
+}
+@media (max-width: 800px) { .itab-cards-grid { grid-template-columns: 1fr; } }
+
+.itab-cards-list { display: flex; flex-direction: column; gap: .5rem; }
+
+.itab-card {
+  padding: .65rem .9rem;
+  border-radius: var(--radius);
+  font-size: .86rem;
+  line-height: 1.55;
+}
+.itab-card.strength    { background: #dcfce7; border-left: 3px solid var(--success); }
+.itab-card.risk        { background: #fef2f2; border-left: 3px solid var(--danger);  }
+.itab-card.competency  { background: #ede9fe; border-left: 3px solid #7c3aed;        }
+
+/* Interview dashboard */
+.itab-dashboard { display: flex; flex-direction: column; gap: .5rem; }
+
+
+/* ══════════════════════════════════════
+   ANALYST MODE
+══════════════════════════════════════ */
+.match-mode-analyst .interview-view { display: none; }
+.match-mode-analyst .analyst-view   { display: block; }
+
+.analyst-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  height: calc(100vh - 54px);
+}
+
+.analyst-sidebar-panel {
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 1rem 1rem 1.5rem;
+}
+
+/* Score hero */
+.analyst-score-hero { text-align: center; margin-bottom: 1rem; }
+.as-score {
+  font-size: 2.5rem; font-weight: 800; line-height: 1;
+  border-radius: 50%; width: 64px; height: 64px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto .3rem;
+  color: #fff;
+}
+.as-score.green  { background: var(--success); }
+.as-score.yellow { background: var(--warning); }
+.as-score.red    { background: var(--danger);  }
+.as-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.as-vs    { font-size: .78rem; color: var(--muted); margin: .2rem 0 .4rem; }
+.as-rec   { font-size: .72rem; }
+
+/* Mini dashboard */
+.analyst-dash-mini { margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.adm-row   { display: flex; align-items: center; gap: .4rem; margin-bottom: .3rem; }
+.adm-label { font-size: .7rem; font-weight: 700; color: var(--muted); width: 28px; flex-shrink: 0; }
+.adm-bar-bg { flex: 1; background: var(--border); border-radius: 999px; height: 5px; overflow: hidden; }
+.adm-bar   { height: 100%; border-radius: 999px; }
+.adm-bar.green  { background: var(--success); }
+.adm-bar.yellow { background: var(--warning); }
+.adm-bar.red    { background: var(--danger);  }
+.adm-badge {
+  font-size: .58rem; font-weight: 700;
+  width: 14px; text-align: center; flex-shrink: 0; color: var(--muted);
+}
+.adm-badge.green  { color: var(--success); }
+.adm-badge.yellow { color: var(--warning); }
+.adm-badge.red    { color: var(--danger);  }
+
+/* Analyst nav */
+.analyst-nav-list { display: flex; flex-direction: column; gap: .15rem; margin-bottom: auto; }
+.anav-link {
+  display: block; padding: .45rem .65rem; border-radius: var(--radius);
+  font-size: .85rem; font-weight: 500; color: var(--muted); cursor: pointer;
+  text-decoration: none; transition: all .1s;
+}
+.anav-link:hover  { background: var(--bg); color: var(--text); }
+.anav-link.active { background: #eff6ff; color: var(--primary); font-weight: 700; }
+
+.analyst-meta { font-size: .72rem; color: var(--muted); margin-top: 1rem; padding-top: .75rem; border-top: 1px solid var(--border); }
+
+/* Content panel */
+.analyst-content-panel { overflow-y: auto; padding: 1.75rem 2rem; }
+.asec-title {
+  font-size: 1rem; font-weight: 700; color: var(--text);
+  margin-bottom: 1rem; padding-bottom: .5rem;
+  border-bottom: 2px solid var(--border);
+}
+.asec { }
+.asec.hidden { display: none; }
+
 /* ══ Career Match ══ */
 
 .card-match-hero { border-left: 3px solid var(--primary); }

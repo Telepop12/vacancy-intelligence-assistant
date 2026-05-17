@@ -6,189 +6,354 @@
   <title>Career Match — Результат</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
-<body>
-<div class="page-wrapper">
-<aside class="sidebar"></aside>
 
-<header>
-  <div class="container">
-    <h1>Vacancy Intelligence Assistant</h1>
-    <p class="sub">
-      <a href="/" style="color:rgba(255,255,255,.75);text-decoration:none;">Анализ вакансий</a>
-      &nbsp;·&nbsp;
-      <a href="/resume" style="color:rgba(255,255,255,.75);text-decoration:none;">Resume Intelligence</a>
-      &nbsp;·&nbsp; Career Match
-    </p>
+<!-- mode class toggled by JS; default = interview -->
+<body class="match-mode-interview">
+
+<!-- ══════════════════════════════════════════
+     COCKPIT BAR — fixed, always visible
+════════════════════════════════════════════ -->
+<div class="cockpit-bar" id="cockpitBar">
+  <div class="cockpit-inner">
+
+    <!-- Score pair -->
+    <div class="cockpit-scores">
+      <div class="cockpit-score-block">
+        <div class="cockpit-score-label">Career Match</div>
+        <div class="cockpit-score-num {{ score_color }}">{{ match.career_match_score }}</div>
+      </div>
+      <div class="cockpit-vs">vs</div>
+      <div class="cockpit-score-block">
+        <div class="cockpit-score-label">Keyword</div>
+        <div class="cockpit-score-num {{ kw_color }}">{{ match.keyword_score }}</div>
+      </div>
+    </div>
+
+    <!-- Recommendation -->
+    <div class="cockpit-rec">
+      <span class="cockpit-rec-badge {{ action_color(match.recommendation_label) }}">
+        {{ match.recommendation_label }}
+      </span>
+      <div class="cockpit-rec-label">LLM · full career</div>
+    </div>
+
+    <!-- Positioning dots -->
+    <div class="cockpit-dots">
+      {% set dot_items = [
+        ("AI",  resume.ai_positioning_level.value),
+        ("TF",  resume.transformation_positioning_level.value),
+        ("EX",  resume.executive_positioning_level.value),
+        ("OPS", resume.operational_depth_level.value),
+        ("SV",  resume.strategic_visibility_level.value),
+      ] %}
+      {% for label, level in dot_items %}
+      <div class="cockpit-dot-item">
+        <div class="cockpit-dot {{ p_css(level) }}"></div>
+        <div class="cockpit-dot-label">{{ label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Mode toggle -->
+    <div class="cockpit-mode-toggle">
+      <button class="mode-btn active" id="btnInterview" onclick="setMode('interview')">
+        🎯 Собеседование
+      </button>
+      <button class="mode-btn" id="btnAnalyst" onclick="setMode('analyst')">
+        🔬 Аналитика
+      </button>
+    </div>
+
+    <!-- Back link -->
+    <a href="/match" class="cockpit-back">← новый</a>
+
   </div>
-</header>
+</div>
 
-<main>
-  <div class="container">
 
-    <div class="actions">
-      <a href="/match" class="btn">← Новый Career Match</a>
-      <a href="/" class="btn">Анализ вакансий</a>
-    </div>
+<!-- ══════════════════════════════════════════
+     INTERVIEW MODE — tabs, each fits 1 screen
+════════════════════════════════════════════ -->
+<div class="interview-view" id="interviewView">
 
-    <!-- ══ Dual Score Hero ══ -->
-    <div class="card card-match-hero">
-      <h2>Career Match Result</h2>
-      <div class="dual-score-row">
+  <!-- Tab navigation -->
+  <div class="itab-nav">
+    <button class="itab-btn active" onclick="showTab('summary')">📋 Обзор</button>
+    <button class="itab-btn" onclick="showTab('strengths')">💪 Сильные стороны</button>
+    <button class="itab-btn" onclick="showTab('risks')">⚠️ Риски</button>
+    <button class="itab-btn" onclick="showTab('competencies')">↔ Компетенции</button>
+    <button class="itab-btn" onclick="showTab('conclusion')">✅ Заключение</button>
+  </div>
 
-        <div class="dual-score-block">
-          <div class="score-label">Career Match Score</div>
-          <div class="score-badge {{ score_color }}">{{ match.career_match_score }}</div>
-          <div class="score-bar-wrap" style="margin-top:.5rem;">
-            <div class="score-bar {{ score_color }}" style="width:{{ match.career_match_score }}%"></div>
-          </div>
-          <div style="margin-top:.4rem;">
-            <span class="rec-badge {{ action_color(match.recommendation_label) }}">{{ match.recommendation_label }}</span>
-          </div>
-          <div class="score-sublabel">LLM · full career analysis</div>
+  <!-- Tab panels -->
+  <div class="itab-panels">
+
+    <!-- SUMMARY -->
+    <div class="itab-panel active" id="tab-summary">
+      <div class="itab-2col">
+        <div>
+          <div class="itab-section-title">Executive Summary</div>
+          {% if match.executive_summary %}
+          <p class="itab-text">{{ match.executive_summary }}</p>
+          {% endif %}
         </div>
-
-        <div class="dual-score-divider">vs</div>
-
-        <div class="dual-score-block">
-          <div class="score-label">Keyword Score</div>
-          <div class="score-badge {{ kw_color }}">{{ match.keyword_score }}</div>
-          <div class="score-bar-wrap" style="margin-top:.5rem;">
-            <div class="score-bar {{ kw_color }}" style="width:{{ match.keyword_score }}%"></div>
-          </div>
-          <div style="margin-top:.4rem;">
-            <span class="rec-badge {{ action_color(match.keyword_rec) }}">{{ match.keyword_rec }}</span>
-          </div>
-          <div class="score-sublabel">Rule-based · keyword matching</div>
+        <div>
+          <div class="itab-section-title">Trajectory Analysis</div>
+          {% if match.trajectory_analysis %}
+          <p class="itab-text">{{ match.trajectory_analysis }}</p>
+          {% endif %}
         </div>
-
-      </div>
-
-      {% if match.executive_summary %}
-      <div class="match-summary">{{ match.executive_summary }}</div>
-      {% endif %}
-
-      <div class="score-date">{{ match.analysis_timestamp.strftime('%d.%m.%Y %H:%M') }}
-        {% if resume.source_file %} · {{ resume.source_file }}{% endif %}
       </div>
     </div>
 
-    <!-- ══ Trajectory Analysis ══ -->
-    {% if match.trajectory_analysis %}
-    <div class="card card-trajectory">
-      <h2>Trajectory Analysis</h2>
-      <p class="trajectory-text">{{ match.trajectory_analysis }}</p>
-    </div>
-    {% endif %}
-
-    <!-- ══ Transferable Competencies + Strategic Strengths ══ -->
-    <div class="row-2col">
-      <div class="card">
-        <h2>Transferable Competencies</h2>
-        {% if match.transferable_competencies %}
-        <ul class="competency-list">
-          {% for c in match.transferable_competencies %}
-          <li>{{ c }}</li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <p class="empty">—</p>
-        {% endif %}
-      </div>
-
-      <div class="card">
-        <h2>Strategic Strengths</h2>
-        {% if match.strategic_strengths %}
-        <ul class="asset-list">
-          {% for s in match.strategic_strengths %}
-          <li>{{ s }}</li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <p class="empty">—</p>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- ══ Risks & Gaps ══ -->
-    {% if match.risks_and_gaps %}
-    <div class="card">
-      <h2>Risks & Gaps</h2>
-      <ul class="risk-list">
-        {% for r in match.risks_and_gaps %}
-        <li>{{ r }}</li>
+    <!-- STRENGTHS -->
+    <div class="itab-panel" id="tab-strengths">
+      <div class="itab-section-title">Strategic Strengths — используй в разговоре</div>
+      <div class="itab-cards-grid">
+        {% for s in match.strategic_strengths %}
+        <div class="itab-card strength">{{ s }}</div>
         {% endfor %}
-      </ul>
+      </div>
     </div>
-    {% endif %}
 
-    <!-- ══ Final Recommendation ══ -->
-    {% if match.final_recommendation %}
-    <div class="card card-final-rec">
-      <h2>Заключение executive-рекрутера</h2>
-      <p class="final-rec-text">{{ match.final_recommendation }}</p>
+    <!-- RISKS -->
+    <div class="itab-panel" id="tab-risks">
+      <div class="itab-section-title">Risks & Gaps — готовься к этим вопросам</div>
+      <div class="itab-cards-list">
+        {% for r in match.risks_and_gaps %}
+        <div class="itab-card risk">{{ r }}</div>
+        {% endfor %}
+      </div>
     </div>
-    {% endif %}
 
-    <!-- ══ Candidate snapshot ══ -->
-    <div class="section-aux">
-      <div class="section-aux-label">Профиль кандидата (из Resume Intelligence)</div>
-      <div class="row-2col">
-        <div class="card">
-          <h2>Positioning Dashboard</h2>
-          <div class="dashboard-grid">
+    <!-- COMPETENCIES -->
+    <div class="itab-panel" id="tab-competencies">
+      <div class="itab-section-title">Transferable Competencies — аргументы для нестандартных вопросов</div>
+      <div class="itab-cards-grid">
+        {% for c in match.transferable_competencies %}
+        <div class="itab-card competency">{{ c }}</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- CONCLUSION -->
+    <div class="itab-panel" id="tab-conclusion">
+      <div class="itab-2col">
+        <div>
+          <div class="itab-section-title">Заключение executive-рекрутера</div>
+          {% if match.final_recommendation %}
+          <p class="itab-text conclusion">{{ match.final_recommendation }}</p>
+          {% endif %}
+        </div>
+        <div>
+          <div class="itab-section-title">Positioning Dashboard</div>
+          <div class="itab-dashboard">
             {% set indicators = [
-              ("AI Positioning",             resume.ai_positioning_level.value),
-              ("Transformation",             resume.transformation_positioning_level.value),
-              ("Executive",                  resume.executive_positioning_level.value),
-              ("Operational Depth",          resume.operational_depth_level.value),
-              ("Strategic Visibility",       resume.strategic_visibility_level.value),
+              ("AI Positioning",   resume.ai_positioning_level.value),
+              ("Transformation",   resume.transformation_positioning_level.value),
+              ("Executive",        resume.executive_positioning_level.value),
+              ("Operational",      resume.operational_depth_level.value),
+              ("Strategic Vis.",   resume.strategic_visibility_level.value),
             ] %}
             {% for label, level in indicators %}
             <div class="dashboard-item">
               <div class="dashboard-label">{{ label }}</div>
               <div class="dashboard-bar-wrap">
                 <div class="dashboard-bar {{ p_css(level) }}"
-                     style="width:{% if level == 'HIGH' %}100%{% elif level == 'MEDIUM' %}55%{% else %}20%{% endif %}"></div>
+                     style="width:{% if level=='HIGH'%}100%{% elif level=='MEDIUM'%}55%{% else %}20%{% endif %}"></div>
               </div>
               <span class="dashboard-badge {{ p_css(level) }}">{{ level }}</span>
             </div>
             {% endfor %}
           </div>
         </div>
-
-        <div class="card">
-          <h2>Key Signals</h2>
-          {% if resume.technology_domains %}
-          <div class="match-list" style="margin-bottom:.6rem;">
-            {% for d in resume.technology_domains %}
-            <span class="match-list" style="display:inline-block;padding:.2rem .6rem;background:#dbeafe;color:#1e40af;border-radius:999px;font-size:.8rem;margin:.15rem;">{{ d }}</span>
-            {% endfor %}
-          </div>
-          {% endif %}
-          {% if resume.industries %}
-          <div style="margin-top:.5rem;font-size:.78rem;color:var(--muted);">
-            Отрасли: {{ resume.industries | join(', ') }}
-          </div>
-          {% endif %}
-          {% if resume.organizational_scale_rationale %}
-          <div style="margin-top:.4rem;font-size:.78rem;color:var(--muted);">
-            {{ resume.organizational_scale_rationale }}
-          </div>
-          {% endif %}
-        </div>
       </div>
     </div>
 
-    {% if match.confidence_notes %}
-    <p class="hint">⚠ {{ match.confidence_notes | join(' · ') }}</p>
-    {% endif %}
+  </div><!-- /itab-panels -->
+</div><!-- /interview-view -->
 
+
+<!-- ══════════════════════════════════════════
+     ANALYST MODE — sidebar + content panel
+════════════════════════════════════════════ -->
+<div class="analyst-view" id="analystView">
+  <div class="analyst-layout">
+
+    <!-- Sidebar -->
+    <aside class="analyst-sidebar-panel">
+
+      <div class="analyst-score-hero">
+        <div class="as-score {{ score_color }}">{{ match.career_match_score }}</div>
+        <div class="as-label">Career Match</div>
+        <div class="as-vs">vs {{ match.keyword_score }} KW</div>
+        <span class="rec-badge {{ action_color(match.recommendation_label) }} as-rec">
+          {{ match.recommendation_label }}
+        </span>
+      </div>
+
+      <div class="analyst-dash-mini">
+        {% for label, level in [
+          ("AI",  resume.ai_positioning_level.value),
+          ("TF",  resume.transformation_positioning_level.value),
+          ("EX",  resume.executive_positioning_level.value),
+          ("OPS", resume.operational_depth_level.value),
+          ("SV",  resume.strategic_visibility_level.value),
+        ] %}
+        <div class="adm-row">
+          <span class="adm-label">{{ label }}</span>
+          <div class="adm-bar-bg">
+            <div class="adm-bar {{ p_css(level) }}"
+                 style="width:{% if level=='HIGH'%}100%{% elif level=='MEDIUM'%}55%{% else %}20%{% endif %}"></div>
+          </div>
+          <span class="adm-badge {{ p_css(level) }}">{{ level[:1] }}</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      <nav class="analyst-nav-list">
+        <a class="anav-link active" onclick="showSection('sec-summary')">📋 Summary</a>
+        <a class="anav-link" onclick="showSection('sec-strengths')">💪 Strengths</a>
+        <a class="anav-link" onclick="showSection('sec-risks')">⚠️ Risks</a>
+        <a class="anav-link" onclick="showSection('sec-competencies')">↔ Competencies</a>
+        <a class="anav-link" onclick="showSection('sec-trajectory')">📈 Trajectory</a>
+        <a class="anav-link" onclick="showSection('sec-conclusion')">✅ Conclusion</a>
+        <a class="anav-link" onclick="showSection('sec-profile')">👤 Profile</a>
+      </nav>
+
+      <div class="analyst-meta">
+        {{ match.analysis_timestamp.strftime('%d.%m.%Y %H:%M') }}<br>
+        {% if resume.source_file %}<span>{{ resume.source_file }}</span>{% endif %}
+      </div>
+    </aside>
+
+    <!-- Content panel -->
+    <main class="analyst-content-panel">
+
+      <div class="asec" id="sec-summary">
+        <h2 class="asec-title">Executive Summary</h2>
+        {% if match.executive_summary %}
+        <p class="match-summary">{{ match.executive_summary }}</p>
+        {% endif %}
+      </div>
+
+      <div class="asec hidden" id="sec-strengths">
+        <h2 class="asec-title">Strategic Strengths</h2>
+        {% for s in match.strategic_strengths %}
+        <div class="itab-card strength" style="margin-bottom:.5rem;">{{ s }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="asec hidden" id="sec-risks">
+        <h2 class="asec-title">Risks & Gaps</h2>
+        {% for r in match.risks_and_gaps %}
+        <div class="itab-card risk" style="margin-bottom:.5rem;">{{ r }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="asec hidden" id="sec-competencies">
+        <h2 class="asec-title">Transferable Competencies</h2>
+        {% for c in match.transferable_competencies %}
+        <div class="itab-card competency" style="margin-bottom:.5rem;">{{ c }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="asec hidden" id="sec-trajectory">
+        <h2 class="asec-title">Trajectory Analysis</h2>
+        {% if match.trajectory_analysis %}
+        <p class="trajectory-text">{{ match.trajectory_analysis }}</p>
+        {% endif %}
+      </div>
+
+      <div class="asec hidden" id="sec-conclusion">
+        <h2 class="asec-title">Заключение executive-рекрутера</h2>
+        {% if match.final_recommendation %}
+        <p class="final-rec-text">{{ match.final_recommendation }}</p>
+        {% endif %}
+        {% if match.confidence_notes %}
+        <p class="hint" style="margin-top:1rem;">⚠ {{ match.confidence_notes | join(' · ') }}</p>
+        {% endif %}
+      </div>
+
+      <div class="asec hidden" id="sec-profile">
+        <h2 class="asec-title">Профиль кандидата</h2>
+        <div class="row-2col">
+          <div class="card">
+            <h2>Positioning Dashboard</h2>
+            <div class="dashboard-grid">
+              {% for label, level in [
+                ("AI Positioning",   resume.ai_positioning_level.value),
+                ("Transformation",   resume.transformation_positioning_level.value),
+                ("Executive",        resume.executive_positioning_level.value),
+                ("Operational Depth",resume.operational_depth_level.value),
+                ("Strategic Vis.",   resume.strategic_visibility_level.value),
+              ] %}
+              <div class="dashboard-item">
+                <div class="dashboard-label">{{ label }}</div>
+                <div class="dashboard-bar-wrap">
+                  <div class="dashboard-bar {{ p_css(level) }}"
+                       style="width:{% if level=='HIGH'%}100%{% elif level=='MEDIUM'%}55%{% else %}20%{% endif %}"></div>
+                </div>
+                <span class="dashboard-badge {{ p_css(level) }}">{{ level }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="card">
+            <h2>Key Signals</h2>
+            <ul class="match-list">
+              {% for d in resume.technology_domains %}
+              <li>{{ d }}</li>
+              {% endfor %}
+            </ul>
+            {% if resume.industries %}
+            <div style="margin-top:.6rem;font-size:.8rem;color:var(--muted);">
+              Отрасли: {{ resume.industries | join(', ') }}
+            </div>
+            {% endif %}
+            {% if resume.organizational_scale_rationale %}
+            <div style="margin-top:.4rem;font-size:.78rem;color:var(--muted);">
+              {{ resume.organizational_scale_rationale }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </main>
   </div>
-</main>
+</div><!-- /analyst-view -->
 
-<footer>
-  <div class="container">Vacancy Intelligence Assistant — Career Match Layer</div>
-</footer>
-</div>
+
+<!-- ══════ JavaScript ══════ -->
+<script>
+  const STORAGE_KEY = 'matchViewMode';
+
+  function setMode(mode) {
+    document.body.className = 'match-mode-' + mode;
+    document.getElementById('btnInterview').classList.toggle('active', mode === 'interview');
+    document.getElementById('btnAnalyst').classList.toggle('active', mode === 'analyst');
+    localStorage.setItem(STORAGE_KEY, mode);
+  }
+
+  function showTab(id) {
+    document.querySelectorAll('.itab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.itab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  function showSection(id) {
+    document.querySelectorAll('.asec').forEach(s => s.classList.add('hidden'));
+    document.querySelectorAll('.anav-link').forEach(l => l.classList.remove('active'));
+    document.getElementById(id).classList.remove('hidden');
+    event.target.classList.add('active');
+  }
+
+  // Restore saved mode on load
+  const saved = localStorage.getItem(STORAGE_KEY) || 'interview';
+  setMode(saved);
+</script>
+
 </body>
 </html>
