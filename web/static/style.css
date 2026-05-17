@@ -970,6 +970,95 @@ details[open] .intake-options-toggle::before { content: "－ "; }
 .asec { }
 .asec.hidden { display: none; }
 
+/* ══ Analyst Dashboard (central cockpit panel) ══ */
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: .85rem;
+  height: calc(100vh - 54px - 3.5rem); /* viewport - cockpit - padding */
+}
+@media (max-width: 1100px) { .dash-grid { grid-template-columns: 1fr 1fr; grid-template-rows: auto; height: auto; } }
+
+.dash-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.dash-card-header {
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--muted);
+  margin-bottom: .55rem;
+  flex-shrink: 0;
+}
+
+/* Left border color per section */
+.dash-summary     { border-left: 3px solid var(--primary); }
+.dash-trajectory  { border-left: 3px solid var(--warning);  }
+.dash-strengths   { border-left: 3px solid var(--success);  }
+.dash-competencies{ border-left: 3px solid #7c3aed;         }
+.dash-risks       { border-left: 3px solid var(--danger);   }
+.dash-conclusion  { border-left: 3px solid var(--success);  }
+
+.dash-card-preview {
+  flex: 1;
+  overflow: hidden;
+  font-size: .83rem;
+  line-height: 1.55;
+  color: var(--text);
+  /* Clamp text to available space */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+}
+/* For item-based previews don't clamp */
+.dash-card-preview:has(.dash-item) {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  -webkit-line-clamp: unset;
+}
+
+.dash-item {
+  padding: .25rem .55rem;
+  border-radius: var(--radius);
+  font-size: .8rem;
+  line-height: 1.4;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  flex-shrink: 0;
+}
+.dash-item.strength    { background: #dcfce7; }
+.dash-item.competency  { background: #ede9fe; }
+.dash-item.risk        { background: #fef2f2; }
+
+.dash-more-btn {
+  margin-top: .6rem;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: .78rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: right;
+  flex-shrink: 0;
+  opacity: .8;
+  transition: opacity .12s;
+}
+.dash-more-btn:hover { opacity: 1; }
+
 /* ══ Career Match ══ */
 
 .card-match-hero { border-left: 3px solid var(--primary); }

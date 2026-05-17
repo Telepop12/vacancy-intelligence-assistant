@@ -212,7 +212,8 @@
       </div>
 
       <nav class="analyst-nav-list">
-        <a class="anav-link active" onclick="showSection('sec-summary')">📋 Summary</a>
+        <a class="anav-link active" onclick="showSection('sec-dashboard')">🏠 Dashboard</a>
+        <a class="anav-link" onclick="showSection('sec-summary')">📋 Summary</a>
         <a class="anav-link" onclick="showSection('sec-strengths')">💪 Strengths</a>
         <a class="anav-link" onclick="showSection('sec-risks')">⚠️ Risks</a>
         <a class="anav-link" onclick="showSection('sec-competencies')">↔ Competencies</a>
@@ -230,7 +231,62 @@
     <!-- Content panel -->
     <main class="analyst-content-panel">
 
-      <div class="asec" id="sec-summary">
+      <!-- ══ DASHBOARD — central cockpit panel ══ -->
+      <div class="asec" id="sec-dashboard">
+        <div class="dash-grid">
+
+          <div class="dash-card dash-summary">
+            <div class="dash-card-header">📋 Executive Summary</div>
+            <div class="dash-card-preview">{{ match.executive_summary }}</div>
+            <button class="dash-more-btn" onclick="showSection('sec-summary')">Подробнее →</button>
+          </div>
+
+          <div class="dash-card dash-trajectory">
+            <div class="dash-card-header">📈 Trajectory</div>
+            <div class="dash-card-preview">{{ match.trajectory_analysis }}</div>
+            <button class="dash-more-btn" onclick="showSection('sec-trajectory')">Подробнее →</button>
+          </div>
+
+          <div class="dash-card dash-strengths">
+            <div class="dash-card-header">💪 Strategic Strengths</div>
+            <div class="dash-card-preview">
+              {% for s in match.strategic_strengths[:3] %}
+              <div class="dash-item strength">{{ s }}</div>
+              {% endfor %}
+            </div>
+            <button class="dash-more-btn" onclick="showSection('sec-strengths')">Подробнее →</button>
+          </div>
+
+          <div class="dash-card dash-competencies">
+            <div class="dash-card-header">↔ Transferable Competencies</div>
+            <div class="dash-card-preview">
+              {% for c in match.transferable_competencies[:3] %}
+              <div class="dash-item competency">{{ c }}</div>
+              {% endfor %}
+            </div>
+            <button class="dash-more-btn" onclick="showSection('sec-competencies')">Подробнее →</button>
+          </div>
+
+          <div class="dash-card dash-risks">
+            <div class="dash-card-header">⚠️ Risks & Gaps</div>
+            <div class="dash-card-preview">
+              {% for r in match.risks_and_gaps[:3] %}
+              <div class="dash-item risk">{{ r }}</div>
+              {% endfor %}
+            </div>
+            <button class="dash-more-btn" onclick="showSection('sec-risks')">Подробнее →</button>
+          </div>
+
+          <div class="dash-card dash-conclusion">
+            <div class="dash-card-header">✅ Заключение</div>
+            <div class="dash-card-preview">{{ match.final_recommendation }}</div>
+            <button class="dash-more-btn" onclick="showSection('sec-conclusion')">Подробнее →</button>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="asec hidden" id="sec-summary">
         <h2 class="asec-title">Executive Summary</h2>
         {% if match.executive_summary %}
         <p class="match-summary">{{ match.executive_summary }}</p>
@@ -347,7 +403,9 @@
     document.querySelectorAll('.asec').forEach(s => s.classList.add('hidden'));
     document.querySelectorAll('.anav-link').forEach(l => l.classList.remove('active'));
     document.getElementById(id).classList.remove('hidden');
-    event.target.classList.add('active');
+    // Highlight nav link (works both from sidebar click and from dashboard buttons)
+    const link = document.querySelector(`.anav-link[onclick="showSection('${id}')"]`);
+    if (link) link.classList.add('active');
   }
 
   // Restore saved mode on load
