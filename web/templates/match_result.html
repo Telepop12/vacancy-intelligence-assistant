@@ -42,7 +42,7 @@
             <div class="score-bar {{ score_color }}" style="width:{{ match.career_match_score }}%"></div>
           </div>
           <div style="margin-top:.4rem;">
-            <span class="rec-badge {{ action_color }}">{{ match.recommendation_label }}</span>
+            <span class="rec-badge {{ action_color(match.recommendation_label) }}">{{ match.recommendation_label }}</span>
           </div>
           <div class="score-sublabel">LLM · full career analysis</div>
         </div>

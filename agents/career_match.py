@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from agents.intake import VacancyInput
-from agents.resume_intelligence import ResumeProfile
+from agents.resume_intelligence import ResumeProfile, format_roles_for_prompt
 
 
 # ---------------------------------------------------------------------------
@@ -87,62 +87,51 @@ DevOps / автоматизация → системное повышение о
 Отвечай строго в формате JSON без лишнего текста. Все строковые значения — на русском языке."""
 
 _USER_TEMPLATE = """\
-Резюме кандидата:
----
-{resume_text}
----
-
-Вакансия:
+ВАКАНСИЯ:
 ---
 {vacancy_text}
 ---
 
-Контекст keyword-анализа:
-- Keyword match score: {keyword_score}/100 (детерминированный)
-- Rule-based рекомендация: {keyword_rec}
+КАРЬЕРНАЯ ИСТОРИЯ КАНДИДАТА (ВСЕ ПОЗИЦИИ):
+---
+{roles_history}
+---
 
-Контекст resume intelligence:
+Дополнительный контекст:
+- Keyword match score: {keyword_score}/100 · Rule-based: {keyword_rec}
 - Архетип: {archetype} · Стаж: ~{years} лет · Масштаб: {scale}
-- Домены: {domains}
-- AI signals: {ai_count} · Трансформация: {tf_count}
+- Домены: {domains} · AI signals: {ai_count} · Трансформация: {tf_count}
 - Executive framing: {framing_level} ({framing_score}/100)
-- Сильные стороны: {strengths}
-- Weak visibility: {weak_vis}
+
+КРИТИЧЕСКИ ВАЖНО:
+1. Анализируй ВСЕ позиции из карьерной истории, не только последнее место работы
+2. В каждом пункте ОБЯЗАТЕЛЬНО ссылайся на конкретную компанию и период
+   Формат: "В [Компания] ([период]) кандидат..."
+   Пример: "В АО «ЛогистикПро» (2016–2020) управлял командой 65 человек..."
+3. Ищи transferable компетенции в ранних позициях карьеры
 
 Верни ТОЛЬКО валидный JSON (без markdown):
 {{
   "career_match_score": 0-100,
-  "executive_summary": "2-3 предложения: как карьера кандидата соответствует вакансии стратегически",
-  "trajectory_analysis": "2-3 предложения: эволюция компетенций и релевантность полной карьерной траектории",
+  "executive_summary": "2-3 предложения: как ПОЛНАЯ карьера кандидата соответствует вакансии",
+  "trajectory_analysis": "2-3 предложения: эволюция компетенций через ВСЕ компании и периоды",
   "transferable_competencies": [
-    "конкретная компетенция + откуда она и почему релевантна вакансии"
+    "В [Компания] ([период]) — конкретная компетенция → применимость к вакансии"
   ],
   "strategic_strengths": [
-    "конкретная сила кандидата применительно к данной вакансии"
+    "В [Компания] ([период]) — конкретная сила применительно к данной вакансии"
   ],
   "risks_and_gaps": [
-    "реалистичный риск или пробел"
+    "конкретный риск или пробел с объяснением"
   ],
   "final_recommendation": "1-2 предложения итогового заключения как executive-рекрутер",
   "recommendation_label": "ОТКЛИКАТЬСЯ|УТОЧНИТЬ|ЗАПУСТИТЬ В РАБОТУ|ПРОПУСТИТЬ"
 }}
 
-career_match_score логика:
-- Учитывает всю карьеру, а не только keyword overlap
-- 70+ = явное стратегическое соответствие
-- 50-69 = значимый transferable fit с уточнениями
-- 30-49 = потенциал есть, но требует валидации
-- <30 = существенные риски несоответствия
-
-recommendation_label:
-- ОТКЛИКАТЬСЯ: career_match_score ≥ 70
-- ЗАПУСТИТЬ В РАБОТУ: score 45-69 с высоким transferable потенциалом
-- УТОЧНИТЬ: смешанные сигналы, нужны уточнения
-- ПРОПУСТИТЬ: низкий career fit без компенсирующих факторов
-
-transferable_competencies — 3-5 конкретных пунктов с объяснением связи
-strategic_strengths — 3-5 применительно именно к данной вакансии
-risks_and_gaps — честно, 2-3 реалистичных ограничения"""
+career_match_score: 70+ прямое соответствие · 50-69 transferable fit · 30-49 требует валидации · <30 существенные риски
+transferable_competencies: 4-6 пунктов с обязательной ссылкой на компанию/период
+strategic_strengths: 4-5 с ссылкой на компанию/период
+risks_and_gaps: 3-5 честных, конкретных"""
 
 
 # ---------------------------------------------------------------------------
@@ -171,8 +160,14 @@ def career_match(
         return result
 
     try:
+        # Use structured roles history (all positions) instead of raw text truncated
+        roles_str = format_roles_for_prompt(resume.roles_history)
+        if not resume.roles_history:
+            # Fallback: raw text if parser found no structured positions
+            roles_str = resume.raw_text[:4500]
+
         prompt = _USER_TEMPLATE.format(
-            resume_text=resume.raw_text[:3500],
+            roles_history=roles_str,
             vacancy_text=(vacancy.normalized_text or vacancy.raw_text)[:2000],
             keyword_score=keyword_score,
             keyword_rec=keyword_rec,
@@ -184,8 +179,6 @@ def career_match(
             tf_count=len(resume.transformation_experience),
             framing_level=resume.executive_framing_level,
             framing_score=resume.executive_framing_score,
-            strengths="; ".join(resume.strongest_assets[:3]) or "—",
-            weak_vis="; ".join(resume.weak_visibility_areas[:2]) or "—",
         )
 
         import anthropic

@@ -334,7 +334,7 @@ async def match_analyze(
         "resume":         resume_profile,
         "score_color":    _score_color(match_result.career_match_score),
         "kw_color":       _score_color(match_result.keyword_score),
-        "action_color":   _action_color(match_result.recommendation_label),
+        "action_color":   _action_color,
         "p_css":          _positioning_css,
     })
 

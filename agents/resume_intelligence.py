@@ -168,6 +168,88 @@ def _normalize_text(text: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Roles history parser
+# ---------------------------------------------------------------------------
+
+_YEAR_RANGE = re.compile(
+    r"(19|20)\d{2}\s*[–—\-]\s*((19|20)\d{2}|н\.в\.|наст\.?|по\s+наст|present|current)",
+    re.IGNORECASE,
+)
+_YEAR_SINGLE = re.compile(r"\b(19|20)\d{2}\b")
+
+
+def parse_roles_history(text: str) -> list[dict]:
+    """
+    Extract structured work positions from CV text.
+    Returns list of {period, company, role, highlights}.
+    Works heuristically: looks for year-range markers as role boundaries.
+    """
+    lines = text.splitlines()
+    role_starts: list[int] = []
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        # Short line (header) with a year range → new role starts here
+        if _YEAR_RANGE.search(stripped) and len(stripped) < 200:
+            role_starts.append(i)
+
+    if not role_starts:
+        return []
+
+    roles: list[dict] = []
+    for idx, start in enumerate(role_starts):
+        end = role_starts[idx + 1] if idx + 1 < len(role_starts) else len(lines)
+        block = [ln.strip() for ln in lines[start:end] if ln.strip()]
+        if not block:
+            continue
+
+        # Extract period from first line
+        period_match = _YEAR_RANGE.search(block[0])
+        period = period_match.group(0).strip() if period_match else ""
+
+        # First line may be "period | Role" or just period; rest are company/role
+        first_line = block[0]
+        parts = re.split(r"\s*[|/]\s*", first_line)
+        role_in_header = parts[1].strip() if len(parts) > 1 else ""
+        company_in_header = parts[2].strip() if len(parts) > 2 else ""
+
+        # Next non-empty lines after the period line
+        rest = block[1:6]
+        company = company_in_header or (rest[0] if rest else "")
+        role    = role_in_header    or (rest[1] if len(rest) > 1 else "")
+
+        # Bullet highlights — only explicit bullet lines (not company/header lines)
+        highlights = [
+            ln.lstrip("—-–•► ").strip()
+            for ln in block[1:]
+            if re.match(r"^[—\-–•►]", ln) and len(ln) > 10
+        ][:5]
+
+        roles.append({
+            "period":     period,
+            "company":    company,
+            "role":       role,
+            "highlights": highlights,
+        })
+
+    return roles
+
+
+def format_roles_for_prompt(roles: list[dict], max_roles: int = 6) -> str:
+    """Format roles history into a compact prompt-friendly string."""
+    if not roles:
+        return "—"
+    lines: list[str] = []
+    for i, r in enumerate(roles[:max_roles], 1):
+        company_period = f"{r['company']} ({r['period']})" if r['period'] else r['company']
+        lines.append(f"{i}. {r['role']} | {company_period}")
+        for h in r['highlights'][:3]:
+            if h:
+                lines.append(f"   • {h[:120]}")
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
 # Signal patterns
 # ---------------------------------------------------------------------------
 
@@ -533,6 +615,7 @@ def _extract_rule_based(text: str, source_file: str, source_type: str) -> Resume
     profile = ResumeProfile(raw_text=text, source_file=source_file, source_type=source_type)
 
     profile.years_experience = _estimate_years(text)
+    profile.roles_history = parse_roles_history(text)
 
     # Composite scale
     scale, scale_signals, scale_rationale = _detect_scale_composite(text)
