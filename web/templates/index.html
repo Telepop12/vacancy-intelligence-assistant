@@ -6,96 +6,104 @@
   <title>Vacancy Intelligence Assistant</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
-<body>
-<div class="page-wrapper">
-<aside class="sidebar"></aside>
+<body class="home-page">
 
 <header>
   <div class="container">
-    <h1>Vacancy Intelligence Assistant</h1>
-    <p class="sub">Анализ вакансий для CIO / CTO / CDTO
-      &nbsp;·&nbsp; <a href="/resume" style="color:rgba(255,255,255,.75);text-decoration:none;">Resume Intelligence</a>
-      &nbsp;·&nbsp; <a href="/match" style="color:rgba(255,255,255,.75);text-decoration:none;">Career Match</a>
-    </p>
+    <div class="home-header-inner">
+      <div>
+        <h1>Vacancy Intelligence Assistant</h1>
+        <p class="sub">Career Intelligence Platform для CIO / CTO / CDTO</p>
+      </div>
+      <nav class="home-nav">
+        <a href="/" class="home-nav-item active">📊 Анализ вакансий</a>
+        <a href="/resume" class="home-nav-item">📄 Resume Intelligence</a>
+        <a href="/match" class="home-nav-item">🎯 Career Match</a>
+      </nav>
+    </div>
   </div>
 </header>
 
 <main>
-  <div class="container">
+  <div class="container home-container">
 
     {% if error %}
     <div class="error-box">{{ error }}</div>
     {% endif %}
 
-    <div class="card">
-      <form method="post" action="/analyze" enctype="multipart/form-data">
-        <input type="hidden" name="source_type" id="source_type_hidden" value="text">
+    <!-- Feature cards -->
+    <div class="home-features">
+      <div class="home-feature-card active-feature">
+        <div class="hf-icon">📊</div>
+        <div class="hf-title">Анализ вакансии</div>
+        <div class="hf-desc">Keyword score + Decision Intelligence + Evolutionary Potential</div>
+      </div>
+      <a href="/resume" class="home-feature-card home-feature-link">
+        <div class="hf-icon">📄</div>
+        <div class="hf-title">Resume Intelligence</div>
+        <div class="hf-desc">Executive profile · AI signals · Trajectory · Framing analysis</div>
+      </a>
+      <a href="/match" class="home-feature-card home-feature-link">
+        <div class="hf-icon">🎯</div>
+        <div class="hf-title">Career Match</div>
+        <div class="hf-desc">Сопоставление резюме + вакансии · Full career analysis · Sonnet</div>
+      </a>
+    </div>
 
-        <!-- Primary input: vacancy text -->
+    <!-- Vacancy analysis form -->
+    <div class="card">
+      <h2 style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:1rem;">
+        Анализ вакансии
+      </h2>
+      <form method="post" action="/analyze" enctype="multipart/form-data">
+        <input type="hidden" name="source_type" value="text">
+
         <div class="field">
           <label for="vacancy">Текст вакансии</label>
-          <textarea id="vacancy" name="vacancy_text" rows="16"
+          <textarea id="vacancy" name="vacancy_text" rows="14"
             placeholder="Вставьте полный текст вакансии — название позиции, задачи, требования, условия…">{{ prefill or "" }}</textarea>
         </div>
 
-        <!-- Optional inputs toggle -->
         <details class="intake-options">
           <summary class="intake-options-toggle">Дополнительные параметры</summary>
           <div class="intake-options-body">
-
             <div class="row-2col intake-row">
-              <!-- File upload -->
               <div class="field">
                 <label for="vacancy_file">Загрузить файл <span class="hint-inline">.txt · .md · .json</span></label>
                 <input type="file" id="vacancy_file" name="vacancy_file"
                        accept=".txt,.md,.json" class="file-input">
                 <p class="hint">Если загружен файл — текст выше игнорируется</p>
               </div>
-
-              <!-- URL -->
               <div class="field">
                 <label for="vacancy_url">URL вакансии <span class="hint-inline">stub</span></label>
                 <input type="url" id="vacancy_url" name="vacancy_url"
-                       placeholder="https://hh.ru/vacancy/…" class="url-input"
-                       value="">
-                <p class="hint">Парсинг URL — в разработке. Пока вставьте текст вручную.</p>
+                       placeholder="https://hh.ru/vacancy/…" class="url-input">
+                <p class="hint">Парсинг URL — в разработке.</p>
               </div>
             </div>
-
-            <!-- Source type selector -->
             <div class="field">
               <label>Формат текста</label>
               <div class="source-type-group">
-                <label class="radio-option">
-                  <input type="radio" name="source_type" value="text" checked> Обычный текст
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="source_type" value="html"> HTML
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="source_type" value="json"> JSON
-                </label>
+                <label class="radio-option"><input type="radio" name="source_type" value="text" checked> Обычный текст</label>
+                <label class="radio-option"><input type="radio" name="source_type" value="html"> HTML</label>
+                <label class="radio-option"><input type="radio" name="source_type" value="json"> JSON</label>
               </div>
             </div>
-
           </div>
         </details>
 
-        <button type="submit" class="btn-submit">Проанализировать</button>
+        <button type="submit" class="btn-submit">Проанализировать вакансию</button>
       </form>
     </div>
 
-    <p class="hint">
-      Профиль кандидата: <strong>{{ profile_name }}</strong>
-    </p>
+    <p class="hint" style="margin-top:.5rem;">Профиль кандидата: <strong>{{ profile_name }}</strong></p>
 
   </div>
 </main>
 
 <footer>
-  <div class="container">Vacancy Intelligence Assistant — Web MVP</div>
+  <div class="container">Vacancy Intelligence Assistant · Career Intelligence Platform</div>
 </footer>
 
-</div><!-- /page-wrapper -->
 </body>
 </html>

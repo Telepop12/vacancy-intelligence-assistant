@@ -697,6 +697,59 @@ details[open] .intake-options-toggle::before { content: "－ "; }
   font-size: .88rem;
 }
 
+/* ══ Home page ══ */
+.home-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.home-nav {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+.home-nav-item {
+  padding: .35rem .9rem;
+  border-radius: 999px;
+  font-size: .82rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: rgba(255,255,255,.7);
+  border: 1px solid rgba(255,255,255,.2);
+  transition: all .15s;
+}
+.home-nav-item:hover { color: #fff; border-color: rgba(255,255,255,.5); }
+.home-nav-item.active { background: rgba(255,255,255,.15); color: #fff; border-color: rgba(255,255,255,.4); }
+
+.home-container { max-width: 900px; }
+
+.home-features {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: .85rem;
+  margin-bottom: 1.25rem;
+}
+.home-feature-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+  cursor: default;
+}
+.home-feature-link {
+  text-decoration: none;
+  cursor: pointer;
+  transition: box-shadow .15s, border-color .15s;
+  display: block;
+}
+.home-feature-link:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(30,64,175,.12); }
+.active-feature { border-left: 3px solid var(--primary); }
+.hf-icon  { font-size: 1.3rem; margin-bottom: .35rem; }
+.hf-title { font-size: .9rem; font-weight: 700; color: var(--text); margin-bottom: .2rem; }
+.hf-desc  { font-size: .78rem; color: var(--muted); line-height: 1.4; }
+
 /* ── Scale rationale ── */
 .scale-rationale { font-size:.75rem; color:var(--muted); margin-top:.4rem; font-style:italic; }
 .meta-tip {
@@ -971,6 +1024,10 @@ details[open] .intake-options-toggle::before { content: "－ "; }
 .asec.hidden { display: none; }
 
 /* ══ Analyst Dashboard (central cockpit panel) ══ */
+
+.interview-dash {
+  height: calc(100vh - 54px - 44px - 2.5rem) !important;
+}
 
 .dash-grid {
   display: grid;
