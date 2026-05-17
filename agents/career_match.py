@@ -184,8 +184,8 @@ def career_match(
         import anthropic
         client = anthropic.Anthropic(api_key=api_key)
         response = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=3000,
+            model="claude-sonnet-4-6",
+            max_tokens=4000,
             system=_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": prompt}],
         )
