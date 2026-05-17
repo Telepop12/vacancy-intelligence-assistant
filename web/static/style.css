@@ -1176,6 +1176,28 @@ details[open] .intake-options-toggle::before { content: "－ "; }
   color: var(--text);
 }
 
+/* ── Rendered resume (Markdown → HTML) ── */
+.resume-rendered {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  font-size: .92rem;
+  line-height: 1.75;
+  color: var(--text);
+}
+.resume-rendered h1 { font-size: 1.2rem; font-weight: 700; margin: .75rem 0 .35rem; color: var(--primary-dk); }
+.resume-rendered h2 { font-size: 1rem; font-weight: 700; margin: 1rem 0 .3rem; border-bottom: 1px solid var(--border); padding-bottom: .2rem; }
+.resume-rendered h3 { font-size: .95rem; font-weight: 600; margin: .75rem 0 .2rem; color: var(--text); }
+.resume-rendered p  { margin: .4rem 0; }
+.resume-rendered ul, .resume-rendered ol { padding-left: 1.4rem; margin: .3rem 0; }
+.resume-rendered li { margin: .2rem 0; }
+.resume-rendered strong { font-weight: 700; }
+.resume-rendered table { border-collapse: collapse; width: 100%; margin: .5rem 0; font-size: .88rem; }
+.resume-rendered th, .resume-rendered td { border: 1px solid var(--border); padding: .35rem .65rem; text-align: left; }
+.resume-rendered th { background: var(--bg); font-weight: 600; }
+.resume-rendered hr { border: none; border-top: 1px solid var(--border); margin: .75rem 0; }
+
 /* ── Error ── */
 .error-box {
   background: #fef2f2;

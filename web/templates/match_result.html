@@ -189,6 +189,22 @@
           {% endif %}
         </div>
       </div>
+
+      {% if resume.raw_text %}
+      <details style="margin-top:1rem;" open>
+        <summary style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);cursor:pointer;user-select:none;">
+          Полный текст резюме
+        </summary>
+        <div id="resume-rendered-interview"
+             class="resume-rendered"
+             style="max-height:calc(100vh - 320px);overflow-y:auto;margin-top:.6rem;">
+        </div>
+        <script>
+          document.getElementById('resume-rendered-interview').innerHTML =
+            marked.parse({{ resume.raw_text | tojson }});
+        </script>
+      </details>
+      {% endif %}
     </div>
 
     <!-- PREPARATION -->
@@ -441,6 +457,18 @@
             </div>
           </div>
         </div>
+      {% if resume.raw_text %}
+      <details style="margin-top:1.25rem;" open>
+        <summary style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);cursor:pointer;user-select:none;">
+          Полный текст резюме
+        </summary>
+        <div id="resume-rendered-analyst" class="resume-rendered" style="margin-top:.6rem;"></div>
+        <script>
+          document.getElementById('resume-rendered-analyst').innerHTML =
+            marked.parse({{ resume.raw_text | tojson }});
+        </script>
+      </details>
+      {% endif %}
       </div>
 
       <div class="asec hidden" id="sec-prep">
@@ -481,6 +509,9 @@
   </div>
 </div>
 
+
+<!-- marked.js for resume Markdown rendering -->
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
 
 <!-- ══ JavaScript ══ -->
 <script>
