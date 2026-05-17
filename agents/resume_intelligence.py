@@ -129,19 +129,73 @@ def load_resume(path: Path) -> tuple[str, str]:
 # ---------------------------------------------------------------------------
 
 def _from_docx(path: Path) -> str:
+    """
+    Extract DOCX as Markdown, preserving document structure.
+    Headings → #/##/###, bold short lines → **bold**, lists → - item,
+    tables → Markdown table rows. Elements are output in document order.
+    """
     try:
         import docx as _docx
+        from docx.oxml.ns import qn
+
         doc = _docx.Document(str(path))
-        parts: list[str] = []
-        for para in doc.paragraphs:
-            if para.text.strip():
-                parts.append(para.text)
-        for table in doc.tables:
+        lines: list[str] = []
+
+        # Heading style names (EN + RU variants)
+        _H = {
+            "Heading 1": "#", "Heading 2": "##", "Heading 3": "###",
+            "Заголовок 1": "#", "Заголовок 2": "##", "Заголовок 3": "###",
+            "Title": "#", "Subtitle": "##",
+        }
+        _LIST = {"List Paragraph", "List Bullet", "List Number",
+                 "Список абзацев", "Маркированный список", "Нумерованный список"}
+
+        def _para_to_md(para) -> str | None:
+            text = para.text.strip()
+            if not text:
+                return None
+            sname = para.style.name if para.style else ""
+            if sname in _H:
+                return f"{_H[sname]} {text}"
+            if sname in _LIST or sname.lower().startswith("list"):
+                return f"- {text}"
+            # Detect bold-only short lines as implicit headings
+            runs = [r for r in para.runs if r.text.strip()]
+            if runs and len(text) <= 80 and all(r.bold for r in runs):
+                return f"**{text}**"
+            return text
+
+        def _table_to_md(table) -> list[str]:
+            rows = []
             for row in table.rows:
-                cells = [c.text.strip() for c in row.cells if c.text.strip()]
-                if cells:
-                    parts.append("  ".join(cells))
-        return "\n".join(parts)
+                cells = [c.text.strip().replace("\n", " ") for c in row.cells]
+                # Deduplicate merged cells (python-docx repeats merged cell text)
+                deduped: list[str] = []
+                for c in cells:
+                    if not deduped or c != deduped[-1]:
+                        deduped.append(c)
+                if any(deduped):
+                    rows.append("| " + " | ".join(deduped) + " |")
+            return rows
+
+        # Iterate body elements in document order (paragraphs and tables interleaved)
+        for child in doc.element.body:
+            tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+            if tag == "p":
+                # Find matching paragraph object
+                for para in doc.paragraphs:
+                    if para._element is child:
+                        md = _para_to_md(para)
+                        if md:
+                            lines.append(md)
+                        break
+            elif tag == "tbl":
+                for table in doc.tables:
+                    if table._element is child:
+                        lines.extend(_table_to_md(table))
+                        break
+
+        return "\n".join(lines)
     except Exception as exc:
         raise ValueError(f"DOCX read error: {exc}") from exc
 
