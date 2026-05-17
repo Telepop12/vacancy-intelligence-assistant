@@ -165,14 +165,14 @@ def career_match(
         return result
 
     try:
-        roles_str = format_roles_for_prompt(resume.roles_history) if resume.roles_history else "— структурированные позиции не извлечены, см. полный текст ниже —"
-        # Always include raw text as backup — Sonnet uses it when structured history is incomplete
-        raw_backup = resume.raw_text[:4000]
+        roles_str = format_roles_for_prompt(resume.roles_history) if resume.roles_history else "— структурированные позиции не извлечены, используй полный текст ниже —"
+        # Full resume text — no truncation. Sonnet has 200K context; a CV is ~10-20K chars max.
+        raw_backup = resume.raw_text
 
         prompt = _USER_TEMPLATE.format(
             roles_history=roles_str,
             raw_resume=raw_backup,
-            vacancy_text=(vacancy.normalized_text or vacancy.raw_text)[:2000],
+            vacancy_text=(vacancy.normalized_text or vacancy.raw_text)[:4000],
             keyword_score=keyword_score,
             keyword_rec=keyword_rec,
             archetype=resume.professional_archetype or "—",
