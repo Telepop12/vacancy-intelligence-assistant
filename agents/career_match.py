@@ -92,9 +92,14 @@ _USER_TEMPLATE = """\
 {vacancy_text}
 ---
 
-КАРЬЕРНАЯ ИСТОРИЯ КАНДИДАТА (ВСЕ ПОЗИЦИИ):
+КАРЬЕРНАЯ ИСТОРИЯ КАНДИДАТА (структурированная):
 ---
 {roles_history}
+---
+
+ПОЛНЫЙ ТЕКСТ РЕЗЮМЕ (используй если структурированная история неполная):
+---
+{raw_resume}
 ---
 
 Дополнительный контекст:
@@ -160,14 +165,13 @@ def career_match(
         return result
 
     try:
-        # Use structured roles history (all positions) instead of raw text truncated
-        roles_str = format_roles_for_prompt(resume.roles_history)
-        if not resume.roles_history:
-            # Fallback: raw text if parser found no structured positions
-            roles_str = resume.raw_text[:4500]
+        roles_str = format_roles_for_prompt(resume.roles_history) if resume.roles_history else "— структурированные позиции не извлечены, см. полный текст ниже —"
+        # Always include raw text as backup — Sonnet uses it when structured history is incomplete
+        raw_backup = resume.raw_text[:4000]
 
         prompt = _USER_TEMPLATE.format(
             roles_history=roles_str,
+            raw_resume=raw_backup,
             vacancy_text=(vacancy.normalized_text or vacancy.raw_text)[:2000],
             keyword_score=keyword_score,
             keyword_rec=keyword_rec,
