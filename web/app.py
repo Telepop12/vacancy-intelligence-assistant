@@ -24,6 +24,7 @@ from agents.intake import from_file, from_html, from_json, from_text, from_url
 from agents.resume_intelligence import ResumeProfile, analyze_resume, load_resume
 from core.analyzer import analyze
 from core.models import CandidateProfile, ScoringGroup
+from core.output_manager import cleanup_output_dir
 from core.report import save_json, save_markdown, update_registry
 
 # ---------------------------------------------------------------------------
@@ -104,10 +105,18 @@ async def health():
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
+async def home(request: Request):
     return templates.TemplateResponse(
-        request, "index.html",
+        request, "home.html",
         context={"profile_name": _profile.name},
+    )
+
+
+@app.get("/vacancy", response_class=HTMLResponse)
+async def vacancy_page(request: Request):
+    return templates.TemplateResponse(
+        request, "vacancy.html",
+        context={"profile_name": _profile.name, "active_nav": "vacancy"},
     )
 
 
@@ -127,10 +136,11 @@ async def analyze_vacancy(
         suffix = Path(vacancy_file.filename).suffix.lower()
         if suffix not in {".txt", ".md", ".json"}:
             return templates.TemplateResponse(
-                request, "index.html",
+                request, "vacancy.html",
                 context={
                     "profile_name": _profile.name,
                     "error": f"Неподдерживаемый тип файла: {suffix}. Принимаются .txt, .md, .json",
+                    "active_nav": "vacancy",
                 },
             )
         content = await vacancy_file.read()
@@ -159,11 +169,12 @@ async def analyze_vacancy(
         if vacancy and vacancy.confidence_notes:
             error = vacancy.confidence_notes[0]
         return templates.TemplateResponse(
-            request, "index.html",
+            request, "vacancy.html",
             context={
                 "profile_name": _profile.name,
                 "error": error,
                 "prefill": vacancy_text,
+                "active_nav": "vacancy",
             },
         )
 
@@ -173,6 +184,7 @@ async def analyze_vacancy(
     md_path   = save_markdown(analysis, OUTPUT_DIR)
     json_path = save_json(analysis, OUTPUT_DIR)
     update_registry(analysis, REGISTRY)
+    cleanup_output_dir(OUTPUT_DIR)
 
     display_action = analysis.recommended_action or analysis.recommendation.value
     return templates.TemplateResponse(
@@ -187,6 +199,7 @@ async def analyze_vacancy(
             "evo_level":         _evo_level(analysis.evolutionary_potential),
             "confidence_color":  _confidence_color(analysis.intake_confidence),
             "LLM_PENDING":       "Ожидает подключения LLM",
+            "active_nav":        "vacancy",
         },
     )
 
@@ -201,7 +214,7 @@ def _positioning_css(level: str) -> str:
 
 @app.get("/resume", response_class=HTMLResponse)
 async def resume_page(request: Request):
-    return templates.TemplateResponse(request, "resume.html", context={})
+    return templates.TemplateResponse(request, "resume.html", context={"active_nav": "resume"})
 
 
 @app.post("/resume/analyze", response_class=HTMLResponse)
@@ -217,6 +230,7 @@ async def resume_analyze(
         if suffix not in {".txt", ".md", ".docx", ".pdf"}:
             return templates.TemplateResponse(request, "resume.html", context={
                 "error": f"Неподдерживаемый формат: {suffix}. Принимаются .txt .md .docx .pdf",
+                "active_nav": "resume",
             })
         import tempfile
         content = await resume_file.read()
@@ -229,6 +243,7 @@ async def resume_analyze(
         except Exception as exc:
             return templates.TemplateResponse(request, "resume.html", context={
                 "error": f"Ошибка чтения файла: {exc}",
+                "active_nav": "resume",
             })
         finally:
             tmp_path.unlink(missing_ok=True)
@@ -237,13 +252,15 @@ async def resume_analyze(
     else:
         return templates.TemplateResponse(request, "resume.html", context={
             "error": "Загрузите файл резюме или вставьте текст.",
+            "active_nav": "resume",
         })
 
     profile = analyze_resume(text, source_file=src_name, source_type=src_type)
 
     return templates.TemplateResponse(request, "resume_result.html", context={
-        "profile":   profile,
-        "p_css":     _positioning_css,
+        "profile":    profile,
+        "p_css":      _positioning_css,
+        "active_nav": "resume",
     })
 
 
@@ -253,7 +270,7 @@ async def resume_analyze(
 
 @app.get("/match", response_class=HTMLResponse)
 async def match_page(request: Request):
-    return templates.TemplateResponse(request, "match.html", context={})
+    return templates.TemplateResponse(request, "match.html", context={"active_nav": "match"})
 
 
 @app.post("/match/analyze", response_class=HTMLResponse)
@@ -315,6 +332,7 @@ async def match_analyze(
             "errors": errors,
             "prefill_vacancy": vacancy_text,
             "prefill_resume": resume_text,
+            "active_nav": "match",
         })
 
     # ── Keyword scoring (existing pipeline) ──
@@ -336,6 +354,7 @@ async def match_analyze(
         "kw_color":       _score_color(match_result.keyword_score),
         "action_color":   _action_color,
         "p_css":          _positioning_css,
+        "active_nav":     "match",
     })
 
 

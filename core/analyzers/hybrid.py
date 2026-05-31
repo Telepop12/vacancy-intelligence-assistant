@@ -50,17 +50,27 @@ class HybridAnalyzer(BaseAnalyzer):
         Override this method in an LLM-backed subclass.
         Receives the completed rule-based analysis plus original inputs.
         Mutates analysis in-place; return value is ignored.
+
+        This base implementation runs rule-based evolutionary potential detection
+        so that recommendation arbitration works correctly even without LLM.
         """
+        from core.scoring import detect_evolutionary_potential
+
         analysis.role_level_fit                   = LLM_PENDING
         analysis.strategic_vs_operational_balance = LLM_PENDING
         analysis.authority_signals                = []
         analysis.target_role_alignment            = LLM_PENDING
         analysis.semantic_summary                 = LLM_PENDING
-        # Evolutionary Potential placeholders
-        analysis.evolutionary_potential           = LLM_PENDING
-        analysis.strategic_opportunity_signals    = []
-        analysis.career_strategy_comment          = LLM_PENDING
-        analysis.recommended_action               = analysis.recommendation.value  # mirrors rule-based
+
+        # Rule-based evolutionary potential — used by recommendation_engine.synthesize()
+        # even when LLM is unavailable so ЗАПУСТИТЬ В РАБОТУ can be triggered correctly.
+        evo_level, evo_signals = detect_evolutionary_potential(vacancy_text)
+        analysis.evolutionary_potential        = evo_level
+        analysis.strategic_opportunity_signals = evo_signals
+        analysis.career_strategy_comment       = LLM_PENDING
+        # recommended_action mirrors rule-based; synthesize() may upgrade it via evo logic
+        analysis.recommended_action            = analysis.recommendation.value
+
         # Decision Intelligence placeholders
         analysis.strategic_rationale              = LLM_PENDING
         analysis.career_risks                     = []

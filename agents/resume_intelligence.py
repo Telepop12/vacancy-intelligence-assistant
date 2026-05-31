@@ -291,14 +291,53 @@ def parse_roles_history(text: str) -> list[dict]:
     return roles
 
 
-def format_roles_for_prompt(roles: list[dict], max_roles: int = 6) -> str:
-    """Format roles history into a compact prompt-friendly string."""
+def _role_recency_weight(period: str, role_index: int) -> str:
+    """
+    Assign a temporal weight label based on role recency.
+    Weight signals to LLM how to prioritize each position in trajectory analysis.
+
+    Returns one of: [ВЫСОКИЙ ВКЛАД] | [СРЕДНИЙ ВКЛАД] | [КОНТЕКСТ]
+    """
+    _CURRENT_YEAR = 2026
+
+    # Current role (contains "н/в", "наст", "present") → always HIGH
+    if re.search(r"н\.в\.|н/в|наст|present|current|сейчас", period, re.IGNORECASE):
+        return "[ВЫСОКИЙ ВКЛАД — текущая роль]"
+
+    # Extract end year from period (last 4-digit year in the string)
+    years = re.findall(r"\b(?:19|20)\d{2}\b", period)
+    if not years:
+        # No year found — trust position in list: index 0-1 = high, 2-3 = medium, rest = context
+        if role_index <= 1:
+            return "[ВЫСОКИЙ ВКЛАД]"
+        if role_index <= 3:
+            return "[СРЕДНИЙ ВКЛАД]"
+        return "[КОНТЕКСТ]"
+
+    end_year = int(years[-1])
+    years_ago = _CURRENT_YEAR - end_year
+
+    if years_ago <= 7:
+        return "[ВЫСОКИЙ ВКЛАД]"
+    if years_ago <= 15:
+        return "[СРЕДНИЙ ВКЛАД]"
+    return "[КОНТЕКСТ — ранний опыт]"
+
+
+def format_roles_for_prompt(roles: list[dict], max_roles: int = 8) -> str:
+    """
+    Format roles history into a prompt-friendly string with temporal weights.
+
+    Each role is labeled [ВЫСОКИЙ ВКЛАД] / [СРЕДНИЙ ВКЛАД] / [КОНТЕКСТ]
+    so the LLM correctly weights recent leadership vs. foundational experience.
+    """
     if not roles:
         return "—"
     lines: list[str] = []
-    for i, r in enumerate(roles[:max_roles], 1):
+    for i, r in enumerate(roles[:max_roles]):
+        weight = _role_recency_weight(r.get("period", ""), i)
         company_period = f"{r['company']} ({r['period']})" if r['period'] else r['company']
-        lines.append(f"{i}. {r['role']} | {company_period}")
+        lines.append(f"{i + 1}. {weight} {r['role']} | {company_period}")
         for h in r['highlights'][:3]:
             if h:
                 lines.append(f"   • {h[:120]}")
@@ -752,6 +791,9 @@ _LLM_TEMPLATE = """\
 {resume_text}
 ---
 
+Структурированная карьера (с весами релевантности):
+{roles_summary}
+
 Контекст rule-based анализа:
 - AI signals: {ai_count} · Трансформация: {tf_count} · Домены: {domains}
 - Стаж: ~{years} лет · Scope: {scope} · Scale: {scale}
@@ -762,8 +804,8 @@ _LLM_TEMPLATE = """\
   "executive_summary": "2-3 предложения: кто этот человек профессионально",
   "strategic_positioning": "1 sentence executive positioning statement",
   "professional_archetype": "CIO|CDTO|CAIO|Transformation Executive|Operations Executive|AI Transformation Leader",
-  "trajectory_markers": ["3-5 карьерных траекторий"],
-  "strongest_assets": ["топ-5 executive strengths с опорой на конкретный опыт"],
+  "trajectory_markers": ["ФОРМАТ: [Работодатель (период)] Роль/направление A → Роль/направление B — карьерный переход МЕЖДУ работодателями или внутри компании на уровне CTO/CIO/CDTO"],
+  "strongest_assets": ["ФОРМАТ: [Работодатель (период)] конкретное достижение с цифрами/ROI/масштабом — ОБЯЗАТЕЛЬНО охвати минимум 2-3 разных РАБОТОДАТЕЛЯ из всей карьеры"],
   "weak_visibility_areas": [
     "Конкретная область + что скрыто + scale/ROI/governance/ownership который не показан"
   ],
@@ -784,8 +826,8 @@ _LLM_TEMPLATE = """\
 Требования:
 - weak_visibility_areas: НЕ просто "AI weak". Формат: "AI initiatives описаны без ROI, scale, governance и business impact — hidden CAIO-potential"
 - executive_reframing_opportunities: 3 конкретных примера из CV с оригинальной фразой и executive reframe
-- trajectory_markers: конкретные trajectory paths (CIO / CDTO / CAIO / Enterprise Architecture / и т.д.)
-- strongest_assets: конкретный опыт, а не абстракции"""
+- trajectory_markers: КАЖДЫЙ ПУНКТ строго начинается с [Работодатель (период)]. Показывает МЕЖКОМПАНИЙНУЮ прогрессию или рост роли в рамках одной компании. НЕ задачи/проекты внутри одного места работы. Используй реальные названия компаний из резюме.
+- strongest_assets: КАЖДЫЙ ПУНКТ строго начинается с [Работодатель (период)]. Минимум 2-3 разных работодателя. НЕ группируй несколько записей одной компании в одном пункте — каждый пункт = один конкретный результат из конкретной компании."""
 
 
 def _enrich_with_llm(profile: ResumeProfile, text: str) -> None:
@@ -795,8 +837,12 @@ def _enrich_with_llm(profile: ResumeProfile, text: str) -> None:
         return
 
     try:
+        safe_text = text.replace("{", "{{").replace("}", "}}")
+        roles_summary = format_roles_for_prompt(profile.roles_history)
+        safe_roles = roles_summary.replace("{", "{{").replace("}", "}}")
         prompt = _LLM_TEMPLATE.format(
-            resume_text=text[:4000],
+            resume_text=safe_text,
+            roles_summary=safe_roles,
             ai_count=len(profile.ai_signals),
             tf_count=len(profile.transformation_experience),
             domains=", ".join(profile.technology_domains[:6]) or "—",
@@ -808,9 +854,13 @@ def _enrich_with_llm(profile: ResumeProfile, text: str) -> None:
         )
 
         import anthropic
-        client = anthropic.Anthropic(api_key=api_key)
+        import httpx
+        client = anthropic.Anthropic(
+            api_key=api_key,
+            http_client=httpx.Client(trust_env=False),
+        )
         response = client.messages.create(
-            model="claude-haiku-4-5-20251001",
+            model="claude-sonnet-4-6",
             max_tokens=3000,
             system=_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": prompt}],

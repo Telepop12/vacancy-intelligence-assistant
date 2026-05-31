@@ -13,6 +13,12 @@ from core.analyzers.hybrid import HybridAnalyzer, LLM_PENDING
 from core.models import CandidateProfile, VacancyAnalysis
 
 _SYSTEM_PROMPT = """\
+Отвечай исключительно на деловом русском языке. Избегай английского профессионального жаргона.
+Используй русские аналоги: «стратегический потенциал» вместо «strategic potential», \
+«эволюционный потенциал» вместо «evolutionary potential», «полномочия» вместо «authority», \
+«карьерная траектория» вместо «career trajectory», «сигналы» вместо «signals».
+Общепринятые термины (AI, ERP, ROI, P&L, KPI, CEO, CIO, CTO, CDTO, CAIO, M&A) допустимы.
+
 Ты — стратегический эксперт по карьере топ-менеджмента уровня CIO/CTO/CDTO/CAIO.
 Анализируешь вакансии для опытного ИТ-руководителя с перспективой AI leadership.
 Отвечай строго в формате JSON без лишнего текста. Все текстовые значения — на русском языке."""
@@ -59,7 +65,7 @@ class ClaudeAnalyzer(HybridAnalyzer):
     def __init__(
         self,
         api_key: str,
-        model: str = "claude-haiku-4-5-20251001",
+        model: str = "claude-sonnet-4-6",
     ) -> None:
         super().__init__()
         self._api_key = api_key
@@ -89,20 +95,26 @@ class ClaudeAnalyzer(HybridAnalyzer):
             analysis.career_strategy_comment          = data.get("career_strategy_comment") or LLM_PENDING
             analysis.recommended_action               = data.get("recommended_action") or analysis.recommendation.value
 
-        except Exception:
-            pass  # placeholders already set; analysis remains fully usable
+        except Exception as exc:
+            import traceback
+            print(f"[ClaudeAnalyzer] LLM call failed: {exc}")
+            traceback.print_exc()
 
     def _call_claude(self, analysis: VacancyAnalysis, vacancy_text: str) -> dict[str, Any]:
         import anthropic
+        import httpx
 
         prompt = _USER_TEMPLATE.format(
-            vacancy_text=vacancy_text[:3000],
+            vacancy_text=vacancy_text[:6000],
             score=analysis.match_score,
             recommendation=analysis.recommendation.value,
             matches=", ".join(analysis.key_matches[:8]) or "—",
         )
 
-        client = anthropic.Anthropic(api_key=self._api_key)
+        client = anthropic.Anthropic(
+            api_key=self._api_key,
+            http_client=httpx.Client(trust_env=False),
+        )
         response = client.messages.create(
             model=self._model,
             max_tokens=2000,

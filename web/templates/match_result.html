@@ -54,7 +54,7 @@
       <button class="mode-btn" id="btnAnalyst" onclick="setMode('analyst')">🔬 Аналитика</button>
     </div>
 
-    <a href="/match" class="cockpit-back">← новый</a>
+    <a href="/" class="cockpit-back">🏠 Главная</a>
   </div>
 </div>
 
@@ -279,6 +279,7 @@
   <div class="analyst-layout">
 
     <aside class="analyst-sidebar-panel">
+      <div class="analyst-app-nav">{% include '_nav.html' %}</div>
       <div class="analyst-score-hero">
         <div class="as-score {{ score_color }}">{{ match.career_match_score }}</div>
         <div class="as-label">Career Match</div>

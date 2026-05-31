@@ -8,15 +8,12 @@
 </head>
 <body>
 <div class="page-wrapper">
-<aside class="sidebar"></aside>
+<aside class="sidebar">{% include '_nav.html' %}</aside>
 
 <header>
   <div class="container">
     <h1>Vacancy Intelligence Assistant</h1>
-    <p class="sub">Анализ вакансий для CIO / CTO / CDTO
-      &nbsp;·&nbsp; <a href="/resume" style="color:rgba(255,255,255,.75);text-decoration:none;">Resume Intelligence</a>
-      &nbsp;·&nbsp; <a href="/match" style="color:rgba(255,255,255,.75);text-decoration:none;">Career Match</a>
-    </p>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
   </div>
 </header>
 
@@ -24,7 +21,7 @@
   <div class="container">
 
     <div class="actions">
-      <a href="/" class="btn">← Новый анализ</a>
+      <a href="/vacancy" class="btn">← Новый анализ</a>
       <a href="/output/{{ md_filename }}" class="btn" download>↓ Markdown</a>
       <a href="/output/{{ json_filename }}" class="btn" download>↓ JSON</a>
     </div>
@@ -104,7 +101,8 @@
                      or analysis.target_role_alignment or analysis.authority_signals %}
     {% if llm_any %}
     <div class="card card-llm">
-      <h2>LLM-инсайты <span class="llm-badge">placeholder</span></h2>
+      {% set llm_is_pending = analysis.semantic_summary == LLM_PENDING %}
+      <h2>LLM-инсайты {% if llm_is_pending %}<span class="llm-badge">placeholder</span>{% endif %}</h2>
 
       {% if analysis.semantic_summary %}
       <div class="llm-field">

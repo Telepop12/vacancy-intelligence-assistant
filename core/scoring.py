@@ -126,3 +126,56 @@ def get_recommendation(score: int) -> Recommendation:
     if score >= THRESHOLD_CLARIFY:
         return Recommendation.CLARIFY
     return Recommendation.SKIP
+
+
+# ---------------------------------------------------------------------------
+# Rule-based Evolutionary Potential detection
+# ---------------------------------------------------------------------------
+
+# Signals that a role has high strategic/evolutionary value even with low keyword score.
+# Each tuple: (signal_id, regex_pattern, weight)
+_EVO_SIGNALS: list[tuple[str, str, int]] = [
+    # Board / CEO access
+    ("ceo_access",       r"прямое подчинение\s+ceo|direct.*ceo|подчинение.*генеральному", 3),
+    ("board_access",     r"совет\s+директоров|board\s+of\s+directors|стратегические\s+сессии", 2),
+    # AI from scratch / ownership
+    ("ai_from_scratch",  r"с\s+нуля|create.*from\s+scratch|создани[её]\s+(?:ai|ии|направлени)", 3),
+    ("ai_ownership",     r"ownership\s+(?:ai|ии)|владелец\s+ai|ответственн\w+\s+за\s+(?:все\s+)?ai", 2),
+    ("ai_roadmap",       r"ai\s+roadmap|дорожная\s+карта\s+ai|стратегия\s+(?:ai|искусственного)", 2),
+    # AI CoE / transformation center
+    ("ai_coe",           r"ai\s+(?:coe|цент[рp]|компетенц)|centre?\s+of\s+excellence", 3),
+    # Measurable ROI
+    ("roi_ownership",    r"измеримый\s+roi|measurable\s+roi|экономический\s+эффект.*ai", 2),
+    # Cross-functional influence
+    ("cross_functional", r"кросс.функциональн|cross.functional|все\s+подразделени", 1),
+    # New AI direction / early adoption
+    ("new_direction",    r"запускает\s+(?:новое\s+)?направлени|launches?\s+new|первый\s+руководитель", 2),
+    # Digital / AI transformation scope
+    ("transformation",   r"цифровая\s+трансформация|digital\s+transformation|стратегическое\s+направлени", 1),
+]
+
+_EVO_HIGH_THRESHOLD   = 5
+_EVO_MEDIUM_THRESHOLD = 2
+
+
+def detect_evolutionary_potential(vacancy_text: str) -> tuple[str, list[str]]:
+    """
+    Rule-based evolutionary potential detection.
+
+    Returns (level, matched_signals) where level is "High" | "Medium" | "Low".
+    Used as fallback when LLM is unavailable.
+    """
+    text_lower = vacancy_text.lower()
+    matched: list[str] = []
+    total_weight = 0
+
+    for signal_id, pattern, weight in _EVO_SIGNALS:
+        if re.search(pattern, text_lower, re.IGNORECASE):
+            matched.append(signal_id)
+            total_weight += weight
+
+    if total_weight >= _EVO_HIGH_THRESHOLD:
+        return "High", matched
+    if total_weight >= _EVO_MEDIUM_THRESHOLD:
+        return "Medium", matched
+    return "Low", matched

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Анализ вакансии — Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page-wrapper">
+<aside class="sidebar">
+  {% include '_nav.html' %}
+</aside>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    {% if error %}
+    <div class="error-box">{{ error }}</div>
+    {% endif %}
+
+    <div class="card">
+      <h2>Анализ вакансии</h2>
+      <form method="post" action="/analyze" enctype="multipart/form-data">
+        <input type="hidden" name="source_type" value="text">
+
+        <div class="field">
+          <label for="vacancy">Текст вакансии</label>
+          <textarea id="vacancy" name="vacancy_text" rows="14"
+            placeholder="Вставьте полный текст вакансии — название позиции, задачи, требования, условия…">{{ prefill or "" }}</textarea>
+        </div>
+
+        <details class="intake-options">
+          <summary class="intake-options-toggle">Дополнительные параметры</summary>
+          <div class="intake-options-body">
+            <div class="row-2col intake-row">
+              <div class="field">
+                <label for="vacancy_file">Загрузить файл <span class="hint-inline">.txt · .md · .json</span></label>
+                <input type="file" id="vacancy_file" name="vacancy_file"
+                       accept=".txt,.md,.json" class="file-input">
+                <p class="hint">Если загружен файл — текст выше игнорируется</p>
+              </div>
+              <div class="field">
+                <label for="vacancy_url">URL вакансии <span class="hint-inline">stub</span></label>
+                <input type="url" id="vacancy_url" name="vacancy_url"
+                       placeholder="https://hh.ru/vacancy/…" class="url-input">
+                <p class="hint">Парсинг URL — в разработке.</p>
+              </div>
+            </div>
+            <div class="field">
+              <label>Формат текста</label>
+              <div class="source-type-group">
+                <label class="radio-option"><input type="radio" name="source_type" value="text" checked> Обычный текст</label>
+                <label class="radio-option"><input type="radio" name="source_type" value="html"> HTML</label>
+                <label class="radio-option"><input type="radio" name="source_type" value="json"> JSON</label>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <button type="submit" class="btn-submit">Проанализировать вакансию</button>
+      </form>
+    </div>
+
+    <p class="hint" style="margin-top:.5rem;">Профиль кандидата: <strong>{{ profile_name }}</strong></p>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant · Анализ вакансий</div>
+</footer>
+</div>
+</body>
+</html>

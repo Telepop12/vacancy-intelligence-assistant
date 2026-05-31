@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page-wrapper">
+<aside class="sidebar">
+  {% include '_nav.html' %}
+</aside>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+    <div class="home-grid">
+      <a href="/vacancy" class="home-card">
+        <div class="home-card-icon">📊</div>
+        <div class="home-card-title">Анализ вакансии</div>
+        <div class="home-card-desc">
+          Keyword score · Decision Intelligence · Evolutionary Potential ·
+          Рекомендация: откликаться / уточнить / запустить в работу
+        </div>
+      </a>
+      <a href="/resume" class="home-card">
+        <div class="home-card-icon">📄</div>
+        <div class="home-card-title">Resume Intelligence</div>
+        <div class="home-card-desc">
+          Executive profile · AI & transformation signals · Trajectory analysis ·
+          Executive framing score · Strategic positioning
+        </div>
+      </a>
+      <a href="/match" class="home-card">
+        <div class="home-card-icon">🎯</div>
+        <div class="home-card-title">Career Match</div>
+        <div class="home-card-desc">
+          Вакансия + Резюме · Полный карьерный анализ · Sonnet ·
+          Interview prep · Риски и пробелы · Переносимые компетенции
+        </div>
+      </a>
+    </div>
+    <p class="hint" style="margin-top:1.5rem;">
+      Профиль кандидата: <strong>{{ profile_name }}</strong>
+    </p>
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant · Career Intelligence Platform</div>
+</footer>
+</div>
+</body>
+</html>

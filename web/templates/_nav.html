@@ -1,0 +1,12 @@
+<nav class="app-nav">
+  <div class="app-nav-title">Сервисы</div>
+  <a href="/vacancy" class="app-nav-item {% if (active_nav | default('')) == 'vacancy' %}active{% endif %}">
+    📊 Анализ вакансии
+  </a>
+  <a href="/resume" class="app-nav-item {% if (active_nav | default('')) == 'resume' %}active{% endif %}">
+    📄 Резюме
+  </a>
+  <a href="/match" class="app-nav-item {% if (active_nav | default('')) == 'match' %}active{% endif %}">
+    🎯 Career Match
+  </a>
+</nav>

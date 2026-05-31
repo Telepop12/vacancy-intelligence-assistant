@@ -1208,3 +1208,76 @@ details[open] .intake-options-toggle::before { content: "－ "; }
   margin-bottom: 1rem;
   font-size: .92rem;
 }
+
+/* ══════════════════════════════════════
+   App sidebar nav (global, all pages)
+══════════════════════════════════════ */
+.app-nav {
+  padding: .5rem 0 .75rem;
+  border-bottom: 1px solid var(--border);
+}
+.app-nav-title {
+  font-size: .66rem;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--muted);
+  padding: .6rem 1.2rem .35rem;
+  font-weight: 700;
+}
+.app-nav-item {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .55rem 1.2rem;
+  color: var(--text);
+  text-decoration: none;
+  font-size: .88rem;
+  border-left: 3px solid transparent;
+  transition: background .12s, border-color .12s;
+  line-height: 1.3;
+}
+.app-nav-item:hover { background: var(--bg); }
+.app-nav-item.active {
+  border-left-color: var(--primary);
+  color: var(--primary);
+  background: #eff6ff;
+  font-weight: 600;
+}
+
+/* Compact variant used inside analyst sidebar */
+.analyst-app-nav {
+  padding: .6rem 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: .5rem;
+}
+.analyst-app-nav .app-nav-title { padding-top: .2rem; }
+.analyst-app-nav .app-nav-item  { padding: .4rem 1rem; font-size: .83rem; }
+
+/* ══════════════════════════════════════
+   Landing page (home.html)
+══════════════════════════════════════ */
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+.home-card {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: calc(var(--radius) * 1.5);
+  padding: 2rem 1.75rem;
+  text-decoration: none;
+  color: var(--text);
+  display: block;
+  transition: box-shadow .2s, border-color .2s, transform .15s;
+}
+.home-card:hover {
+  box-shadow: 0 6px 20px rgba(30,64,175,.12);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+.home-card-icon  { font-size: 2.4rem; margin-bottom: 1rem; }
+.home-card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: .5rem; }
+.home-card-desc  { font-size: .875rem; color: var(--muted); line-height: 1.6; }
+@media (max-width: 700px) { .home-grid { grid-template-columns: 1fr; } }

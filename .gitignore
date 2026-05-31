@@ -12,6 +12,14 @@ output/*.md
 output/*.json
 output/registry.csv
 
+# Logs / debug
+*.log
+server.err
+server.log
+
+# Test cache
+.pytest_cache/
+
 # IDE
 .vscode/
 .idea/
