@@ -1,5 +1,8 @@
 <nav class="app-nav">
   <div class="app-nav-title">Сервисы</div>
+  <a href="/search" class="app-nav-item {% if (active_nav | default('')) == 'search' %}active{% endif %}">
+    🔍 Поиск hh.ru
+  </a>
   <a href="/vacancy" class="app-nav-item {% if (active_nav | default('')) == 'vacancy' %}active{% endif %}">
     📊 Анализ вакансии
   </a>

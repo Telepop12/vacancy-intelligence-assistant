@@ -1281,3 +1281,34 @@ details[open] .intake-options-toggle::before { content: "－ "; }
 .home-card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: .5rem; }
 .home-card-desc  { font-size: .875rem; color: var(--muted); line-height: 1.6; }
 @media (max-width: 700px) { .home-grid { grid-template-columns: 1fr; } }
+
+/* ── hh.ru search results table ── */
+.search-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .875rem;
+}
+.search-table th {
+  text-align: left;
+  padding: .5rem .6rem;
+  border-bottom: 2px solid var(--border);
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.search-table td {
+  padding: .55rem .6rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.search-table tr:hover td { background: rgba(30,64,175,.04); }
+.search-table a { color: var(--primary); text-decoration: none; }
+.search-table a:hover { text-decoration: underline; }
+.btn-inline {
+  display: inline-block;
+  padding: .3rem .7rem;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  font-size: .8rem;
+  white-space: nowrap;
+}

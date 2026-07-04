@@ -188,16 +188,63 @@ def from_json(data: str | dict, source_name: str = "json") -> VacancyInput:
 
 def from_url(url: str) -> VacancyInput:
     """
-    Stub for future URL-based ingestion.
+    Create VacancyInput from a vacancy URL.
 
-    Future implementation: fetch page with Playwright or requests+BeautifulSoup,
-    pass HTML to from_html(html, url=url).
+    hh.ru vacancy links go through the official API (structured JSON,
+    HIGH-quality metadata). Any other URL falls back to a generic HTML
+    fetch — best effort, confidence is capped at MEDIUM because page
+    chrome (menus, footers) pollutes the extracted text.
     """
-    return _error_input(
-        SourceType.URL, url,
-        "URL ingestion not yet implemented. Paste the vacancy text manually.",
-        confidence=IntakeConfidence.LOW,
+    from agents import hh_api
+
+    url = url.strip()
+    if not re.match(r"https?://", url, re.IGNORECASE):
+        url = "https://" + url
+
+    hh_id = hh_api.extract_vacancy_id(url)
+    if hh_id:
+        try:
+            data = hh_api.fetch_vacancy_data(hh_id)
+        except hh_api.HHApiError as exc:
+            return _error_input(SourceType.URL, url, str(exc))
+        vi = from_json(data, source_name=f"hh.ru:{hh_id}")
+        vi.source_type = SourceType.URL
+        vi.url = vi.url or url
+        if data.get("archived"):
+            vi.confidence_notes.append("Вакансия в архиве hh.ru — вероятно, уже закрыта")
+        return vi
+
+    # Generic URL: plain HTML fetch (no JS rendering)
+    try:
+        html_text = _fetch_url(url)
+    except Exception as exc:
+        return _error_input(SourceType.URL, url, f"Не удалось загрузить страницу: {exc}")
+
+    vi = from_html(html_text, url=url, source_name=url)
+    vi.source_type = SourceType.URL
+    if vi.intake_confidence == IntakeConfidence.HIGH:
+        vi.intake_confidence = IntakeConfidence.MEDIUM
+    vi.confidence_notes.append(
+        "Универсальный парсинг HTML — текст может содержать элементы страницы"
     )
+    return vi
+
+
+def _fetch_url(url: str, timeout: int = 20) -> str:
+    """Fetch raw HTML from an arbitrary URL (no JS rendering)."""
+    import urllib.request
+
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                           "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"),
+            "Accept-Language": "ru,en;q=0.8",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        charset = resp.headers.get_content_charset() or "utf-8"
+        return resp.read().decode(charset, errors="replace")
 
 
 # ---------------------------------------------------------------------------

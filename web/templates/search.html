@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Поиск hh.ru — Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page-wrapper">
+<aside class="sidebar">
+  {% include '_nav.html' %}
+</aside>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    {% if error %}
+    <div class="error-box">{{ error }}</div>
+    {% endif %}
+
+    <div class="card">
+      <h2>Автопоиск вакансий на hh.ru</h2>
+      <p class="hint" style="margin-bottom:1rem;">
+        Система найдёт вакансии по запросам ниже, загрузит полные описания новых
+        и оценит каждую по профилю кандидата. Поиск занимает до минуты —
+        не закрывайте страницу.
+      </p>
+      <form method="post" action="/search/run" id="search-form">
+        <div class="field">
+          <label for="queries">Поисковые запросы <span class="hint-inline">по одному в строке · ищутся в названии вакансии</span></label>
+          <textarea id="queries" name="queries" rows="7">{{ queries }}</textarea>
+        </div>
+        <div class="field">
+          <label class="radio-option" style="display:inline-flex;align-items:center;gap:.4rem;">
+            <input type="checkbox" name="rescan" value="1">
+            Переоценить все найденные (игнорировать историю запусков)
+          </label>
+        </div>
+        <button type="submit" class="btn-submit" id="search-btn">Найти и оценить</button>
+      </form>
+      <p class="hint" style="margin-top:.7rem;">
+        Регион и лимиты настраиваются в <code>config/hh_search.yaml</code>.
+      </p>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant · Автопоиск hh.ru</div>
+</footer>
+</div>
+<script>
+document.getElementById('search-form').addEventListener('submit', function () {
+  var btn = document.getElementById('search-btn');
+  btn.disabled = true;
+  btn.textContent = 'Ищу и оцениваю… это может занять до минуты';
+});
+</script>
+</body>
+</html>

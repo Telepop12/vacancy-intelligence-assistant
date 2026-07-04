@@ -37,6 +37,11 @@ python main.py --file data/sample_vacancy.txt --no-registry
 python web/smoke_test.py
 ```
 
+**hh.ru integration tests (offline, network mocked):**
+```
+python -m pytest qa/test_hh.py -q
+```
+
 ## API Key
 
 Create `.env` in `vacancy_ai_assistant/`:
@@ -52,6 +57,8 @@ The system has four independent layers that compose at the web layer (`web/app.p
 
 ```
 agents/intake.py          — Vacancy normalization (text/file/html/json/url → VacancyInput)
+agents/hh_api.py          — hh.ru client: official API (token) + HTML/JSON-LD fallback
+agents/hh_search.py       — Batch discovery: queries → ids → fetch → rule-based triage
 core/                     — Vacancy analysis (keyword scoring + LLM semantic analysis)
 agents/resume_intelligence.py — Resume parsing → ResumeProfile
 agents/career_match.py    — Resume × Vacancy → CareerMatchResult (LLM, Sonnet)
@@ -72,7 +79,9 @@ agents/career_match.py    — Resume × Vacancy → CareerMatchResult (LLM, Sonn
 
 **Intake layer is mandatory.** `analyze()` and `career_match()` never receive raw text directly — all input goes through `agents/intake.py` first. Adding a new source (e.g., hh.ru API) means adding one `from_X()` function in intake; analysis layers don't change.
 
-**`from_url()` is a stub.** Currently returns `IntakeConfidence.LOW` error. Implementation plan: detect `hh.ru/vacancy/{id}`, call `https://api.hh.ru/vacancies/{id}` (no auth), pipe JSON to existing `from_json()`.
+**`from_url()` is dual-channel.** hh.ru vacancy links resolve via `agents/hh_api.py`: the official API is used when `HH_ACCESS_TOKEN` is set in `.env` (register an app at https://dev.hh.ru), otherwise the public vacancy page is fetched and its JSON-LD JobPosting block is parsed. Context: in December 2025 hh.ru closed anonymous API access to `/vacancies` (HTTP 403), but public pages still serve full structured data without JavaScript. Non-hh URLs fall back to a generic HTML fetch with confidence capped at MEDIUM.
+
+**hh.ru batch search (`agents/hh_search.py`) is deliberately LLM-free.** `run_search()` triages new vacancies with `RuleBasedAnalyzer` only — a batch of 30 would otherwise mean 30 paid Sonnet calls. Full LLM analysis is per-vacancy via `/analyze/hh/{id}`. Already-triaged ids persist in `output/hh_search_state.json`; `rescan=True` re-triages everything (needed after editing the scoring profile). Search queries/region/limits live in `config/hh_search.yaml`. Fetches are throttled (`_REQUEST_DELAY`) — do not remove the delays, hh.ru shows captcha pages to aggressive clients.
 
 **DOCX resumes are converted to Markdown** inside `_from_docx()` using paragraph style names (`Heading 1` → `#`, list items → `-`). This enables `marked.js` rendering in the browser and preserves structure for LLM parsing.
 

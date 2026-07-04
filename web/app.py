@@ -20,6 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from agents.career_match import career_match
+from agents.hh_search import load_search_config, run_search
 from agents.intake import from_file, from_html, from_json, from_text, from_url
 from agents.resume_intelligence import ResumeProfile, analyze_resume, load_resume
 from core.analyzer import analyze
@@ -178,6 +179,11 @@ async def analyze_vacancy(
             },
         )
 
+    return _render_vacancy_result(request, vacancy)
+
+
+def _render_vacancy_result(request: Request, vacancy) -> HTMLResponse:
+    """Run full analysis of a VacancyInput and render the result page."""
     analysis = analyze(vacancy, _profile)
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -206,6 +212,52 @@ async def analyze_vacancy(
 
 def _positioning_css(level: str) -> str:
     return {"HIGH": "green", "MEDIUM": "yellow", "LOW": "red"}.get(level, "yellow")
+
+
+# ---------------------------------------------------------------------------
+# hh.ru search routes
+# ---------------------------------------------------------------------------
+
+@app.get("/search", response_class=HTMLResponse)
+async def search_page(request: Request):
+    cfg = load_search_config()
+    return templates.TemplateResponse(request, "search.html", context={
+        "queries":    "\n".join(cfg["queries"]),
+        "area":       cfg.get("area", 113),
+        "active_nav": "search",
+    })
+
+
+@app.post("/search/run", response_class=HTMLResponse)
+async def search_run(
+    request: Request,
+    queries: str = Form(default=""),
+    rescan:  str = Form(default=""),
+):
+    query_list = [q.strip() for q in queries.splitlines() if q.strip()]
+    result = run_search(_profile, queries=query_list or None, rescan=bool(rescan))
+    return templates.TemplateResponse(request, "search_results.html", context={
+        "result":       result,
+        "score_color":  _score_color,
+        "action_color": _action_color,
+        "active_nav":   "search",
+    })
+
+
+@app.get("/analyze/hh/{hh_id}", response_class=HTMLResponse)
+async def analyze_hh_vacancy(request: Request, hh_id: str):
+    """Full analysis of a single hh.ru vacancy straight from the search table."""
+    vacancy = from_url(f"https://hh.ru/vacancy/{hh_id}")
+    if not vacancy.normalized_text.strip():
+        cfg = load_search_config()
+        return templates.TemplateResponse(request, "search.html", context={
+            "queries":    "\n".join(cfg["queries"]),
+            "area":       cfg.get("area", 113),
+            "error":      vacancy.confidence_notes[0] if vacancy.confidence_notes
+                          else f"Не удалось загрузить вакансию {hh_id}",
+            "active_nav": "search",
+        })
+    return _render_vacancy_result(request, vacancy)
 
 
 # ---------------------------------------------------------------------------

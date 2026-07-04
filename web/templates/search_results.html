@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Результаты поиска — Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page-wrapper">
+<aside class="sidebar">
+  {% include '_nav.html' %}
+</aside>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <div class="card">
+      <h2>Результаты автопоиска</h2>
+      <p class="hint" style="margin-bottom:.6rem;">
+        Найдено по запросам: <strong>{{ result.found_total }}</strong> ·
+        новых оценено: <strong>{{ result.new_count }}</strong>
+        {% if result.skipped_backlog %} · отложено до следующего запуска: <strong>{{ result.skipped_backlog }}</strong>{% endif %} ·
+        всего в базе: <strong>{{ result.items | length }}</strong>
+      </p>
+
+      {% for e in result.errors %}
+      <div class="error-box">{{ e }}</div>
+      {% endfor %}
+
+      {% if result.items %}
+      <div style="overflow-x:auto;">
+        <table class="search-table">
+          <thead>
+            <tr>
+              <th>Балл</th>
+              <th>Рекомендация</th>
+              <th>Вакансия</th>
+              <th>Компания</th>
+              <th>Город</th>
+              <th>Зарплата</th>
+              <th>Дата</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in result.items if not item.error %}
+            <tr>
+              <td><span class="score-badge {{ score_color(item.score) }}">{{ item.score }}</span></td>
+              <td><span class="rec-badge {{ action_color(item.recommendation) }}">{{ item.recommendation }}</span></td>
+              <td>
+                <a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.title or ('Вакансия ' ~ item.hh_id) }}</a>
+                {% if item.key_matches %}
+                <div class="hint" style="margin-top:.15rem;">{{ item.key_matches | join(', ') }}</div>
+                {% endif %}
+              </td>
+              <td>{{ item.company }}</td>
+              <td>{{ item.area }}</td>
+              <td>{{ item.salary or '—' }}</td>
+              <td>{{ item.published_at }}</td>
+              <td><a class="btn-inline" href="/analyze/hh/{{ item.hh_id }}">Полный анализ</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p>Пока ничего не найдено. Попробуйте изменить запросы.</p>
+      {% endif %}
+    </div>
+
+    <p style="margin-top:1rem;"><a href="/search">← Новый поиск</a></p>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant · Автопоиск hh.ru</div>
+</footer>
+</div>
+</body>
+</html>
