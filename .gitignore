@@ -28,3 +28,6 @@ server.log
 # OS
 .DS_Store
 Thumbs.db
+
+# Personal data - canonical resume lives locally only
+data/resume/
