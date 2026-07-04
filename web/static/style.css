@@ -1312,3 +1312,9 @@ details[open] .intake-options-toggle::before { content: "－ "; }
   font-size: .8rem;
   white-space: nowrap;
 }
+
+.vac-meta {
+  margin-top: .2rem;
+  font-size: .8rem;
+  color: var(--muted);
+}
