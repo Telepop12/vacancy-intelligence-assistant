@@ -53,6 +53,8 @@ All LLM calls degrade gracefully to rule-based fallbacks when the key is absent 
 
 ## Architecture
 
+Full design rationale lives in [ARCHITECTURE.md](ARCHITECTURE.md); documentation registry — [DOCS-INDEX.md](DOCS-INDEX.md). Update ARCHITECTURE.md when making design-level decisions and CHANGELOG.md when closing a sprint.
+
 The system has four independent layers that compose at the web layer (`web/app.py`):
 
 ```
