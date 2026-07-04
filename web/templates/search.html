@@ -30,7 +30,8 @@
       <h2>Автопоиск вакансий на hh.ru</h2>
       <p class="hint" style="margin-bottom:1rem;">
         Система найдёт вакансии по запросам ниже, загрузит полные описания новых
-        и оценит каждую по профилю кандидата. Поиск занимает до минуты —
+        и оценит каждую по профилю кандидата. Загрузка идёт с паузами, чтобы
+        hh.ru не принял её за атаку робота — запуск занимает 1–2 минуты,
         не закрывайте страницу.
       </p>
       <form method="post" action="/search/run" id="search-form">
@@ -62,7 +63,7 @@
 document.getElementById('search-form').addEventListener('submit', function () {
   var btn = document.getElementById('search-btn');
   btn.disabled = true;
-  btn.textContent = 'Ищу и оцениваю… это может занять до минуты';
+  btn.textContent = 'Ищу и оцениваю… это может занять 1–2 минуты';
 });
 </script>
 </body>

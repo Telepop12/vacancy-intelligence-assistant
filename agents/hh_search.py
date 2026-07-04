@@ -134,6 +134,9 @@ def run_search(
 
     # ── Determine which ids need triage ──
     state = {} if rescan else _load_state()
+    # Drop error records from earlier runs (and legacy state files):
+    # a failed fetch must not count as "seen", otherwise it is never retried.
+    state = {vid: rec for vid, rec in state.items() if not rec.get("error")}
     new_ids = [vid for vid in all_ids if vid not in state]
     max_new = int(cfg.get("max_new_per_run", 30))
     to_fetch = new_ids[:max_new]
@@ -141,15 +144,22 @@ def run_search(
 
     # ── Fetch + triage new vacancies ──
     analyzer = RuleBasedAnalyzer()
-    fetched, fetch_errors = hh_api.fetch_vacancies_batch(to_fetch)
-    for vid, msg in fetch_errors.items():
+    fetched, fetch_errors, rate_limited = hh_api.fetch_vacancies_batch(to_fetch)
+
+    # Failed ids are reported but NOT persisted — next run retries them.
+    unattempted = len(to_fetch) - len(fetched) - len(fetch_errors)
+    skipped_backlog += len(fetch_errors) + unattempted
+    if rate_limited:
+        errors.append(
+            "hh.ru временно ограничил частоту запросов — загрузка остановлена. "
+            f"Не обработано вакансий: {len(fetch_errors) + unattempted}. "
+            "Подождите несколько минут и запустите поиск снова — "
+            "они будут обработаны автоматически."
+        )
+    for vid, msg in list(fetch_errors.items())[:5]:
         errors.append(f"Вакансия {vid}: {msg}")
-        state[vid] = asdict(TriageItem(
-            hh_id=vid,
-            url=f"{hh_api.HH_SITE_BASE}/vacancy/{vid}",
-            error=msg,
-            triaged_at=datetime.now().isoformat(timespec="seconds"),
-        ))
+    if len(fetch_errors) > 5:
+        errors.append(f"… и ещё {len(fetch_errors) - 5} вакансий с ошибками загрузки")
 
     for vid, data in fetched.items():
         vi = from_json(data, source_name=f"hh.ru:{vid}")

@@ -18,8 +18,10 @@ agents.intake.from_json().
 """
 from __future__ import annotations
 
+import http.cookiejar
 import json
 import os
+import random
 import re
 import time
 import urllib.error
@@ -36,8 +38,17 @@ _BROWSER_USER_AGENT = (
     "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 )
 
-_REQUEST_DELAY = 0.6   # seconds between batch page fetches
+_REQUEST_DELAY = 1.2   # base pause between batch page fetches (jitter added on top)
+_RETRY_DELAY = 7.0     # pause before retrying a rate-limited request
+_MAX_CONSECUTIVE_BLOCKS = 3  # stop the batch after this many 403s in a row
 _TIMEOUT = 25          # seconds
+
+# Shared cookie jar: hh.ru issues session cookies on the first request;
+# sending them back makes subsequent page fetches look like one browsing
+# session instead of 30 cold hits, which trips the anti-bot much less.
+_opener = urllib.request.build_opener(
+    urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar())
+)
 
 # hh.ru and its regional mirrors publish the same vacancy ids
 _VACANCY_URL_RE = re.compile(
@@ -51,6 +62,10 @@ _SEARCH_ID_RE = re.compile(r"/vacancy/(\d{6,})")
 
 class HHApiError(Exception):
     """hh.ru request failed (network, HTTP error, or unparseable payload)."""
+
+
+class HHRateLimitError(HHApiError):
+    """hh.ru anti-bot protection kicked in (HTTP 403/429 on a public page)."""
 
 
 def extract_vacancy_id(url: str) -> str | None:
@@ -89,18 +104,45 @@ def _get_json(path: str, params: dict[str, Any] | None = None) -> dict:
 
 
 def _get_html(url: str) -> str:
-    """GET a public hh.ru page as a regular browser would."""
+    """GET a public hh.ru page as a regular browser would (with session cookies)."""
     req = urllib.request.Request(
         url,
-        headers={"User-Agent": _BROWSER_USER_AGENT, "Accept-Language": "ru,en;q=0.8"},
+        headers={
+            "User-Agent": _BROWSER_USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "ru,en;q=0.8",
+        },
     )
     try:
-        with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:
+        with _opener.open(req, timeout=_TIMEOUT) as resp:
             return resp.read().decode("utf-8", errors="replace")
     except urllib.error.HTTPError as exc:
+        if exc.code in (403, 429):
+            raise HHRateLimitError(
+                f"hh.ru ограничил частоту запросов (HTTP {exc.code})"
+            ) from exc
         raise HHApiError(f"hh.ru вернул HTTP {exc.code} для {url}") from exc
     except urllib.error.URLError as exc:
         raise HHApiError(f"Сетевая ошибка при обращении к hh.ru: {exc.reason}") from exc
+
+
+def _polite_sleep() -> None:
+    """Randomized pause so batch traffic doesn't look machine-regular."""
+    time.sleep(_REQUEST_DELAY + random.uniform(0.2, 1.0))
+
+
+def _warm_session() -> None:
+    """
+    Visit the public search page to obtain session cookies.
+
+    hh.ru's anti-bot blocks cold hits on /vacancy/{id} far more aggressively
+    than requests carrying cookies from a prior page view — empirically a
+    403-blocked vacancy page opens fine right after one search-page visit.
+    """
+    try:
+        _get_html(f"{HH_SITE_BASE}/search/vacancy?text=&area=113")
+    except HHApiError:
+        pass  # warming is best-effort; the retry will surface the real error
 
 
 # ---------------------------------------------------------------------------
@@ -207,7 +249,13 @@ def fetch_vacancy_data(vacancy_id: str) -> dict:
         except HHApiError:
             pass  # token expired/insufficient — fall through to HTML
 
-    html = _get_html(f"{HH_SITE_BASE}/vacancy/{vacancy_id}")
+    try:
+        html = _get_html(f"{HH_SITE_BASE}/vacancy/{vacancy_id}")
+    except HHRateLimitError:
+        # Cold hit blocked — pick up session cookies and try once more
+        _warm_session()
+        time.sleep(1.0 + random.uniform(0.0, 1.0))
+        html = _get_html(f"{HH_SITE_BASE}/vacancy/{vacancy_id}")
     for block in _JSONLD_RE.findall(html):
         try:
             data = json.loads(block)
@@ -281,22 +329,46 @@ def _search_ids_html(text, area, max_pages, search_field) -> list[str]:
         for i in page_ids:
             seen.add(i)
             ids.append(i)
-        time.sleep(_REQUEST_DELAY)
+        _polite_sleep()
     return ids
 
 
-def fetch_vacancies_batch(vacancy_ids: list[str]) -> tuple[dict[str, dict], dict[str, str]]:
+def fetch_vacancies_batch(
+    vacancy_ids: list[str],
+) -> tuple[dict[str, dict], dict[str, str], bool]:
     """
     Fetch full intake dicts for a list of ids, politely throttled.
-    Returns (fetched: id → intake dict, errors: id → message).
+
+    Returns (fetched: id → intake dict, errors: id → message, rate_limited).
+
+    Rate-limited requests are retried once after a long pause. After
+    _MAX_CONSECUTIVE_BLOCKS blocks in a row the remaining ids are left
+    untouched (neither fetched nor errored) so the caller can retry them
+    on the next run — hammering on only makes the block longer.
     """
     fetched: dict[str, dict] = {}
     errors: dict[str, str] = {}
+    consecutive_blocks = 0
+
     for i, vid in enumerate(vacancy_ids):
         if i:
-            time.sleep(_REQUEST_DELAY)
+            _polite_sleep()
         try:
             fetched[vid] = fetch_vacancy_data(vid)
+            consecutive_blocks = 0
+        except HHRateLimitError:
+            time.sleep(_RETRY_DELAY + random.uniform(0.0, 2.0))
+            try:
+                fetched[vid] = fetch_vacancy_data(vid)
+                consecutive_blocks = 0
+            except HHRateLimitError as exc:
+                consecutive_blocks += 1
+                errors[vid] = str(exc)
+                if consecutive_blocks >= _MAX_CONSECUTIVE_BLOCKS:
+                    return fetched, errors, True
+            except HHApiError as exc:
+                errors[vid] = str(exc)
         except HHApiError as exc:
             errors[vid] = str(exc)
-    return fetched, errors
+
+    return fetched, errors, False

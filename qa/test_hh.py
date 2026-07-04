@@ -138,6 +138,7 @@ def test_run_search_triage(monkeypatch, tmp_path):
         lambda ids: (
             {vid: dict(hh_api._api_record_to_intake(_API_RECORD), hh_id=vid) for vid in ids},
             {},
+            False,
         ),
     )
 
@@ -154,6 +155,46 @@ def test_run_search_triage(monkeypatch, tmp_path):
     result2 = hh_search.run_search(_profile, queries=["CIO"])
     assert result2.new_count == 0
     assert len(result2.items) == 2
+
+
+@pytest.mark.no_llm
+def test_run_search_failed_ids_retried_next_run(monkeypatch, tmp_path):
+    """Rate-limited/errored ids must NOT be marked as seen — next run retries them."""
+    monkeypatch.setattr(hh_search, "STATE_PATH", tmp_path / "state.json")
+    monkeypatch.setattr(
+        hh_api, "search_vacancy_ids",
+        lambda text, area=None, max_pages=1, search_field="name", extra_params=None: ["201", "202"],
+    )
+
+    # Run 1: vacancy 201 loads, 202 is blocked, batch reports rate limiting
+    monkeypatch.setattr(
+        hh_api, "fetch_vacancies_batch",
+        lambda ids: (
+            {"201": dict(hh_api._api_record_to_intake(_API_RECORD), hh_id="201")},
+            {"202": "hh.ru ограничил частоту запросов (HTTP 403)"},
+            True,
+        ),
+    )
+    from web.app import _profile
+    r1 = hh_search.run_search(_profile, queries=["CIO"])
+    assert r1.new_count == 1
+    assert r1.skipped_backlog == 1
+    assert any("ограничил" in e for e in r1.errors)
+    assert len(r1.items) == 1  # error record not in the table
+
+    # Run 2: hh.ru recovered — 202 must be retried and triaged
+    monkeypatch.setattr(
+        hh_api, "fetch_vacancies_batch",
+        lambda ids: (
+            {vid: dict(hh_api._api_record_to_intake(_API_RECORD), hh_id=vid) for vid in ids},
+            {},
+            False,
+        ),
+    )
+    r2 = hh_search.run_search(_profile, queries=["CIO"])
+    assert r2.new_count == 1
+    assert len(r2.items) == 2
+    assert not r2.errors
 
 
 @pytest.mark.no_llm

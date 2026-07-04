@@ -31,9 +31,17 @@
         всего в базе: <strong>{{ result.items | length }}</strong>
       </p>
 
-      {% for e in result.errors %}
-      <div class="error-box">{{ e }}</div>
-      {% endfor %}
+      {% if result.errors %}
+      <div class="error-box">{{ result.errors[0] }}</div>
+      {% if result.errors | length > 1 %}
+      <details style="margin:.5rem 0 1rem;">
+        <summary class="hint" style="cursor:pointer;">Подробности об ошибках ({{ result.errors | length - 1 }})</summary>
+        {% for e in result.errors[1:] %}
+        <p class="hint" style="margin:.3rem 0 0 .5rem;">{{ e }}</p>
+        {% endfor %}
+      </details>
+      {% endif %}
+      {% endif %}
 
       {% if result.items %}
       <div style="overflow-x:auto;">
