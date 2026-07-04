@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Варианты резюме — Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page-wrapper">
+<aside class="sidebar">
+  {% include '_nav.html' %}
+</aside>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    {% for e in errors or [] %}
+    <div class="error-box">{{ e }}</div>
+    {% endfor %}
+
+    <div class="card">
+      <h2>Варианты резюме для hh.ru</h2>
+      <p class="hint" style="margin-bottom:.6rem;">
+        На hh.ru отклик отправляется уже существующим резюме, поэтому система
+        готовит контент для <strong>постоянных вариантов</strong> под архетипы ролей.
+        Факты берутся только из канонического резюме — ничего не выдумывается,
+        меняются акценты и формулировки. Сгенерированный блок копируется в
+        соответствующее резюме на hh один раз.
+      </p>
+      <p class="hint">
+        Каноническое резюме: <code>{{ resume_file }}</code>
+        {% if resume_exists %}<span style="color:green;">— найдено</span>
+        {% else %}<span style="color:red;">— НЕ НАЙДЕНО, генерация невозможна</span>{% endif %}
+      </p>
+      <form method="post" action="/variants/generate" id="gen-all-form" style="margin-top:.7rem;">
+        <input type="hidden" name="key" value="">
+        <button type="submit" class="btn-submit gen-btn">Сгенерировать все варианты (3–5 минут)</button>
+      </form>
+    </div>
+
+    {% for key, vcfg in cfg_variants.items() %}
+    {% set v = saved.get(key) %}
+    <div class="card" style="margin-top:1rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+        <h2 style="margin:0;">{{ vcfg.name }}</h2>
+        <form method="post" action="/variants/generate" style="margin:0;">
+          <input type="hidden" name="key" value="{{ key }}">
+          <button type="submit" class="btn-inline gen-btn">
+            {{ 'Перегенерировать' if v else 'Сгенерировать' }}
+          </button>
+        </form>
+      </div>
+
+      {% if v and not v.error %}
+      <p class="hint" style="margin:.3rem 0 .8rem;">Сгенерировано: {{ v.generated_at }} ·
+        <a href="/output/resume_variants/{{ key }}.md" target="_blank">скачать .md</a></p>
+
+      <h3 class="variant-h">Заголовок резюме</h3>
+      <div class="copy-block" data-copy>{{ v.hh_title }}</div>
+
+      <h3 class="variant-h">О себе</h3>
+      <div class="copy-block" data-copy>{{ v.about }}</div>
+
+      <h3 class="variant-h">Ключевые навыки</h3>
+      <div class="copy-block" data-copy>{{ v.key_skills | join(' · ') }}</div>
+
+      <details style="margin-top:.6rem;">
+        <summary class="hint" style="cursor:pointer;">Акценты по позициям ({{ v.positions | length }})</summary>
+        {% for p in v.positions %}
+        <div style="margin:.6rem 0 0 .5rem;">
+          <strong>{{ p.company }}</strong> · {{ p.period }} — {{ p.title }}
+          <ul style="margin:.2rem 0 0 1.1rem;">
+            {% for b in p.bullets %}<li>{{ b }}</li>{% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+      </details>
+
+      <details style="margin-top:.4rem;">
+        <summary class="hint" style="cursor:pointer;">Что изменено и честные пробелы</summary>
+        <p style="margin:.4rem 0 0 .5rem;"><strong>Смещение акцентов:</strong> {{ v.what_changed }}</p>
+        <p style="margin:.4rem 0 0 .5rem;"><strong>Пробелы под архетип:</strong> {{ v.honest_gaps }}</p>
+      </details>
+
+      {% elif v and v.error %}
+      <div class="error-box" style="margin-top:.6rem;">{{ v.error }}</div>
+      {% else %}
+      <p class="hint" style="margin-top:.4rem;">Ещё не сгенерирован.</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant · Варианты резюме</div>
+</footer>
+</div>
+<script>
+document.querySelectorAll('form').forEach(function (f) {
+  f.addEventListener('submit', function () {
+    var btn = f.querySelector('.gen-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Генерирую… не закрывайте страницу'; }
+  });
+});
+document.querySelectorAll('[data-copy]').forEach(function (el) {
+  el.title = 'Нажмите, чтобы скопировать';
+  el.addEventListener('click', function () {
+    navigator.clipboard.writeText(el.textContent.trim()).then(function () {
+      el.classList.add('copied');
+      setTimeout(function () { el.classList.remove('copied'); }, 800);
+    });
+  });
+});
+</script>
+</body>
+</html>

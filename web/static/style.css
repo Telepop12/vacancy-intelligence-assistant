@@ -1318,3 +1318,22 @@ details[open] .intake-options-toggle::before { content: "－ "; }
   font-size: .8rem;
   color: var(--muted);
 }
+
+/* ── resume variants ── */
+.variant-h {
+  margin: .8rem 0 .3rem;
+  font-size: .85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.copy-block {
+  background: rgba(30,64,175,.05);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: .6rem .8rem;
+  cursor: copy;
+  white-space: pre-wrap;
+}
+.copy-block:hover { border-color: var(--primary); }
+.copy-block.copied { background: rgba(22,163,74,.12); border-color: var(--success); }

@@ -21,6 +21,10 @@ from fastapi.templating import Jinja2Templates
 
 from agents.career_match import career_match
 from agents.hh_search import load_search_config, run_search
+from agents.resume_variants import (
+    generate_all, generate_variant, load_saved_variants,
+    load_variants_config, resume_path,
+)
 from agents.intake import from_file, from_html, from_json, from_text, from_url
 from agents.resume_intelligence import ResumeProfile, analyze_resume, load_resume
 from core.analyzer import analyze
@@ -212,6 +216,41 @@ def _render_vacancy_result(request: Request, vacancy) -> HTMLResponse:
 
 def _positioning_css(level: str) -> str:
     return {"HIGH": "green", "MEDIUM": "yellow", "LOW": "red"}.get(level, "yellow")
+
+
+# ---------------------------------------------------------------------------
+# Resume variants routes
+# ---------------------------------------------------------------------------
+
+def _variants_context() -> dict:
+    cfg = load_variants_config()
+    rp = resume_path(cfg)
+    return {
+        "cfg_variants": cfg["variants"],
+        "saved": load_saved_variants(),
+        "resume_file": str(rp),
+        "resume_exists": rp.exists(),
+        "active_nav": "variants",
+    }
+
+
+@app.get("/variants", response_class=HTMLResponse)
+async def variants_page(request: Request):
+    return templates.TemplateResponse(request, "variants.html", context=_variants_context())
+
+
+@app.post("/variants/generate", response_class=HTMLResponse)
+async def variants_generate(request: Request, key: str = Form(default="")):
+    """Generate one variant (key given) or all of them (key empty)."""
+    if key:
+        result = generate_variant(key)
+        errors = [result.error] if result.error else []
+    else:
+        results = generate_all()
+        errors = [f"{k}: {v.error}" for k, v in results.items() if v.error]
+    ctx = _variants_context()
+    ctx["errors"] = errors
+    return templates.TemplateResponse(request, "variants.html", context=ctx)
 
 
 # ---------------------------------------------------------------------------
@@ -410,10 +449,14 @@ async def match_analyze(
     })
 
 
-@app.get("/output/{filename}")
+@app.get("/output/{filename:path}")
 async def download(filename: str):
-    """Serve generated report files for download."""
-    path = OUTPUT_DIR / filename
-    if not path.exists() or path.suffix not in {".md", ".json"}:
+    """Serve generated report files for download (subfolders allowed)."""
+    path = (OUTPUT_DIR / filename).resolve()
+    if (
+        not str(path).startswith(str(OUTPUT_DIR.resolve()))
+        or not path.exists()
+        or path.suffix not in {".md", ".json"}
+    ):
         raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(str(path), filename=filename)
+    return FileResponse(str(path), filename=path.name)
