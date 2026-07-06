@@ -93,3 +93,28 @@ def test_word_count():
 def test_load_missing_package(monkeypatch, tmp_path):
     monkeypatch.setattr(ap, "OUTPUT_DIR", tmp_path)
     assert ap.load_saved_package("hh_none") is None
+
+
+@pytest.mark.no_llm
+def test_package_route_cold_path(monkeypatch, tmp_path):
+    """Regression: /package/hh/{id} cold path must resolve all names in web.app
+    (a missing import surfaced as NameError only when the cache was empty)."""
+    from fastapi.testclient import TestClient
+    import web.app as webapp
+
+    monkeypatch.setattr(ap, "OUTPUT_DIR", tmp_path)  # empty cache → cold path
+    monkeypatch.setattr(
+        webapp.hh_api, "fetch_vacancy_data",
+        lambda vid: {"name": "CIO", "employer": "Тест", "description": "текст",
+                     "alternate_url": "https://hh.ru/vacancy/1"},
+    )
+    monkeypatch.setattr(
+        webapp, "build_package",
+        lambda **kw: ApplicationPackage(package_id="hh_1", vacancy_title="CIO",
+                                        letter="Добрый день!", variant_name="CIO",
+                                        recommended_variant="cio"),
+    )
+    client = TestClient(webapp.app)
+    resp = client.get("/package/hh/1")
+    assert resp.status_code == 200
+    assert "Добрый день!" in resp.text

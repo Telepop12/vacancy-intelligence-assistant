@@ -19,6 +19,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from agents import hh_api
 from agents.career_match import career_match
 from agents.hh_search import load_search_config, run_search
 from agents.application_package import (
