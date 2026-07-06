@@ -1,6 +1,8 @@
 """
 pytest: hh.ru integration tests — all offline (network calls are monkeypatched).
 """
+import json
+
 import pytest
 
 from agents import hh_api, hh_search
