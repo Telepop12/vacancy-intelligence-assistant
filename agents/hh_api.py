@@ -256,17 +256,51 @@ def fetch_vacancy_data(vacancy_id: str) -> dict:
         _warm_session()
         time.sleep(1.0 + random.uniform(0.0, 1.0))
         html = _get_html(f"{HH_SITE_BASE}/vacancy/{vacancy_id}")
+    foreign_found = False
     for block in _JSONLD_RE.findall(html):
         try:
             data = json.loads(block)
         except json.JSONDecodeError:
             continue
-        if data.get("@type") == "JobPosting":
-            return _jsonld_to_intake(data, vacancy_id)
+        if data.get("@type") != "JobPosting":
+            continue
+        # Identity guard: an archived/transitional vacancy page can embed a
+        # JobPosting of a *similar* vacancy (observed live: letter generated
+        # for the wrong employer). Accept the block only if it doesn't claim
+        # a different vacancy id.
+        jd_id = _jsonld_vacancy_id(data)
+        if jd_id and jd_id != str(vacancy_id):
+            foreign_found = True
+            continue
+        return _jsonld_to_intake(data, vacancy_id)
+    if foreign_found:
+        raise HHApiError(
+            f"Страница вакансии {vacancy_id} показывает другую (похожую) "
+            "вакансию — исходная, вероятно, в архиве. Пакет по ней не строим."
+        )
     raise HHApiError(
         f"Страница вакансии {vacancy_id} не содержит данных JobPosting — "
         "возможно, вакансия в архиве или hh.ru показал проверку на робота"
     )
+
+
+def _jsonld_vacancy_id(data: dict) -> str | None:
+    """Extract the vacancy id a JSON-LD JobPosting block claims to describe."""
+    identifier = data.get("identifier")
+    candidates = [
+        data.get("url"),
+        data.get("sameAs"),
+        identifier.get("value") if isinstance(identifier, dict) else identifier,
+    ]
+    for cand in candidates:
+        if not isinstance(cand, str):
+            continue
+        m = re.search(r"/vacancy/(\d+)", cand)
+        if m:
+            return m.group(1)
+        if cand.isdigit():
+            return cand
+    return None
 
 
 # ---------------------------------------------------------------------------

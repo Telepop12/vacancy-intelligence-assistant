@@ -158,6 +158,46 @@ def test_run_search_triage(monkeypatch, tmp_path):
 
 
 @pytest.mark.no_llm
+def test_fetch_vacancy_rejects_foreign_jsonld(monkeypatch):
+    """Archived vacancy page embedding a JobPosting of a SIMILAR vacancy must
+    not be silently accepted (caused a cover letter for the wrong employer)."""
+    foreign = {
+        "@type": "JobPosting", "title": "Чужая вакансия",
+        "url": "https://hh.ru/vacancy/999999", "description": "чужой текст",
+        "hiringOrganization": {"name": "Чужая компания"},
+    }
+    own = {
+        "@type": "JobPosting", "title": "Наша вакансия",
+        "url": "https://hh.ru/vacancy/111", "description": "наш текст",
+        "hiringOrganization": {"name": "Наша компания"},
+    }
+
+    def page(*blocks):
+        scripts = "".join(
+            f'<script type="application/ld+json">{json.dumps(b, ensure_ascii=False)}</script>'
+            for b in blocks
+        )
+        return f"<html><head>{scripts}</head><body></body></html>"
+
+    monkeypatch.setattr(hh_api, "_token", lambda: "")
+
+    # Page shows only a foreign posting → explicit error, not a wrong intake
+    monkeypatch.setattr(hh_api, "_get_html", lambda url: page(foreign))
+    with pytest.raises(hh_api.HHApiError, match="другую"):
+        hh_api.fetch_vacancy_data("111")
+
+    # Foreign posting first, own second → own must win
+    monkeypatch.setattr(hh_api, "_get_html", lambda url: page(foreign, own))
+    d = hh_api.fetch_vacancy_data("111")
+    assert d["employer"] == "Наша компания"
+
+    # Posting without any id claim → accepted as before (can't verify)
+    anon = {k: v for k, v in own.items() if k != "url"}
+    monkeypatch.setattr(hh_api, "_get_html", lambda url: page(anon))
+    assert hh_api.fetch_vacancy_data("111")["employer"] == "Наша компания"
+
+
+@pytest.mark.no_llm
 def test_run_search_failed_ids_retried_next_run(monkeypatch, tmp_path):
     """Rate-limited/errored ids must NOT be marked as seen — next run retries them."""
     monkeypatch.setattr(hh_search, "STATE_PATH", tmp_path / "state.json")
