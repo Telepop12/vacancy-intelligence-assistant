@@ -27,6 +27,14 @@ import yaml
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_PATH = BASE_DIR / "config" / "resume_variants.yaml"
 OUTPUT_DIR = BASE_DIR / "output" / "resume_variants"
+FACTS_PATH = BASE_DIR / "data" / "resume" / "facts.md"
+
+
+def load_facts() -> str:
+    """Extra verified facts beyond the canonical resume (публикации, pet-проекты)."""
+    if FACTS_PATH.exists():
+        return FACTS_PATH.read_text(encoding="utf-8")
+    return ""
 
 
 @dataclass
@@ -165,9 +173,16 @@ KPI, CEO, CIO, CTO, CDTO, CAIO, M&A, MBA, BI, MDM, ITSM, ITIL, DevOps, CI/CD.
 Отвечай строго валидным JSON без markdown и пояснений вокруг."""
 
 _USER_TEMPLATE = """\
-КАНОНИЧЕСКОЕ РЕЗЮМЕ (единственный источник фактов):
+КАНОНИЧЕСКОЕ РЕЗЮМЕ (главный источник фактов, мастер-версия):
 ---
 {resume_text}
+---
+
+ФАКТ-БАЗА (дополнительные подтверждённые факты: публикации, pet-проекты,
+детализация позиций; внутри действует правило статусов — использовать можно
+только ✅ и детализацию канонических позиций, разделы 🚫 игнорировать):
+---
+{facts}
 ---
 
 АРХЕТИП ВАРИАНТА: {name}
@@ -231,6 +246,7 @@ def generate_variant(key: str, resume_text: str | None = None) -> ResumeVariant:
 
     prompt = _USER_TEMPLATE.format(
         resume_text=text,
+        facts=load_facts() or "— факт-база пуста —",
         name=vcfg["name"],
         hh_title_hint=vcfg.get("hh_title_hint", ""),
         focus=vcfg.get("focus", ""),

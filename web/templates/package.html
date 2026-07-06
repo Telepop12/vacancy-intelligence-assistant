@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Пакет отклика — Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page-wrapper">
+<aside class="sidebar">
+  {% include '_nav.html' %}
+</aside>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <div class="card">
+      <h2>Пакет отклика</h2>
+      <p style="margin:.4rem 0;">
+        <strong>{{ pkg.vacancy_title }}</strong>
+        {% if pkg.company %} · {{ pkg.company }}{% endif %}
+        {% if pkg.vacancy_url %} · <a href="{{ pkg.vacancy_url }}" target="_blank">открыть на hh.ru</a>{% endif %}
+      </p>
+      <p class="hint">Сгенерировано: {{ pkg.generated_at }}
+        · <a href="/package/hh/{{ pkg.package_id | replace('hh_','') }}?regenerate=true">перегенерировать</a></p>
+    </div>
+
+    {% if pkg.error %}
+    <div class="error-box" style="margin-top:1rem;">{{ pkg.error }}</div>
+    {% else %}
+
+    <div class="card" style="margin-top:1rem;">
+      <h2>Каким резюме откликаться</h2>
+      <p style="margin:.5rem 0;"><strong>{{ pkg.variant_name }}</strong></p>
+      <p class="hint">{{ pkg.variant_reasoning }}</p>
+      <p class="hint" style="margin-top:.4rem;">
+        Контент этого варианта — в разделе <a href="/variants">«Варианты резюме»</a>.
+        Убедись, что он заведён на hh, прежде чем откликаться.
+      </p>
+    </div>
+
+    <div class="card" style="margin-top:1rem;">
+      <h2>Сопроводительное письмо <span class="hint" style="font-weight:normal;">({{ word_count }} слов — клик по тексту копирует)</span></h2>
+      <div class="copy-block" data-copy style="margin-top:.5rem;">{{ pkg.letter }}</div>
+    </div>
+
+    <div class="card" style="margin-top:1rem;">
+      <h2>Что зеркалим из вакансии</h2>
+      <ul style="margin:.5rem 0 0 1.1rem;">
+        {% for h in pkg.hooks %}<li>{{ h }}</li>{% endfor %}
+      </ul>
+      <p class="hint" style="margin-top:.6rem;">
+        Проверь каждый пункт перед отправкой: письмо строится только на фактах
+        резюме и факт-базы, но финальная ответственность за формулировки — твоя.
+      </p>
+    </div>
+
+    {% endif %}
+
+    <p style="margin-top:1rem;"><a href="/search">← к результатам поиска</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant · Пакет отклика</div>
+</footer>
+</div>
+<script>
+document.querySelectorAll('[data-copy]').forEach(function (el) {
+  el.title = 'Нажмите, чтобы скопировать';
+  el.addEventListener('click', function () {
+    navigator.clipboard.writeText(el.textContent.trim()).then(function () {
+      el.classList.add('copied');
+      setTimeout(function () { el.classList.remove('copied'); }, 800);
+    });
+  });
+});
+</script>
+</body>
+</html>
