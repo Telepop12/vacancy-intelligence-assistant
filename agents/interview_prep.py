@@ -75,6 +75,7 @@ class PrepPackage:
     vacancy_url: str = ""
     interviewer_profile: str = ""   # «с чьих позиций» построены вопросы
     qa: list[PrepQA] = field(default_factory=list)
+    hr_qa: list[PrepQA] = field(default_factory=list)  # общие/поведенческие от HR
     employer_questions: list[EmployerQuestion] = field(default_factory=list)
     purple_rounds: list[PurpleRound] = field(default_factory=list)
     top_risks: list[str] = field(default_factory=list)
@@ -144,6 +145,52 @@ _QA_USER = """\
 Требования к qa: 10-12 вопросов; охватить и козыри (пусть кандидат готов
 подать их сильно), и болевые зоны; вопросы к цифрам обязательны.
 Ответы (answer) — плотные, 2-3 предложения, без воды."""
+
+
+# ---------------------------------------------------------------------------
+# Stage 1b: general / behavioral HR questions
+# ---------------------------------------------------------------------------
+
+_HR_SYSTEM = _LANG_RULES + """
+
+Ты — опытный HR-директор с сильной подготовкой в психологии, интервьюируешь
+руководителя C-Level. Твой жанр — общие и поведенческие вопросы, НЕ технические:
+самопрезентация, мотивация, стиль управления, конфликты, работа с людьми,
+неудачи, отношения с первым лицом. Ты любишь ситуационные кейсы
+(«ваш сотрудник регулярно срывает сроки…», «на руководителя жалуются, что
+он хамит коллегам…») и слушаешь не «что», а «как» человек думает.
+
+Заготовки ответов пиши от первого лица кандидата: живо, структурно
+(ситуация → действие → результат, где уместно), с опорой на его реальный
+опыт из резюме. Ответ на «расскажите о себе» затачивай под конкретную
+вакансию. Без заученности и пафоса. Отвечай строго валидным JSON."""
+
+_HR_USER = """\
+ВАКАНСИЯ (для контекста самопрезентации):
+---
+{vacancy_text}
+---
+
+РЕЗЮМЕ КАНДИДАТА:
+---
+{resume_text}
+---
+
+Верни ТОЛЬКО валидный JSON:
+{{
+  "hr_qa": [
+    {{
+      "source": "тема (самопрезентация / мотивация / конфликт / стиль управления / …)",
+      "question": "вопрос как его задаст HR",
+      "answer": "заготовка ответа от первого лица, 2-4 предложения",
+      "severity": "hr"
+    }}
+  ]
+}}
+8-10 вопросов. Обязательно включить: «Расскажите о себе» (под эту вакансию),
+причину поиска работы, 1-2 ситуационных кейса про проблемных сотрудников
+(срыв сроков; жалобы коллег на хамство), конфликт с генеральным директором
+или собственником, управленческий стиль, неудачу/ошибку, слабые стороны."""
 
 
 # ---------------------------------------------------------------------------
@@ -273,6 +320,13 @@ def build_prep(
         pkg.top_risks = data.get("top_risks") or []
         pkg.top_trumps = data.get("top_trumps") or []
 
+        # Stage 1b — general / behavioral HR questions
+        data1b = _call_llm(api_key, _HR_SYSTEM, _HR_USER.format(
+            vacancy_text=vac, resume_text=resume,
+        ), max_tokens=5000)
+        pkg.hr_qa = [PrepQA(**{k: q.get(k, "") for k in ("source", "question", "answer", "severity")})
+                     for q in data1b.get("hr_qa") or []]
+
         # Stage 2 — employer questions
         brief = f"{title}; козыри: {'; '.join(pkg.top_trumps[:3])}; риски: {'; '.join(pkg.top_risks[:3])}"
         data2 = _call_llm(api_key, _EMP_SYSTEM, _EMP_USER.format(
@@ -312,6 +366,7 @@ def load_saved_prep(package_id: str) -> PrepPackage | None:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
         data["qa"] = [PrepQA(**q) for q in data.get("qa", [])]
+        data["hr_qa"] = [PrepQA(**q) for q in data.get("hr_qa", [])]
         data["employer_questions"] = [EmployerQuestion(**q) for q in data.get("employer_questions", [])]
         data["purple_rounds"] = [PurpleRound(**r) for r in data.get("purple_rounds", [])]
         return PrepPackage(**data)
@@ -358,6 +413,9 @@ def _save(pkg: PrepPackage) -> None:
             q.answer,
             "",
         ]
+    md += ["## Общие и поведенческие вопросы (HR)", ""]
+    for i, q in enumerate(pkg.hr_qa, 1):
+        md += [f"### {i}. {q.question}", f"_Тема: {q.source}_", "", q.answer, ""]
     md += ["## Ваши вопросы работодателю", ""]
     for q in pkg.employer_questions:
         md += [f"- **{q.question}**", f"  _{q.why}_", ""]

@@ -71,11 +71,32 @@
     </div>
 
     <div class="card" style="margin-top:1rem;">
-      <h2>Вопросы интервьюера <span class="hint" style="font-weight:normal;">({{ pkg.qa | length }} — клик раскрывает заготовку ответа)</span></h2>
-      {% for q in pkg.qa %}
+      <h2>Вопросы по вашему опыту <span class="hint" style="font-weight:normal;">(клик раскрывает заготовку ответа)</span></h2>
+      {% for block_key, block_title, block_hint in [
+        ('strong', '🟢 Подача козырей', 'вопросы, на которых можно выиграть — готовьте сильную подачу'),
+        ('warn', '🟡 Зоны подготовки', 'спросят почти наверняка — нужна отрепетированная конкретика'),
+        ('risk', '🔴 Болевые зоны', 'самые неудобные вопросы — отработаны в спарринге ниже'),
+      ] %}
+      {% set block_items = pkg.qa | selectattr('severity', 'equalto', block_key) | list %}
+      {% if block_items %}
+      <h3 class="variant-h" style="margin-top:1rem;">{{ block_title }} <span style="text-transform:none;letter-spacing:0;">— {{ block_hint }}</span></h3>
+      {% for q in block_items %}
       <div class="qa-item" onclick="this.classList.toggle('open')">
-        <div class="q">{{ loop.index }}. {{ q.question }} <span class="sev {{ q.severity }}">{{ q.severity }}</span></div>
+        <div class="q">{{ q.question }}</div>
         <div class="src">← {{ q.source }}</div>
+        <div class="a">{{ q.answer }}</div>
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    <div class="card" style="margin-top:1rem;">
+      <h2>Общие и поведенческие вопросы <span class="hint" style="font-weight:normal;">(HR: самопрезентация, конфликты, стиль)</span></h2>
+      {% for q in pkg.hr_qa %}
+      <div class="qa-item" onclick="this.classList.toggle('open')">
+        <div class="q">{{ q.question }}</div>
+        <div class="src">тема: {{ q.source }}</div>
         <div class="a">{{ q.answer }}</div>
       </div>
       {% endfor %}
