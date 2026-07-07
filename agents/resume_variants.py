@@ -152,6 +152,9 @@ _SYSTEM_PROMPT = """\
 KPI, CEO, CIO, CTO, CDTO, CAIO, M&A, MBA, BI, MDM, ITSM, ITIL, DevOps, CI/CD.
 Запрещены ИИ-штампы: «обладаю обширным опытом», «богатый опыт», «эффективный менеджер»,
 «нацелен на результат» и подобные пустые формулы.
+Запрещён контрастный оборот-финализация «X, а не Y» («…подтверждённая позиция,
+а не декларация», «…результат, а не процесс», «не просто …, а …») — смысл пункта
+должен быть ясен без такого противопоставления; просто не пиши вторую половину.
 
 Ты — эксперт по executive-резюме для ролей CIO / CTO / CDTO / CAIO уровня Top Management.
 Твоя задача — переакцентировать РЕАЛЬНОЕ резюме кандидата под заданный архетип роли.
@@ -258,6 +261,15 @@ def generate_variant(key: str, resume_text: str | None = None) -> ResumeVariant:
 
     try:
         data = _call_llm(api_key, prompt)
+        if _has_contrast_tic(data):
+            # Deterministic guard: the model slips into the banned "X, а не Y"
+            # rhetoric despite the system prompt — one retry with direct feedback.
+            data = _call_llm(
+                api_key,
+                prompt + "\n\nВАЖНО: в прошлой попытке ты использовал запрещённый "
+                "оборот «…, а не …». Перепиши все формулировки БЕЗ этого "
+                "противопоставления — просто утверждение, без «а не»-части.",
+            )
         variant.hh_title = data.get("hh_title", "")
         variant.about = data.get("about", "")
         variant.key_skills = data.get("key_skills") or []
@@ -284,6 +296,15 @@ def generate_all(resume_text: str | None = None) -> dict[str, ResumeVariant]:
     cfg = load_variants_config()
     text = resume_text or load_canonical_resume(cfg)
     return {key: generate_variant(key, resume_text=text) for key in cfg["variants"]}
+
+
+def _has_contrast_tic(data: dict) -> bool:
+    """True if the banned '…, а не …' rhetoric appears in PUBLISHED fields."""
+    published = [data.get("hh_title", ""), data.get("about", "")]
+    published += data.get("key_skills") or []
+    for p in data.get("positions") or []:
+        published += p.get("bullets") or []
+    return any(", а не " in s for s in published if isinstance(s, str))
 
 
 def _call_llm(api_key: str, prompt: str) -> dict:

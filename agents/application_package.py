@@ -56,6 +56,8 @@ _SYSTEM_PROMPT = """\
 M&A, BI, MES, ITSM, DevOps. Запрещены ИИ-штампы и пустые формулы:
 «обладаю обширным опытом», «нацелен на результат», «эффективный менеджер»,
 «буду рад стать частью команды» и подобные.
+Запрещён контрастный оборот-финализация «X, а не Y» («…результат, а не
+декларация», «не просто …, а …») — пиши утверждение без противопоставления.
 
 Ты — консультант по executive-трудоустройству. Пишешь сопроводительные письма
 для кандидата уровня CIO/CTO/CDTO/CAIO и выбираешь, какой из его постоянных
@@ -174,6 +176,14 @@ def build_package(
 
     try:
         data = _call_llm(api_key, prompt)
+        if ", а не " in (data.get("letter") or ""):
+            # Same deterministic guard as in resume_variants: one retry
+            # with direct feedback on the banned rhetoric.
+            data = _call_llm(
+                api_key,
+                prompt + "\n\nВАЖНО: в прошлой попытке в письме был запрещённый "
+                "оборот «…, а не …». Перепиши без противопоставления.",
+            )
         pkg.letter = (data.get("letter") or "").strip()
         pkg.recommended_variant = data.get("recommended_variant", "")
         pkg.variant_name = vcfg.get(pkg.recommended_variant, {}).get("name", pkg.recommended_variant)
