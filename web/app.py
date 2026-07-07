@@ -517,7 +517,7 @@ async def download(filename: str):
     if (
         not str(path).startswith(str(OUTPUT_DIR.resolve()))
         or not path.exists()
-        or path.suffix not in {".md", ".json"}
+        or path.suffix not in {".md", ".json", ".docx"}
     ):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(str(path), filename=path.name)

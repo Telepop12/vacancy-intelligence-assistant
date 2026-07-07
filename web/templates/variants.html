@@ -61,7 +61,8 @@
 
       {% if v and not v.error %}
       <p class="hint" style="margin:.3rem 0 .8rem;">Сгенерировано: {{ v.generated_at }} ·
-        <a href="/output/resume_variants/{{ key }}.md" target="_blank">скачать .md</a></p>
+        <a href="/output/resume_variants/{{ key }}.md" target="_blank">.md</a> ·
+        <a href="/output/resume_variants/docx/{{ key }}.docx">.docx для hh</a></p>
 
       <h3 class="variant-h">Заголовок резюме</h3>
       <div class="copy-block" data-copy>{{ v.hh_title }}</div>

@@ -142,6 +142,57 @@ def render_variant_md(v: ResumeVariant) -> str:
     return "\n".join(lines)
 
 
+def export_variant_docx(variant: ResumeVariant, out_dir: Path | None = None) -> Path:
+    """
+    Export a variant to .docx formatted for hh.ru transfer.
+
+    hh.ru's resume fields are plain text (no rich editor): Word lists, fonts
+    and indents are lost on paste. So structure lives in the characters
+    themselves — «— » dash bullets as plain paragraphs, blank lines between
+    blocks, UPPERCASE section headers. Copy-paste keeps the visual structure.
+    """
+    from docx import Document
+    from docx.shared import Pt
+
+    out_dir = out_dir or OUTPUT_DIR / "docx"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    doc = Document()
+    style = doc.styles["Normal"]
+    style.font.name = "Calibri"
+    style.font.size = Pt(11)
+
+    def para(text="", bold=False, size=None):
+        p = doc.add_paragraph()
+        run = p.add_run(text)
+        run.bold = bold
+        if size:
+            run.font.size = Pt(size)
+        return p
+
+    para(v_title := (variant.hh_title or variant.name), bold=True, size=14)
+    para(f"Вариант: {variant.name} · сгенерировано {variant.generated_at}", size=9)
+    para()
+    para("О СЕБЕ", bold=True)
+    para(variant.about)
+    para()
+    para("КЛЮЧЕВЫЕ НАВЫКИ", bold=True)
+    # hh key skills are entered one by one — keep them on one line for copying
+    para(" · ".join(variant.key_skills))
+    para()
+    para("ОПЫТ РАБОТЫ (акценты по позициям)", bold=True)
+    for pos in variant.positions:
+        para()
+        para(f"{pos.company} · {pos.period}", bold=True)
+        para(pos.title)
+        for b in pos.bullets:
+            para(f"— {b}")
+
+    path = out_dir / f"{variant.key}.docx"
+    doc.save(str(path))
+    return path
+
+
 # ---------------------------------------------------------------------------
 # LLM generation
 # ---------------------------------------------------------------------------
