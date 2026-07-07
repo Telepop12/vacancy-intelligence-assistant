@@ -95,10 +95,13 @@
       <h2>Purple Team — спарринг по болевым зонам</h2>
       {% for r in pkg.purple_rounds %}
       <div class="pt-round">
-        <p class="pt-att"><strong>🔴 Рекрутёр:</strong> {{ r.attack }}</p>
-        <p class="pt-def"><strong>🔵 Вы:</strong> {{ r.defense }}</p>
-        <p class="pt-jud"><strong>⚖ Судья:</strong> {{ r.verdict }}</p>
-        <p class="pt-imp"><strong>Отточенный ответ:</strong> {{ r.improved_answer }}</p>
+        <p class="pt-att"><strong>🔴 Вопрос:</strong> {{ r.attack }}</p>
+        <p class="pt-imp"><strong>✅ Ответ:</strong> {{ r.improved_answer }}</p>
+        <details style="margin-top:.5rem;">
+          <summary class="hint" style="cursor:pointer;">Показать разбор раунда</summary>
+          <p class="pt-def" style="margin-top:.5rem;"><strong>🔵 Первый ответ двойника:</strong> {{ r.defense }}</p>
+          <p class="pt-jud"><strong>⚖ Судья:</strong> {{ r.verdict }}</p>
+        </details>
       </div>
       {% endfor %}
     </div>
