@@ -25,6 +25,7 @@ from agents.hh_search import load_search_config, run_search
 from agents.application_package import (
     build_package, letter_word_count, load_saved_package,
 )
+from agents.interview_prep import build_prep, load_saved_prep
 from agents.resume_variants import (
     generate_all, generate_variant, load_saved_variants,
     load_variants_config, resume_path,
@@ -286,6 +287,31 @@ async def package_page(request: Request, vacancy_id: str, regenerate: bool = Fal
             package_id=f"hh_{vacancy_id}",
         )
     return templates.TemplateResponse(request, "package.html", context=_package_context(pkg))
+
+
+# ---------------------------------------------------------------------------
+# Interview prep routes
+# ---------------------------------------------------------------------------
+
+@app.get("/prep/hh/{vacancy_id}", response_class=HTMLResponse)
+async def prep_page(request: Request, vacancy_id: str, regenerate: bool = False):
+    """Interview prep package for an hh.ru vacancy (independent of applying)."""
+    pkg = None if regenerate else load_saved_prep(f"hh_{vacancy_id}")
+    if pkg is None:
+        try:
+            data = hh_api.fetch_vacancy_data(vacancy_id)
+        except hh_api.HHApiError as exc:
+            raise HTTPException(status_code=502, detail=str(exc))
+        pkg = build_prep(
+            vacancy_text=data.get("description", ""),
+            title=data.get("name", ""),
+            company=data.get("employer", ""),
+            url=data.get("alternate_url") or f"{hh_api.HH_SITE_BASE}/vacancy/{vacancy_id}",
+            package_id=f"hh_{vacancy_id}",
+        )
+    return templates.TemplateResponse(
+        request, "prep.html", context={"pkg": pkg, "active_nav": "search"}
+    )
 
 
 # ---------------------------------------------------------------------------

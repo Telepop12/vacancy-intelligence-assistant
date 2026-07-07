@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Подготовка к интервью — Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    .sev{display:inline-block;padding:.1rem .5rem;border-radius:999px;font-size:.68rem;font-weight:700}
+    .sev.strong{background:rgba(22,163,74,.12);color:#16a34a}
+    .sev.warn{background:rgba(217,119,6,.12);color:#d97706}
+    .sev.risk{background:rgba(220,38,38,.1);color:#dc2626}
+    .qa-item{border-bottom:1px solid var(--border);padding:.8rem 0}
+    .qa-item .q{font-weight:600;cursor:pointer}
+    .qa-item .src{font-size:.75rem;color:var(--muted);margin:.2rem 0}
+    .qa-item .a{margin:.4rem 0 0;padding:.5rem .7rem;background:rgba(30,64,175,.05);border-radius:var(--radius);display:none}
+    .qa-item.open .a{display:block}
+    .pt-round{border:1px solid var(--border);border-radius:var(--radius);padding:.8rem 1rem;margin:.7rem 0}
+    .pt-round p{margin:.35rem 0}
+    .pt-att{color:#dc2626}
+    .pt-def{color:var(--text)}
+    .pt-jud{color:var(--muted);font-size:.85rem}
+    .pt-imp{background:rgba(22,163,74,.07);padding:.5rem .7rem;border-radius:var(--radius)}
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+<aside class="sidebar">
+  {% include '_nav.html' %}
+</aside>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <div class="card">
+      <h2>Подготовка к интервью</h2>
+      <p style="margin:.4rem 0;">
+        <strong>{{ pkg.vacancy_title }}</strong>
+        {% if pkg.company %} · {{ pkg.company }}{% endif %}
+        {% if pkg.vacancy_url %} · <a href="{{ pkg.vacancy_url }}" target="_blank">открыть на hh.ru</a>{% endif %}
+      </p>
+      <p class="hint">Сгенерировано: {{ pkg.generated_at }}
+        · <a href="/prep/hh/{{ pkg.package_id | replace('hh_','') }}?regenerate=true">перегенерировать</a>
+        · <a href="/output/prep/{{ pkg.package_id }}.md" target="_blank">скачать .md</a></p>
+    </div>
+
+    {% if pkg.error %}
+    <div class="error-box" style="margin-top:1rem;">{{ pkg.error }}</div>
+    {% else %}
+
+    <div class="card" style="margin-top:1rem;">
+      <h2>Кто вас будет спрашивать</h2>
+      <p style="margin:.5rem 0;">{{ pkg.interviewer_profile }}</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:.8rem;">
+        <div>
+          <h3 class="variant-h">Козыри под вакансию</h3>
+          <ul style="margin:.3rem 0 0 1.1rem;">{% for t in pkg.top_trumps %}<li>{{ t }}</li>{% endfor %}</ul>
+        </div>
+        <div>
+          <h3 class="variant-h">Болевые зоны</h3>
+          <ul style="margin:.3rem 0 0 1.1rem;">{% for r in pkg.top_risks %}<li>{{ r }}</li>{% endfor %}</ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:1rem;">
+      <h2>Вопросы интервьюера <span class="hint" style="font-weight:normal;">({{ pkg.qa | length }} — клик раскрывает заготовку ответа)</span></h2>
+      {% for q in pkg.qa %}
+      <div class="qa-item" onclick="this.classList.toggle('open')">
+        <div class="q">{{ loop.index }}. {{ q.question }} <span class="sev {{ q.severity }}">{{ q.severity }}</span></div>
+        <div class="src">← {{ q.source }}</div>
+        <div class="a">{{ q.answer }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="card" style="margin-top:1rem;">
+      <h2>Ваши вопросы работодателю</h2>
+      {% for q in pkg.employer_questions %}
+      <div class="qa-item">
+        <div class="q" style="cursor:default;">{{ q.question }}</div>
+        <div class="src">{{ q.why }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="card" style="margin-top:1rem;">
+      <h2>Purple Team — спарринг по болевым зонам</h2>
+      {% for r in pkg.purple_rounds %}
+      <div class="pt-round">
+        <p class="pt-att"><strong>🔴 Рекрутёр:</strong> {{ r.attack }}</p>
+        <p class="pt-def"><strong>🔵 Вы:</strong> {{ r.defense }}</p>
+        <p class="pt-jud"><strong>⚖ Судья:</strong> {{ r.verdict }}</p>
+        <p class="pt-imp"><strong>Отточенный ответ:</strong> {{ r.improved_answer }}</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% endif %}
+
+    <p style="margin-top:1rem;"><a href="/search">← к результатам поиска</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant · Подготовка к интервью</div>
+</footer>
+</div>
+</body>
+</html>
