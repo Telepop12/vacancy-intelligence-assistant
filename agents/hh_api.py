@@ -117,7 +117,7 @@ def _get_html(url: str) -> str:
         with _opener.open(req, timeout=_TIMEOUT) as resp:
             return resp.read().decode("utf-8", errors="replace")
     except urllib.error.HTTPError as exc:
-        if exc.code in (403, 429):
+        if exc.code in (403, 423, 429):
             raise HHRateLimitError(
                 f"hh.ru ограничил частоту запросов (HTTP {exc.code})"
             ) from exc
