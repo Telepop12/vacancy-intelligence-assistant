@@ -27,6 +27,8 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 HH_API_BASE = "https://api.hh.ru"
@@ -42,6 +44,14 @@ _REQUEST_DELAY = 1.2   # base pause between batch page fetches (jitter added on 
 _RETRY_DELAY = 7.0     # pause before retrying a rate-limited request
 _MAX_CONSECUTIVE_BLOCKS = 3  # stop the batch after this many 403s in a row
 _TIMEOUT = 25          # seconds
+
+# Global cooldown: after a rate-limit hit the whole client goes silent for
+# this long. Observed live: continuing to knock escalates from per-request
+# 403/423 to an IP-level "Malicious activity blocked" page that affects
+# even the user's normal browser. Persisted to a file so all processes
+# (host + container share ./output) respect it.
+_COOLDOWN_MINUTES = 30
+_COOLDOWN_PATH = Path(__file__).resolve().parent.parent / "output" / "hh_cooldown.json"
 
 # Shared cookie jar: hh.ru issues session cookies on the first request;
 # sending them back makes subsequent page fetches look like one browsing
@@ -103,8 +113,36 @@ def _get_json(path: str, params: dict[str, Any] | None = None) -> dict:
         raise HHApiError(f"Некорректный ответ hh.ru API: {exc}") from exc
 
 
+def _cooldown_left() -> int:
+    """Minutes left in the global silence window (0 = free to go)."""
+    try:
+        data = json.loads(_COOLDOWN_PATH.read_text(encoding="utf-8"))
+        until = datetime.fromisoformat(data["until"])
+    except (OSError, ValueError, KeyError, json.JSONDecodeError):
+        return 0
+    left = (until - datetime.now()).total_seconds()
+    return max(0, int(left // 60) + 1) if left > 0 else 0
+
+
+def _start_cooldown() -> None:
+    until = datetime.now() + timedelta(minutes=_COOLDOWN_MINUTES)
+    try:
+        _COOLDOWN_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _COOLDOWN_PATH.write_text(
+            json.dumps({"until": until.isoformat(timespec="seconds")}), encoding="utf-8"
+        )
+    except OSError:
+        pass  # cooldown is best-effort protection
+
+
 def _get_html(url: str) -> str:
     """GET a public hh.ru page as a regular browser would (with session cookies)."""
+    left = _cooldown_left()
+    if left:
+        raise HHRateLimitError(
+            f"hh.ru недавно ограничил доступ — система выдерживает паузу ещё "
+            f"~{left} мин, чтобы не продлевать блокировку. Попробуйте позже."
+        )
     req = urllib.request.Request(
         url,
         headers={
@@ -252,10 +290,15 @@ def fetch_vacancy_data(vacancy_id: str) -> dict:
     try:
         html = _get_html(f"{HH_SITE_BASE}/vacancy/{vacancy_id}")
     except HHRateLimitError:
-        # Cold hit blocked — pick up session cookies and try once more
+        # Cold hit blocked — pick up session cookies and try once more.
+        # If the retry is blocked too, the block is escalating: go silent.
         _warm_session()
         time.sleep(1.0 + random.uniform(0.0, 1.0))
-        html = _get_html(f"{HH_SITE_BASE}/vacancy/{vacancy_id}")
+        try:
+            html = _get_html(f"{HH_SITE_BASE}/vacancy/{vacancy_id}")
+        except HHRateLimitError:
+            _start_cooldown()
+            raise
     foreign_found = False
     for block in _JSONLD_RE.findall(html):
         try:
@@ -399,6 +442,7 @@ def fetch_vacancies_batch(
                 consecutive_blocks += 1
                 errors[vid] = str(exc)
                 if consecutive_blocks >= _MAX_CONSECUTIVE_BLOCKS:
+                    _start_cooldown()
                     return fetched, errors, True
             except HHApiError as exc:
                 errors[vid] = str(exc)

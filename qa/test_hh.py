@@ -200,6 +200,24 @@ def test_fetch_vacancy_rejects_foreign_jsonld(monkeypatch):
 
 
 @pytest.mark.no_llm
+def test_global_cooldown(monkeypatch, tmp_path):
+    """After an escalated block the client must go silent for the window."""
+    monkeypatch.setattr(hh_api, "_COOLDOWN_PATH", tmp_path / "cd.json")
+    assert hh_api._cooldown_left() == 0
+
+    hh_api._start_cooldown()
+    left = hh_api._cooldown_left()
+    assert 0 < left <= hh_api._COOLDOWN_MINUTES + 1
+
+    with pytest.raises(hh_api.HHRateLimitError, match="паузу"):
+        hh_api._get_html("https://hh.ru/vacancy/1")
+
+    # Corrupt state file → fail open, not closed
+    (tmp_path / "cd.json").write_text("{broken", encoding="utf-8")
+    assert hh_api._cooldown_left() == 0
+
+
+@pytest.mark.no_llm
 def test_run_search_failed_ids_retried_next_run(monkeypatch, tmp_path):
     """Rate-limited/errored ids must NOT be marked as seen — next run retries them."""
     monkeypatch.setattr(hh_search, "STATE_PATH", tmp_path / "state.json")
