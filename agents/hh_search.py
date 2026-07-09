@@ -97,6 +97,41 @@ def _save_state(state: dict[str, dict]) -> None:
     )
 
 
+def make_triage_item(
+    profile: CandidateProfile,
+    data: dict,
+    vid: str,
+    analyzer: RuleBasedAnalyzer | None = None,
+) -> TriageItem:
+    """Score one vacancy intake dict into a TriageItem (no LLM)."""
+    analyzer = analyzer or RuleBasedAnalyzer()
+    vi = from_json(data, source_name=f"vacancy:{vid}")
+    analysis = analyzer.analyze(vi.normalized_text, profile)
+    default_url = f"{hh_api.HH_SITE_BASE}/vacancy/{vid}" if str(vid).isdigit() else ""
+    return TriageItem(
+        hh_id=vid,
+        title=vi.title or data.get("name", ""),
+        company=vi.company or data.get("employer", ""),
+        area=vi.location,
+        salary=vi.salary,
+        url=vi.url or data.get("alternate_url", "") or default_url,
+        published_at=str(data.get("published_at", ""))[:10],
+        score=analysis.match_score,
+        recommendation=analysis.recommendation.value,
+        key_matches=analysis.key_matches[:6],
+        triaged_at=datetime.now().isoformat(timespec="seconds"),
+    )
+
+
+def register_vacancy(profile: CandidateProfile, data: dict, vid: str) -> TriageItem:
+    """Triage a single vacancy and add it to the shared search state."""
+    item = make_triage_item(profile, data, vid)
+    state = _load_state()
+    state[vid] = asdict(item)
+    _save_state(state)
+    return item
+
+
 def run_search(
     profile: CandidateProfile,
     queries: list[str] | None = None,
@@ -161,22 +196,10 @@ def run_search(
     if len(fetch_errors) > 5:
         errors.append(f"… и ещё {len(fetch_errors) - 5} вакансий с ошибками загрузки")
 
+    from agents import vacancy_store
     for vid, data in fetched.items():
-        vi = from_json(data, source_name=f"hh.ru:{vid}")
-        analysis = analyzer.analyze(vi.normalized_text, profile)
-        state[vid] = asdict(TriageItem(
-            hh_id=vid,
-            title=vi.title or data.get("name", ""),
-            company=vi.company,
-            area=vi.location,
-            salary=vi.salary,
-            url=vi.url or f"{hh_api.HH_SITE_BASE}/vacancy/{vid}",
-            published_at=str(data.get("published_at", ""))[:10],
-            score=analysis.match_score,
-            recommendation=analysis.recommendation.value,
-            key_matches=analysis.key_matches[:6],
-            triaged_at=datetime.now().isoformat(timespec="seconds"),
-        ))
+        state[vid] = asdict(make_triage_item(profile, data, vid, analyzer=analyzer))
+        vacancy_store.save_vacancy(data, vid)  # cache: no repeat hh fetches
 
     _save_state(state)
 

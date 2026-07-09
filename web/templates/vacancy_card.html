@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Вакансия — Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page-wrapper">
+<aside class="sidebar">
+  {% include '_nav.html' %}
+</aside>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <div class="card">
+      <h2>{{ rec.title or data.name or 'Вакансия' }}</h2>
+      <p style="margin:.4rem 0;">
+        {{ rec.company or data.employer or '' }}
+        {% if rec.area or data.area %} · {{ rec.area or data.area }}{% endif %}
+        {% if rec.url or data.alternate_url %} · <a href="{{ rec.url or data.alternate_url }}" target="_blank">источник</a>{% endif %}
+      </p>
+
+      {% if rec %}
+      <div style="display:flex;align-items:center;gap:1rem;margin:.8rem 0;">
+        <span class="score-badge {{ score_color }}">{{ rec.score }}</span>
+        <div>
+          <strong>{{ rec.recommendation }}</strong>
+          {% if rec.key_matches %}
+          <div class="hint">{{ rec.key_matches | join(', ') }}</div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem;">
+        <a class="btn-submit" style="text-decoration:none;" href="/analyze/{{ vid }}">Полный анализ</a>
+        <a class="btn-submit" style="text-decoration:none;" href="/package/{{ vid }}">Пакет отклика</a>
+        <a class="btn-submit" style="text-decoration:none;" href="/prep/{{ vid }}">Подготовка к интервью</a>
+      </div>
+      <p class="hint" style="margin-top:.8rem;">Пакет отклика и подготовка генерируются 1–4 минуты при первом открытии, дальше — из кеша. Вакансия сохранена в базе и видна в таблице поиска.</p>
+    </div>
+
+    {% if data.description %}
+    <div class="card" style="margin-top:1rem;">
+      <h2>Описание</h2>
+      <details open>
+        <summary class="hint" style="cursor:pointer;">свернуть/развернуть</summary>
+        <div style="white-space:pre-wrap;margin-top:.6rem;font-size:.9rem;line-height:1.55;">{{ data.description[:6000] }}</div>
+      </details>
+    </div>
+    {% endif %}
+
+    <p style="margin-top:1rem;"><a href="/search">← к поиску</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant · Карточка вакансии</div>
+</footer>
+</div>
+</body>
+</html>

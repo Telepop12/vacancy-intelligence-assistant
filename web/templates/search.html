@@ -52,6 +52,38 @@
       </p>
     </div>
 
+    <div class="card" style="margin-top:1rem;">
+      <h2>Добавить вакансию вручную</h2>
+      <p class="hint" style="margin-bottom:1rem;">
+        Для вакансий, которые не парсятся автоматически (анти-бот hh, архив,
+        другие площадки): вставьте ссылку — система попробует загрузить сама;
+        не получится или площадка другая — вставьте текст описания. Вакансия
+        попадёт в общий конвейер: оценка + полный анализ, пакет отклика,
+        подготовка к интервью.
+      </p>
+      <form method="post" action="/vacancy/add" id="add-form">
+        <div class="field">
+          <label for="vac_url">Ссылка на вакансию <span class="hint-inline">необязательно, если вставлен текст</span></label>
+          <input type="text" id="vac_url" name="vac_url" placeholder="https://hh.ru/vacancy/… или другая площадка">
+        </div>
+        <div class="field" style="display:flex;gap:.8rem;flex-wrap:wrap;">
+          <span style="flex:1;min-width:200px;">
+            <label for="vac_title">Название <span class="hint-inline">необязательно</span></label>
+            <input type="text" id="vac_title" name="vac_title" placeholder="Директор по ИТ" style="width:100%;">
+          </span>
+          <span style="flex:1;min-width:200px;">
+            <label for="vac_company">Компания <span class="hint-inline">необязательно</span></label>
+            <input type="text" id="vac_company" name="vac_company" placeholder="ООО …" style="width:100%;">
+          </span>
+        </div>
+        <div class="field">
+          <label for="vac_text">Текст вакансии <span class="hint-inline">вставьте описание целиком, если ссылка не читается</span></label>
+          <textarea id="vac_text" name="vac_text" rows="6" placeholder="Обязанности… Требования… Условия…"></textarea>
+        </div>
+        <button type="submit" class="btn-submit" id="add-btn">Добавить и оценить</button>
+      </form>
+    </div>
+
   </div>
 </main>
 

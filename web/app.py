@@ -15,13 +15,14 @@ from typing import Optional
 
 import yaml
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from agents import hh_api
 from agents.career_match import career_match
-from agents.hh_search import load_search_config, run_search
+from agents import vacancy_store
+from agents.hh_search import load_search_config, register_vacancy, run_search
 from agents.application_package import (
     build_package, letter_word_count, load_saved_package,
 )
@@ -259,6 +260,74 @@ async def variants_generate(request: Request, key: str = Form(default="")):
 
 
 # ---------------------------------------------------------------------------
+# Vacancy store routes (manual input + unified vacancy card)
+# ---------------------------------------------------------------------------
+
+def _search_page_ctx(error: str = "", notice: str = "") -> dict:
+    cfg = load_search_config()
+    return {
+        "queries": "\n".join(cfg["queries"]),
+        "area": cfg.get("area", 113),
+        "error": error,
+        "notice": notice,
+        "active_nav": "search",
+    }
+
+
+@app.post("/vacancy/add", response_class=HTMLResponse)
+async def vacancy_add(
+    request: Request,
+    vac_url: str = Form(default=""),
+    vac_text: str = Form(default=""),
+    vac_title: str = Form(default=""),
+    vac_company: str = Form(default=""),
+):
+    """Manually add a vacancy (hh link and/or pasted text) to the pipeline."""
+    vac_url, vac_text = vac_url.strip(), vac_text.strip()
+    hh_id = vacancy_store.hh_id_from_url(vac_url)
+
+    if vac_text:
+        data = vacancy_store.manual_vacancy_dict(
+            vac_text, title=vac_title, company=vac_company, url=vac_url,
+        )
+        vid = vacancy_store.save_vacancy(data, hh_id)
+    elif hh_id:
+        try:
+            data = vacancy_store.resolve_vacancy(hh_id)
+            vid = hh_id
+        except hh_api.HHApiError as exc:
+            return templates.TemplateResponse(request, "search.html", context=_search_page_ctx(
+                error=f"{exc} — вставьте описание вакансии текстом в это же окно.",
+            ))
+    else:
+        return templates.TemplateResponse(request, "search.html", context=_search_page_ctx(
+            error="Укажите ссылку на вакансию или вставьте её текст.",
+        ))
+
+    register_vacancy(_profile, data, vid)
+    return RedirectResponse(url=f"/vacancy/{vid}", status_code=303)
+
+
+@app.get("/vacancy/{vid}", response_class=HTMLResponse)
+async def vacancy_card(request: Request, vid: str):
+    """Unified vacancy card: triage score + full pipeline buttons."""
+    from agents.hh_search import _load_state
+    rec = _load_state().get(vid)
+    data = vacancy_store.load_vacancy(vid)
+    if rec is None and data is not None:
+        rec = None  # card still renders from stored data
+    if rec is None and data is None:
+        raise HTTPException(status_code=404, detail="Вакансия не найдена в базе")
+    return templates.TemplateResponse(request, "vacancy_card.html", context={
+        "vid": vid,
+        "rec": rec or {},
+        "data": data or {},
+        "score_color": _score_color(rec.get("score", 0)) if rec else "",
+        "active_nav": "search",
+    })
+
+
+# ---------------------------------------------------------------------------
 # Application package routes
 # ---------------------------------------------------------------------------
 
@@ -270,21 +339,26 @@ def _package_context(pkg) -> dict:
     }
 
 
-@app.get("/package/hh/{vacancy_id}", response_class=HTMLResponse)
-async def package_page(request: Request, vacancy_id: str, regenerate: bool = False):
-    """Show (or generate) the application package for an hh.ru vacancy."""
-    pkg = None if regenerate else load_saved_package(f"hh_{vacancy_id}")
+@app.get("/package/hh/{vacancy_id}")
+async def package_page_legacy(vacancy_id: str):
+    return RedirectResponse(url=f"/package/{vacancy_id}", status_code=307)
+
+
+@app.get("/package/{vid}", response_class=HTMLResponse)
+async def package_page(request: Request, vid: str, regenerate: bool = False):
+    """Show (or generate) the application package for a stored/hh vacancy."""
+    pkg = None if regenerate else load_saved_package(f"hh_{vid}")
     if pkg is None:
         try:
-            data = hh_api.fetch_vacancy_data(vacancy_id)
+            data = vacancy_store.resolve_vacancy(vid)
         except hh_api.HHApiError as exc:
             raise HTTPException(status_code=502, detail=str(exc))
         pkg = build_package(
             vacancy_text=data.get("description", ""),
             title=data.get("name", ""),
             company=data.get("employer", ""),
-            url=data.get("alternate_url") or f"{hh_api.HH_SITE_BASE}/vacancy/{vacancy_id}",
-            package_id=f"hh_{vacancy_id}",
+            url=data.get("alternate_url", ""),
+            package_id=f"hh_{vid}",
         )
     return templates.TemplateResponse(request, "package.html", context=_package_context(pkg))
 
@@ -293,21 +367,26 @@ async def package_page(request: Request, vacancy_id: str, regenerate: bool = Fal
 # Interview prep routes
 # ---------------------------------------------------------------------------
 
-@app.get("/prep/hh/{vacancy_id}", response_class=HTMLResponse)
-async def prep_page(request: Request, vacancy_id: str, regenerate: bool = False):
-    """Interview prep package for an hh.ru vacancy (independent of applying)."""
-    pkg = None if regenerate else load_saved_prep(f"hh_{vacancy_id}")
+@app.get("/prep/hh/{vacancy_id}")
+async def prep_page_legacy(vacancy_id: str):
+    return RedirectResponse(url=f"/prep/{vacancy_id}", status_code=307)
+
+
+@app.get("/prep/{vid}", response_class=HTMLResponse)
+async def prep_page(request: Request, vid: str, regenerate: bool = False):
+    """Interview prep package for a stored/hh vacancy (independent of applying)."""
+    pkg = None if regenerate else load_saved_prep(f"hh_{vid}")
     if pkg is None:
         try:
-            data = hh_api.fetch_vacancy_data(vacancy_id)
+            data = vacancy_store.resolve_vacancy(vid)
         except hh_api.HHApiError as exc:
             raise HTTPException(status_code=502, detail=str(exc))
         pkg = build_prep(
             vacancy_text=data.get("description", ""),
             title=data.get("name", ""),
             company=data.get("employer", ""),
-            url=data.get("alternate_url") or f"{hh_api.HH_SITE_BASE}/vacancy/{vacancy_id}",
-            package_id=f"hh_{vacancy_id}",
+            url=data.get("alternate_url", ""),
+            package_id=f"hh_{vid}",
         )
     return templates.TemplateResponse(
         request, "prep.html", context={"pkg": pkg, "active_nav": "search"}
@@ -344,19 +423,26 @@ async def search_run(
     })
 
 
-@app.get("/analyze/hh/{hh_id}", response_class=HTMLResponse)
-async def analyze_hh_vacancy(request: Request, hh_id: str):
-    """Full analysis of a single hh.ru vacancy straight from the search table."""
-    vacancy = from_url(f"https://hh.ru/vacancy/{hh_id}")
+@app.get("/analyze/hh/{hh_id}")
+async def analyze_hh_legacy(hh_id: str):
+    return RedirectResponse(url=f"/analyze/{hh_id}", status_code=307)
+
+
+@app.get("/analyze/{vid}", response_class=HTMLResponse)
+async def analyze_vacancy_by_id(request: Request, vid: str):
+    """Full analysis of a stored/hh vacancy straight from the search table."""
+    try:
+        data = vacancy_store.resolve_vacancy(vid)
+    except hh_api.HHApiError as exc:
+        return templates.TemplateResponse(
+            request, "search.html", context=_search_page_ctx(error=str(exc)),
+        )
+    vacancy = from_json(data, source_name=f"vacancy:{vid}")
     if not vacancy.normalized_text.strip():
-        cfg = load_search_config()
-        return templates.TemplateResponse(request, "search.html", context={
-            "queries":    "\n".join(cfg["queries"]),
-            "area":       cfg.get("area", 113),
-            "error":      vacancy.confidence_notes[0] if vacancy.confidence_notes
-                          else f"Не удалось загрузить вакансию {hh_id}",
-            "active_nav": "search",
-        })
+        return templates.TemplateResponse(
+            request, "search.html",
+            context=_search_page_ctx(error=f"Вакансия {vid} без текста описания"),
+        )
     return _render_vacancy_result(request, vacancy)
 
 
