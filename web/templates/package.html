@@ -39,12 +39,15 @@
 
     <div class="card" style="margin-top:1rem;">
       <h2>Каким резюме откликаться</h2>
-      <p style="margin:.5rem 0;"><strong>{{ pkg.variant_name }}</strong></p>
+      <p style="margin:.5rem 0;"><strong>{{ pkg.variant_name }}</strong>
+        {% if pkg.variant_hh_url %} · <a href="{{ pkg.variant_hh_url }}" target="_blank">открыть резюме на hh.ru →</a>{% endif %}
+      </p>
       <p class="hint">{{ pkg.variant_reasoning }}</p>
+      {% if not pkg.variant_hh_url %}
       <p class="hint" style="margin-top:.4rem;">
         Контент этого варианта — в разделе <a href="/variants">«Варианты резюме»</a>.
-        Убедись, что он заведён на hh, прежде чем откликаться.
       </p>
+      {% endif %}
     </div>
 
     <div class="card" style="margin-top:1rem;">

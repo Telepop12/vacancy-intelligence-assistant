@@ -38,8 +38,9 @@ class ApplicationPackage:
     company: str = ""
     vacancy_url: str = ""
     letter: str = ""
-    recommended_variant: str = ""   # ключ варианта (cio/cto/cdto/caio/universal)
+    recommended_variant: str = ""   # ключ активного варианта (cio/cto/cdto)
     variant_name: str = ""
+    variant_hh_url: str = ""        # ссылка на опубликованное резюме hh
     variant_reasoning: str = ""
     hooks: list[str] = field(default_factory=list)  # какие требования вакансии зеркалим
     generated_at: str = ""
@@ -159,7 +160,9 @@ def build_package(
         pkg.error = f"Не удалось прочитать каноническое резюме: {exc}"
         return pkg
 
-    vcfg = load_variants_config()["variants"]
+    all_variants = load_variants_config()["variants"]
+    # Only variants actually published on hh.ru are eligible for recommendation
+    vcfg = {k: v for k, v in all_variants.items() if v.get("active", True)}
     variants_list = "\n".join(
         f"- {key}: {v['name']} — фокус: {' '.join(str(v.get('focus', '')).split())}"
         for key, v in vcfg.items()
@@ -186,7 +189,9 @@ def build_package(
             )
         pkg.letter = (data.get("letter") or "").strip()
         pkg.recommended_variant = data.get("recommended_variant", "")
-        pkg.variant_name = vcfg.get(pkg.recommended_variant, {}).get("name", pkg.recommended_variant)
+        rec_cfg = vcfg.get(pkg.recommended_variant, {})
+        pkg.variant_name = rec_cfg.get("name", pkg.recommended_variant)
+        pkg.variant_hh_url = rec_cfg.get("hh_url", "") or ""
         pkg.variant_reasoning = data.get("variant_reasoning", "")
         pkg.hooks = data.get("hooks") or []
         if not pkg.letter:
