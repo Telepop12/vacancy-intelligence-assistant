@@ -76,6 +76,74 @@ def test_vacancy_add_route_manual_text(monkeypatch, tmp_path):
 
 
 @pytest.mark.no_llm
+def test_favorites_roundtrip(monkeypatch, tmp_path):
+    monkeypatch.setattr(vs, "FAV_PATH", tmp_path / "fav.json")
+    monkeypatch.setattr(vs, "STORE_DIR", tmp_path / "store")
+    assert vs.list_favorites() == []
+    vs.add_favorite("111")
+    vs.add_favorite("m2026")
+    vs.add_favorite("111")  # idempotent
+    assert vs.list_favorites() == ["111", "m2026"]
+    assert vs.is_favorite("111")
+    vs.remove_favorite("111")
+    assert vs.list_favorites() == ["m2026"]
+
+    vs.save_vacancy({"name": "X", "description": "y"}, "m2026")
+    vs.delete_vacancy("m2026")
+    assert vs.list_favorites() == []
+    assert vs.load_vacancy("m2026") is None
+
+
+@pytest.mark.no_llm
+def test_favorites_page_and_toggle(monkeypatch, tmp_path):
+    from fastapi.testclient import TestClient
+    import web.app as webapp
+    from agents import hh_search
+
+    monkeypatch.setattr(vs, "FAV_PATH", tmp_path / "fav.json")
+    monkeypatch.setattr(vs, "STORE_DIR", tmp_path / "store")
+    monkeypatch.setattr(hh_search, "STATE_PATH", tmp_path / "state.json")
+
+    client = TestClient(webapp.app)
+    # add manual vacancy → toggle favorite → visible on /favorites
+    marker = "Директор по данным Квантовой Ромашки"
+    resp = client.post("/vacancy/add", data={"vac_text": f"{marker}\nСтратегия, ERP."},
+                       follow_redirects=False)
+    vid = resp.headers["location"].rsplit("/", 1)[-1]
+    assert client.post(f"/favorites/toggle/{vid}").json() == {"favorite": True}
+    page = client.get("/favorites")
+    assert page.status_code == 200 and marker in page.text
+    # delete removes everywhere
+    client.post(f"/vacancy/{vid}/delete", follow_redirects=False)
+    assert vs.list_favorites() == []
+    assert marker not in client.get("/favorites").text
+
+
+@pytest.mark.no_llm
+def test_rescan_keeps_state_on_fetch_failure(monkeypatch, tmp_path):
+    """Regression: rescan + rate limit must NOT wipe the base (lost 49 items live)."""
+    from agents import hh_search, hh_api
+    from web.app import _profile
+
+    monkeypatch.setattr(hh_search, "STATE_PATH", tmp_path / "state.json")
+    monkeypatch.setattr(vs, "STORE_DIR", tmp_path / "store")
+    monkeypatch.setattr(
+        hh_api, "search_vacancy_ids",
+        lambda text, area=None, max_pages=1, search_field="name", extra_params=None: ["301"],
+    )
+    ok = lambda ids: ({vid: {"name": "CIO", "description": "текст", "hh_id": vid} for vid in ids}, {}, False)
+    fail = lambda ids: ({}, {vid: "HTTP 423" for vid in ids}, True)
+
+    monkeypatch.setattr(hh_api, "fetch_vacancies_batch", ok)
+    r1 = hh_search.run_search(_profile, queries=["CIO"])
+    assert r1.new_count == 1
+
+    monkeypatch.setattr(hh_api, "fetch_vacancies_batch", fail)
+    r2 = hh_search.run_search(_profile, queries=["CIO"], rescan=True)
+    assert len([i for i in r2.items if not i.error]) == 1  # база уцелела
+
+
+@pytest.mark.no_llm
 def test_vacancy_add_route_empty_is_error(monkeypatch, tmp_path):
     from fastapi.testclient import TestClient
     import web.app as webapp

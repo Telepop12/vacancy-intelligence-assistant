@@ -80,6 +80,50 @@ def resolve_vacancy(vid: str) -> dict:
     return data
 
 
+# ---------------------------------------------------------------------------
+# Favorites — survive any rescan/state wipe (separate file + cached vacancy)
+# ---------------------------------------------------------------------------
+
+FAV_PATH = BASE_DIR / "output" / "favorites.json"
+
+
+def list_favorites() -> list[str]:
+    if not FAV_PATH.exists():
+        return []
+    try:
+        data = json.loads(FAV_PATH.read_text(encoding="utf-8"))
+        return [str(v) for v in data] if isinstance(data, list) else []
+    except (json.JSONDecodeError, OSError):
+        return []
+
+
+def _save_favorites(vids: list[str]) -> None:
+    FAV_PATH.parent.mkdir(parents=True, exist_ok=True)
+    FAV_PATH.write_text(json.dumps(vids, ensure_ascii=False), encoding="utf-8")
+
+
+def is_favorite(vid: str) -> bool:
+    return str(vid) in list_favorites()
+
+
+def add_favorite(vid: str) -> None:
+    vids = list_favorites()
+    if str(vid) not in vids:
+        vids.append(str(vid))
+        _save_favorites(vids)
+
+
+def remove_favorite(vid: str) -> None:
+    vids = [v for v in list_favorites() if v != str(vid)]
+    _save_favorites(vids)
+
+
+def delete_vacancy(vid: str) -> None:
+    """Remove a vacancy everywhere: favorites + cached data (state — caller's)."""
+    remove_favorite(vid)
+    _path(vid).unlink(missing_ok=True)
+
+
 def manual_vacancy_dict(
     text: str, title: str = "", company: str = "", url: str = "",
 ) -> dict:

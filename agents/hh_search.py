@@ -123,6 +123,16 @@ def make_triage_item(
     )
 
 
+def remove_from_state(vid: str) -> None:
+    state = _load_state()
+    if state.pop(str(vid), None) is not None:
+        _save_state(state)
+
+
+def get_state_item(vid: str) -> dict | None:
+    return _load_state().get(str(vid))
+
+
 def register_vacancy(profile: CandidateProfile, data: dict, vid: str) -> TriageItem:
     """Triage a single vacancy and add it to the shared search state."""
     item = make_triage_item(profile, data, vid)
@@ -168,11 +178,14 @@ def run_search(
                 all_ids.append(vid)
 
     # ── Determine which ids need triage ──
-    state = {} if rescan else _load_state()
+    # State is NEVER dropped wholesale: a rescan simply re-fetches everything
+    # found by the queries. Otherwise rescan + rate limit = lost base
+    # (наблюдалось вживую: 423 на все запросы стёрли 49 вакансий).
+    state = _load_state()
     # Drop error records from earlier runs (and legacy state files):
     # a failed fetch must not count as "seen", otherwise it is never retried.
     state = {vid: rec for vid, rec in state.items() if not rec.get("error")}
-    new_ids = [vid for vid in all_ids if vid not in state]
+    new_ids = list(all_ids) if rescan else [vid for vid in all_ids if vid not in state]
     max_new = int(cfg.get("max_new_per_run", 30))
     to_fetch = new_ids[:max_new]
     skipped_backlog = len(new_ids) - len(to_fetch)

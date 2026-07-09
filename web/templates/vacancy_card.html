@@ -42,11 +42,22 @@
       </div>
       {% endif %}
 
-      <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem;">
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem;align-items:center;">
+        <button class="fav-star {{ 'on' if is_favorite else '' }}" data-vid="{{ vid }}"
+                title="В избранное" style="font-size:1.4rem;">★</button>
         <a class="btn-submit" style="text-decoration:none;" href="/analyze/{{ vid }}">Полный анализ</a>
         <a class="btn-submit" style="text-decoration:none;" href="/package/{{ vid }}">Пакет отклика</a>
         <a class="btn-submit" style="text-decoration:none;" href="/prep/{{ vid }}">Подготовка к интервью</a>
       </div>
+      <script>
+      document.querySelectorAll('.fav-star').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          fetch('/favorites/toggle/' + btn.dataset.vid, {method: 'POST'})
+            .then(function (r) { return r.json(); })
+            .then(function (d) { btn.classList.toggle('on', d.favorite); });
+        });
+      });
+      </script>
       <p class="hint" style="margin-top:.8rem;">Пакет отклика и подготовка генерируются 1–4 минуты при первом открытии, дальше — из кеша. Вакансия сохранена в базе и видна в таблице поиска.</p>
     </div>
 

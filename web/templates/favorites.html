@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Избранное — Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page-wrapper">
+<aside class="sidebar">
+  {% include '_nav.html' %}
+</aside>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+    <div class="card">
+      <h2>Избранные вакансии <span class="hint" style="font-weight:normal;">({{ rows | length }})</span></h2>
+      <p class="hint" style="margin:.4rem 0 1rem;">
+        Сохранённые вакансии живут независимо от запусков поиска и переоценок.
+        Тексты закешированы — анализ и пакеты работают даже когда hh.ru недоступен.
+      </p>
+
+      {% if rows %}
+      <table class="results-table" style="width:100%;">
+        <thead>
+          <tr><th>Балл</th><th>Рекомендация</th><th>Вакансия</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td><span class="score-badge {{ score_color(r.score) }}">{{ r.score }}</span></td>
+            <td><span class="rec-label">{{ r.recommendation }}</span></td>
+            <td>
+              <a href="/vacancy/{{ r.vid }}"><strong>{{ r.title }}</strong></a>
+              <div class="hint">{{ r.company }}{% if r.area %} · {{ r.area }}{% endif %}
+                {% if r.url %} · <a href="{{ r.url }}" target="_blank">источник</a>{% endif %}</div>
+              {% if r.key_matches %}
+              <div class="hint" style="margin-top:.15rem;">{{ r.key_matches | join(', ') }}</div>
+              {% endif %}
+            </td>
+            <td style="white-space:nowrap;">
+              <a class="btn-inline" href="/analyze/{{ r.vid }}">Полный анализ</a><br>
+              <a class="btn-inline" href="/package/{{ r.vid }}" style="margin-top:.3rem;display:inline-block;">Пакет отклика</a><br>
+              <a class="btn-inline" href="/prep/{{ r.vid }}" style="margin-top:.3rem;display:inline-block;">Подготовка</a><br>
+              <form method="post" action="/vacancy/{{ r.vid }}/delete" style="margin-top:.3rem;"
+                    onsubmit="return confirm('Удалить вакансию из избранного и базы?');">
+                <button type="submit" class="btn-inline" style="color:#dc2626;border-color:#dc2626;">Удалить</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="hint">Пока пусто. Отметьте вакансии звёздочкой ★ в результатах поиска или на карточке вакансии.</p>
+      {% endif %}
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant · Избранное</div>
+</footer>
+</div>
+</body>
+</html>

@@ -1337,3 +1337,18 @@ details[open] .intake-options-toggle::before { content: "－ "; }
 }
 .copy-block:hover { border-color: var(--primary); }
 .copy-block.copied { background: rgba(22,163,74,.12); border-color: var(--success); }
+
+/* ── favorites star ── */
+.fav-star {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--border);
+  font-size: 1.15rem;
+  cursor: pointer;
+  padding: 0 .3rem;
+  vertical-align: middle;
+  transition: color .15s, transform .1s;
+}
+.fav-star:hover { color: #f2b33d; transform: scale(1.15); }
+.fav-star.on { color: #f2b33d; }

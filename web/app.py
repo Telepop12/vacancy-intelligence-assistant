@@ -22,7 +22,10 @@ from fastapi.templating import Jinja2Templates
 from agents import hh_api
 from agents.career_match import career_match
 from agents import vacancy_store
-from agents.hh_search import load_search_config, register_vacancy, run_search
+from agents.hh_search import (
+    get_state_item, load_search_config, register_vacancy,
+    remove_from_state, run_search,
+)
 from agents.application_package import (
     build_package, letter_word_count, load_saved_package,
 )
@@ -308,6 +311,52 @@ async def vacancy_add(
     return RedirectResponse(url=f"/vacancy/{vid}", status_code=303)
 
 
+@app.post("/favorites/toggle/{vid}")
+async def favorites_toggle(vid: str):
+    """Star/unstar a vacancy (called via fetch from tables and cards)."""
+    if vacancy_store.is_favorite(vid):
+        vacancy_store.remove_favorite(vid)
+        return {"favorite": False}
+    vacancy_store.add_favorite(vid)
+    return {"favorite": True}
+
+
+@app.post("/vacancy/{vid}/delete")
+async def vacancy_delete(vid: str):
+    """Remove a vacancy from favorites, cache and search state."""
+    vacancy_store.delete_vacancy(vid)
+    remove_from_state(vid)
+    return RedirectResponse(url="/favorites", status_code=303)
+
+
+@app.get("/favorites", response_class=HTMLResponse)
+async def favorites_page(request: Request):
+    """Saved vacancies — survive rescans; full pipeline buttons per row."""
+    rows = []
+    for vid in vacancy_store.list_favorites():
+        rec = get_state_item(vid) or {}
+        data = vacancy_store.load_vacancy(vid) or {}
+        if not rec and data:
+            # re-triage from cache so the row always has a score
+            rec = register_vacancy(_profile, data, vid).__dict__
+        rows.append({
+            "vid": vid,
+            "title": rec.get("title") or data.get("name") or f"Вакансия {vid}",
+            "company": rec.get("company") or data.get("employer", ""),
+            "area": rec.get("area") or data.get("area", ""),
+            "url": rec.get("url") or data.get("alternate_url", ""),
+            "score": rec.get("score", 0),
+            "recommendation": rec.get("recommendation", ""),
+            "key_matches": rec.get("key_matches", []),
+        })
+    rows.sort(key=lambda r: -r["score"])
+    return templates.TemplateResponse(request, "favorites.html", context={
+        "rows": rows,
+        "score_color": _score_color,
+        "active_nav": "favorites",
+    })
+
+
 @app.get("/vacancy/{vid}", response_class=HTMLResponse)
 async def vacancy_card(request: Request, vid: str):
     """Unified vacancy card: triage score + full pipeline buttons."""
@@ -323,6 +372,7 @@ async def vacancy_card(request: Request, vid: str):
         "rec": rec or {},
         "data": data or {},
         "score_color": _score_color(rec.get("score", 0)) if rec else "",
+        "is_favorite": vacancy_store.is_favorite(vid),
         "active_nav": "search",
     })
 
@@ -419,6 +469,7 @@ async def search_run(
         "result":       result,
         "score_color":  _score_color,
         "action_color": _action_color,
+        "favorites":    set(vacancy_store.list_favorites()),
         "active_nav":   "search",
     })
 

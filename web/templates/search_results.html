@@ -68,6 +68,8 @@
               {% endif %}
             </td>
             <td style="white-space:nowrap;">
+              <button class="fav-star {{ 'on' if item.hh_id in (favorites | default([])) else '' }}"
+                      data-vid="{{ item.hh_id }}" title="В избранное">★</button>
               <a class="btn-inline" href="/analyze/{{ item.hh_id }}">Полный анализ</a><br>
               <a class="btn-inline" href="/package/{{ item.hh_id }}" style="margin-top:.3rem;display:inline-block;">Пакет отклика</a><br>
               <a class="btn-inline" href="/prep/{{ item.hh_id }}" style="margin-top:.3rem;display:inline-block;">Подготовка</a>
@@ -90,5 +92,14 @@
   <div class="container">Vacancy Intelligence Assistant · Автопоиск hh.ru</div>
 </footer>
 </div>
+<script>
+document.querySelectorAll('.fav-star').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    fetch('/favorites/toggle/' + btn.dataset.vid, {method: 'POST'})
+      .then(function (r) { return r.json(); })
+      .then(function (d) { btn.classList.toggle('on', d.favorite); });
+  });
+});
+</script>
 </body>
 </html>
