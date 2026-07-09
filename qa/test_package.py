@@ -102,6 +102,8 @@ def test_package_route_cold_path(monkeypatch, tmp_path):
     from fastapi.testclient import TestClient
     import web.app as webapp
 
+    from agents import vacancy_store as vs
+    monkeypatch.setattr(vs, "STORE_DIR", tmp_path / "store")
     monkeypatch.setattr(ap, "OUTPUT_DIR", tmp_path)  # empty cache → cold path
     monkeypatch.setattr(
         webapp.hh_api, "fetch_vacancy_data",
