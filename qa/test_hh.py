@@ -131,6 +131,8 @@ def test_from_url_hh_error(monkeypatch):
 @pytest.mark.no_llm
 def test_run_search_triage(monkeypatch, tmp_path):
     monkeypatch.setattr(hh_search, "STATE_PATH", tmp_path / "state.json")
+    from agents import vacancy_store as _vs
+    monkeypatch.setattr(_vs, "STORE_DIR", tmp_path / "store")
     monkeypatch.setattr(
         hh_api, "search_vacancy_ids",
         lambda text, area=None, max_pages=1, search_field="name", extra_params=None: ["101", "102"],
@@ -221,6 +223,8 @@ def test_global_cooldown(monkeypatch, tmp_path):
 def test_run_search_failed_ids_retried_next_run(monkeypatch, tmp_path):
     """Rate-limited/errored ids must NOT be marked as seen — next run retries them."""
     monkeypatch.setattr(hh_search, "STATE_PATH", tmp_path / "state.json")
+    from agents import vacancy_store as _vs
+    monkeypatch.setattr(_vs, "STORE_DIR", tmp_path / "store")
     monkeypatch.setattr(
         hh_api, "search_vacancy_ids",
         lambda text, area=None, max_pages=1, search_field="name", extra_params=None: ["201", "202"],
