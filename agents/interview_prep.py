@@ -76,6 +76,7 @@ class PrepPackage:
     interviewer_profile: str = ""   # «с чьих позиций» построены вопросы
     qa: list[PrepQA] = field(default_factory=list)
     hr_qa: list[PrepQA] = field(default_factory=list)  # общие/поведенческие от HR
+    user_qa: list[PrepQA] = field(default_factory=list)  # свои вопросы пользователя
     employer_questions: list[EmployerQuestion] = field(default_factory=list)
     purple_rounds: list[PurpleRound] = field(default_factory=list)
     top_risks: list[str] = field(default_factory=list)
@@ -367,11 +368,82 @@ def load_saved_prep(package_id: str) -> PrepPackage | None:
         data = json.loads(path.read_text(encoding="utf-8"))
         data["qa"] = [PrepQA(**q) for q in data.get("qa", [])]
         data["hr_qa"] = [PrepQA(**q) for q in data.get("hr_qa", [])]
+        data["user_qa"] = [PrepQA(**q) for q in data.get("user_qa", [])]
         data["employer_questions"] = [EmployerQuestion(**q) for q in data.get("employer_questions", [])]
         data["purple_rounds"] = [PurpleRound(**r) for r in data.get("purple_rounds", [])]
         return PrepPackage(**data)
     except (json.JSONDecodeError, TypeError):
         return None
+
+
+_ASK_SYSTEM = _LANG_RULES + """
+
+Ты — AI-двойник кандидата на собеседовании. Пользователь (сам кандидат)
+задаёт вопрос — так, как его мог бы задать интервьюер на этой вакансии.
+Дай заготовку ответа ОТ ПЕРВОГО ЛИЦА кандидата: 2-5 предложений, плотно,
+на фактах из резюме и факт-базы, без выдумки. Если фактов не хватает —
+построй ответ через смежный опыт или честное признание границы, и скажи
+об этом в поле note. Отвечай строго валидным JSON."""
+
+_ASK_USER = """\
+ВАКАНСИЯ: {title} · {company}
+Профиль интервьюера: {interviewer_profile}
+
+РЕЗЮМЕ КАНДИДАТА:
+---
+{resume_text}
+---
+
+ФАКТ-БАЗА:
+---
+{facts}
+---
+
+ВОПРОС ИНТЕРВЬЮЕРА (задан пользователем):
+«{question}»
+
+Верни ТОЛЬКО валидный JSON:
+{{
+  "answer": "заготовка ответа от первого лица",
+  "note": "необязательное примечание: чем ответ подкреплён слабо / что уточнить у кандидата (или пустая строка)"
+}}"""
+
+
+def answer_user_question(package_id: str, question: str) -> PrepQA:
+    """Answer a user-typed interviewer question and persist it in the package."""
+    question = (question or "").strip()
+    if not question:
+        return PrepQA(question="", answer="", severity="user")
+
+    pkg = load_saved_prep(package_id)
+    api_key = _get_api_key()
+    if not api_key:
+        return PrepQA(question=question, answer="Нет ANTHROPIC_API_KEY.", severity="user")
+
+    try:
+        resume = load_canonical_resume()
+    except Exception as exc:
+        return PrepQA(question=question, answer=f"Не удалось прочитать резюме: {exc}", severity="user")
+
+    data = _call_llm(api_key, _ASK_SYSTEM, _ASK_USER.format(
+        title=pkg.vacancy_title if pkg else "—",
+        company=pkg.company if pkg else "—",
+        interviewer_profile=pkg.interviewer_profile if pkg else "—",
+        resume_text=resume,
+        facts=load_facts() or "— факт-база пуста —",
+        question=question,
+    ), max_tokens=2000)
+
+    item = PrepQA(
+        source=(data.get("note") or "ваш вопрос").strip() or "ваш вопрос",
+        question=question,
+        answer=data.get("answer", ""),
+        severity="user",
+    )
+    if pkg is not None:
+        pkg.user_qa.append(item)
+        _save(pkg)
+    return item
 
 
 # ---------------------------------------------------------------------------
@@ -416,6 +488,12 @@ def _save(pkg: PrepPackage) -> None:
     md += ["## Общие и поведенческие вопросы (HR)", ""]
     for i, q in enumerate(pkg.hr_qa, 1):
         md += [f"### {i}. {q.question}", f"_Тема: {q.source}_", "", q.answer, ""]
+    if pkg.user_qa:
+        md += ["## Ваши собственные вопросы (спрошено у двойника)", ""]
+        for q in pkg.user_qa:
+            md += [f"### {q.question}", "", q.answer, ""]
+            if q.source and q.source != "ваш вопрос":
+                md += [f"_Примечание: {q.source}_", ""]
     md += ["## Ваши вопросы работодателю", ""]
     for q in pkg.employer_questions:
         md += [f"- **{q.question}**", f"  _{q.why}_", ""]

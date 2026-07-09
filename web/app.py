@@ -29,7 +29,7 @@ from agents.hh_search import (
 from agents.application_package import (
     build_package, letter_word_count, load_saved_package,
 )
-from agents.interview_prep import build_prep, load_saved_prep
+from agents.interview_prep import answer_user_question, build_prep, load_saved_prep
 from agents.resume_variants import (
     generate_all, generate_variant, load_saved_variants,
     load_variants_config, resume_path,
@@ -441,6 +441,13 @@ async def prep_page(request: Request, vid: str, regenerate: bool = False):
     return templates.TemplateResponse(
         request, "prep.html", context={"pkg": pkg, "active_nav": "search"}
     )
+
+
+@app.post("/prep/{vid}/ask")
+async def prep_ask(vid: str, question: str = Form(default="")):
+    """Answer a user-typed interviewer question; persists into the package."""
+    answer_user_question(f"hh_{vid}", question)
+    return RedirectResponse(url=f"/prep/{vid}#user-qa", status_code=303)
 
 
 # ---------------------------------------------------------------------------

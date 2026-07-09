@@ -93,6 +93,28 @@ def test_build_prep_empty_qa_is_error(monkeypatch, tmp_path):
 
 
 @pytest.mark.no_llm
+def test_answer_user_question_persists(monkeypatch, tmp_path):
+    monkeypatch.setattr(ip, "OUTPUT_DIR", tmp_path)
+    monkeypatch.setattr(ip, "_get_api_key", lambda: "sk-test")
+    monkeypatch.setattr(ip, "load_canonical_resume", lambda: "резюме")
+    monkeypatch.setattr(ip, "_call_llm", _mock_llm([_STAGE1, _STAGE1B, _STAGE2, _STAGE3]))
+    ip.build_prep(vacancy_text="v", title="CIO", package_id="hh_9", resume_text="р")
+
+    monkeypatch.setattr(ip, "_call_llm", _mock_llm([
+        {"answer": "Отвечаю на фактах.", "note": ""},
+    ]))
+    item = ip.answer_user_question("hh_9", "Почему вы?")
+    assert item.answer == "Отвечаю на фактах."
+    assert item.severity == "user"
+
+    loaded = ip.load_saved_prep("hh_9")
+    assert len(loaded.user_qa) == 1
+    assert loaded.user_qa[0].question == "Почему вы?"
+    md = (tmp_path / "hh_9.md").read_text(encoding="utf-8")
+    assert "спрошено у двойника" in md
+
+
+@pytest.mark.no_llm
 def test_prep_route_cold_path(monkeypatch, tmp_path):
     from fastapi.testclient import TestClient
     import web.app as webapp

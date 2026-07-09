@@ -102,6 +102,33 @@
       {% endfor %}
     </div>
 
+    <div class="card" style="margin-top:1rem;" id="user-qa">
+      <h2>Спросить двойника <span class="hint" style="font-weight:normal;">— свой вопрос, ответ от вашего лица на ваших фактах</span></h2>
+      {% for q in pkg.user_qa %}
+      <div class="qa-item open">
+        <div class="q" style="cursor:default;">{{ q.question }}</div>
+        <div class="a" style="display:block;">{{ q.answer }}</div>
+        {% if q.source and q.source != 'ваш вопрос' %}
+        <div class="src" style="margin-top:.3rem;">⚠ {{ q.source }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+      <form method="post" action="/prep/{{ pkg.package_id | replace('hh_','') }}/ask" id="ask-form" style="margin-top:.8rem;">
+        <div class="field">
+          <textarea name="question" rows="2" required
+            placeholder="Например: почему вы ушли с последнего места именно сейчас, в разгар AI-проектов?"
+            style="width:100%;"></textarea>
+        </div>
+        <button type="submit" class="btn-submit" id="ask-btn">Получить ответ (~20 сек)</button>
+      </form>
+      <script>
+      document.getElementById('ask-form').addEventListener('submit', function () {
+        var b = document.getElementById('ask-btn');
+        b.disabled = true; b.textContent = 'Двойник думает…';
+      });
+      </script>
+    </div>
+
     <div class="card" style="margin-top:1rem;">
       <h2>Ваши вопросы работодателю</h2>
       {% for q in pkg.employer_questions %}
