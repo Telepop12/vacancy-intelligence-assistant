@@ -44,7 +44,9 @@
 
       {% if run_result %}
       <p class="hint" style="margin-top:.6rem;">
-        Цикл {{ run_result.started_at }}: новых оценено {{ run_result.new_total }},
+        Цикл {{ run_result.started_at }}: в выдаче hh {{ run_result.found_total }} вакансий,
+        из них новых {{ run_result.new_total }}
+        {%- if run_result.new_total == 0 %} (все уже оценены ранее — новых публикаций не было){% endif %},
         сильных {{ run_result.new_strong }}, пакетов собрано {{ run_result.packages_built }},
         алерт {{ 'отправлен' if run_result.notified else 'не отправлялся' }}.
         {% for e in run_result.errors %}<br>⚠ {{ e }}{% endfor %}

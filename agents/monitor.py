@@ -68,8 +68,9 @@ class DigestEntry:
 @dataclass
 class CycleResult:
     started_at: str = ""
-    new_total: int = 0          # новых вакансий найдено (все)
-    new_strong: int = 0         # из них выше порога
+    found_total: int = 0        # всего вакансий в выдаче по запросам
+    new_total: int = 0          # из них новых (оценены в этом цикле)
+    new_strong: int = 0         # из новых — выше порога
     packages_built: int = 0
     notified: bool = False
     errors: list[str] = field(default_factory=list)
@@ -198,6 +199,7 @@ def run_cycle(profile, base_url: str = "http://localhost:8000") -> CycleResult:
         if not it.error and it.hh_id not in known
         and it.triaged_at and it.triaged_at >= result.started_at[:10]
     ]
+    result.found_total = search.found_total
     result.new_total = search.new_count
     strong = sorted(
         [it for it in fresh if it.score >= int(cfg["score_threshold"])],
