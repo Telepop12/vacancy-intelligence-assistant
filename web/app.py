@@ -135,7 +135,7 @@ async def vacancy_page(request: Request):
 
 
 @app.post("/analyze", response_class=HTMLResponse)
-async def analyze_vacancy(
+def analyze_vacancy(  # sync: LLM-генерация уходит в threadpool FastAPI, event loop свободен
     request: Request,
     vacancy_text: str = Form(default=""),
     vacancy_url:  str = Form(default=""),
@@ -157,7 +157,7 @@ async def analyze_vacancy(
                     "active_nav": "vacancy",
                 },
             )
-        content = await vacancy_file.read()
+        content = vacancy_file.file.read()
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
             tmp.write(content)
             tmp_path = Path(tmp.name)
@@ -249,7 +249,7 @@ async def variants_page(request: Request):
 
 
 @app.post("/variants/generate", response_class=HTMLResponse)
-async def variants_generate(request: Request, key: str = Form(default="")):
+def variants_generate(request: Request, key: str = Form(default="")):
     """Generate one variant (key given) or all of them (key empty)."""
     if key:
         result = generate_variant(key)
@@ -278,7 +278,7 @@ def _search_page_ctx(error: str = "", notice: str = "") -> dict:
 
 
 @app.post("/vacancy/add", response_class=HTMLResponse)
-async def vacancy_add(
+def vacancy_add(
     request: Request,
     vac_url: str = Form(default=""),
     vac_text: str = Form(default=""),
@@ -395,7 +395,7 @@ async def package_page_legacy(vacancy_id: str):
 
 
 @app.get("/package/{vid}", response_class=HTMLResponse)
-async def package_page(request: Request, vid: str, regenerate: bool = False):
+def package_page(request: Request, vid: str, regenerate: bool = False):
     """Show (or generate) the application package for a stored/hh vacancy."""
     pkg = None if regenerate else load_saved_package(f"hh_{vid}")
     if pkg is None:
@@ -423,7 +423,7 @@ async def prep_page_legacy(vacancy_id: str):
 
 
 @app.get("/prep/{vid}", response_class=HTMLResponse)
-async def prep_page(request: Request, vid: str, regenerate: bool = False):
+def prep_page(request: Request, vid: str, regenerate: bool = False):
     """Interview prep package for a stored/hh vacancy (independent of applying)."""
     pkg = None if regenerate else load_saved_prep(f"hh_{vid}")
     if pkg is None:
@@ -444,7 +444,7 @@ async def prep_page(request: Request, vid: str, regenerate: bool = False):
 
 
 @app.post("/prep/{vid}/ask")
-async def prep_ask(vid: str, question: str = Form(default="")):
+def prep_ask(vid: str, question: str = Form(default="")):
     """Answer a user-typed interviewer question; persists into the package."""
     answer_user_question(f"hh_{vid}", question)
     return RedirectResponse(url=f"/prep/{vid}#user-qa", status_code=303)
@@ -465,7 +465,7 @@ async def search_page(request: Request):
 
 
 @app.post("/search/run", response_class=HTMLResponse)
-async def search_run(
+def search_run(
     request: Request,
     queries: str = Form(default=""),
     rescan:  str = Form(default=""),
@@ -487,7 +487,7 @@ async def analyze_hh_legacy(hh_id: str):
 
 
 @app.get("/analyze/{vid}", response_class=HTMLResponse)
-async def analyze_vacancy_by_id(request: Request, vid: str):
+def analyze_vacancy_by_id(request: Request, vid: str):
     """Full analysis of a stored/hh vacancy straight from the search table."""
     try:
         data = vacancy_store.resolve_vacancy(vid)
@@ -514,7 +514,7 @@ async def resume_page(request: Request):
 
 
 @app.post("/resume/analyze", response_class=HTMLResponse)
-async def resume_analyze(
+def resume_analyze(
     request: Request,
     resume_text: str = Form(default=""),
     resume_file: Optional[UploadFile] = File(default=None),
@@ -529,7 +529,7 @@ async def resume_analyze(
                 "active_nav": "resume",
             })
         import tempfile
-        content = await resume_file.read()
+        content = resume_file.file.read()
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
             tmp.write(content)
             tmp_path = Path(tmp.name)
@@ -570,7 +570,7 @@ async def match_page(request: Request):
 
 
 @app.post("/match/analyze", response_class=HTMLResponse)
-async def match_analyze(
+def match_analyze(
     request: Request,
     vacancy_text: str = Form(default=""),
     resume_text:  str = Form(default=""),
@@ -582,7 +582,7 @@ async def match_analyze(
     # ── Resolve vacancy ──
     vacancy = None
     if vacancy_file and vacancy_file.filename:
-        content = await vacancy_file.read()
+        content = vacancy_file.file.read()
         suffix = Path(vacancy_file.filename).suffix.lower()
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
             tmp.write(content)
@@ -605,7 +605,7 @@ async def match_analyze(
         if suffix not in {".txt", ".md", ".docx", ".pdf"}:
             errors.append(f"Неподдерживаемый формат резюме: {suffix}")
         else:
-            content = await resume_file.read()
+            content = resume_file.file.read()
             with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
                 tmp.write(content)
                 tmp_path = Path(tmp.name)

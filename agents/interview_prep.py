@@ -514,50 +514,12 @@ def _save(pkg: PrepPackage) -> None:
 
 
 def _call_llm(api_key: str, system: str, prompt: str, max_tokens: int = 4000) -> dict:
-    """LLM call with JSON parsing; retries once on truncation/invalid JSON."""
-    import anthropic
-    import httpx
-
-    client = anthropic.Anthropic(api_key=api_key, http_client=httpx.Client(trust_env=False))
-    attempt_prompt, attempt_tokens = prompt, max_tokens
-    last_err: Exception | None = None
-    for _ in range(2):
-        response = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=attempt_tokens,
-            system=system,
-            messages=[{"role": "user", "content": attempt_prompt}],
-        )
-        raw = response.content[0].text.strip()
-        if raw.startswith("```"):
-            lines = raw.split("\n")
-            raw = "\n".join(lines[1:])
-            if raw.endswith("```"):
-                raw = raw[: raw.rfind("```")].rstrip()
-        start, end = raw.find("{"), raw.rfind("}") + 1
-        if start >= 0 and end > start:
-            raw = raw[start:end]
-        try:
-            return json.loads(raw)
-        except json.JSONDecodeError as exc:
-            last_err = exc
-            # Truncated by the token limit or malformed — one denser retry
-            attempt_tokens = min(int(attempt_tokens * 1.6), 16000)
-            attempt_prompt = prompt + (
-                "\n\nВАЖНО: прошлый ответ оборвался или содержал невалидный JSON. "
-                "Сократи формулировки (ответы по 2-3 предложения) и верни "
-                "СТРОГО валидный JSON целиком."
-            )
-    raise last_err  # type: ignore[misc]
+    """Thin wrapper over the shared gateway (kept for test monkeypatching)."""
+    from core import llm
+    return llm.call_json(system, prompt, max_tokens=max_tokens, api_key=api_key,
+                         banned_substrings=[", а не "])
 
 
 def _get_api_key() -> str:
-    env_path = BASE_DIR / ".env"
-    if env_path.exists():
-        for line in env_path.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, _, v = line.partition("=")
-                os.environ.setdefault(k.strip(), v.strip())
-    key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-    return key if key and not key.startswith("sk-ant-ВАШ") else ""
+    from core import llm
+    return llm.get_api_key()

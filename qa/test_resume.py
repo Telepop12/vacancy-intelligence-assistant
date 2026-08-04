@@ -1,7 +1,20 @@
 """
 pytest: Resume Intelligence Layer tests (TC-20..TC-29).
+
+Проверяются rule-based поля профиля, поэтому LLM-ключ принудительно
+отключён: без этого каждый тест делал живой вызов Sonnet (25-45 секунд
+и деньги за прогон) — так офлайн-набор шёл 7 минут вместо секунд.
 """
 import pytest
+
+from core import llm as _llm
+
+
+@pytest.fixture(autouse=True)
+def _force_no_llm(monkeypatch):
+    monkeypatch.setattr(_llm, "get_api_key", lambda: "")
+
+
 from qa.run_functional_tests import (
     tc_resume_large_cv,
     tc_resume_ai_signals,

@@ -13,32 +13,20 @@ from pathlib import Path
 from core.models import CandidateProfile, VacancyAnalysis
 
 # ---------------------------------------------------------------------------
-# Load .env (if present) before checking for the API key
-# ---------------------------------------------------------------------------
-
-_env_path = Path(__file__).resolve().parent.parent / ".env"
-if _env_path.exists():
-    for _line in _env_path.read_text(encoding="utf-8").splitlines():
-        _line = _line.strip()
-        if _line and not _line.startswith("#") and "=" in _line:
-            _k, _, _v = _line.partition("=")
-            os.environ.setdefault(_k.strip(), _v.strip())
-
-
-# ---------------------------------------------------------------------------
-# Build analyzer — ClaudeAnalyzer if API key present, else HybridAnalyzer
+# Build analyzer — ClaudeAnalyzer if API key present, else HybridAnalyzer.
+# Built lazily per call (NOT at import): key detection goes through the
+# shared gateway, so tests can disable the LLM with a monkeypatch and the
+# key can be added/removed without restarting the process.
 # ---------------------------------------------------------------------------
 
 def _build_analyzer():
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-    if api_key and not api_key.startswith("sk-ant-ВАШ"):
+    from core import llm
+    api_key = llm.get_api_key()
+    if api_key:
         from core.analyzers.claude_analyzer import ClaudeAnalyzer
         return ClaudeAnalyzer(api_key=api_key)
     from core.analyzers.hybrid import HybridAnalyzer
     return HybridAnalyzer()
-
-
-_analyzer = _build_analyzer()
 
 
 # ---------------------------------------------------------------------------
@@ -58,7 +46,7 @@ def analyze(vacancy, profile: CandidateProfile) -> VacancyAnalysis:
     if isinstance(vacancy, str):
         vacancy = from_text(vacancy)
 
-    analysis = _analyzer.analyze(vacancy.normalized_text or vacancy.raw_text, profile)
+    analysis = _build_analyzer().analyze(vacancy.normalized_text or vacancy.raw_text, profile)
     synthesize(analysis)
 
     # Populate intake fields on the analysis result

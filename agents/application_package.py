@@ -254,35 +254,11 @@ def _save_package(pkg: ApplicationPackage) -> None:
 
 
 def _call_llm(api_key: str, prompt: str) -> dict:
-    import anthropic
-    import httpx
-
-    client = anthropic.Anthropic(api_key=api_key, http_client=httpx.Client(trust_env=False))
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=2500,
-        system=_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    raw = response.content[0].text.strip()
-    if raw.startswith("```"):
-        lines = raw.split("\n")
-        raw = "\n".join(lines[1:])
-        if raw.endswith("```"):
-            raw = raw[: raw.rfind("```")].rstrip()
-    start, end = raw.find("{"), raw.rfind("}") + 1
-    if start >= 0 and end > start:
-        raw = raw[start:end]
-    return json.loads(raw)
+    """Thin wrapper over the shared gateway (kept for test monkeypatching)."""
+    from core import llm
+    return llm.call_json(_SYSTEM_PROMPT, prompt, max_tokens=2500, api_key=api_key)
 
 
 def _get_api_key() -> str:
-    env_path = BASE_DIR / ".env"
-    if env_path.exists():
-        for line in env_path.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, _, v = line.partition("=")
-                os.environ.setdefault(k.strip(), v.strip())
-    key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-    return key if key and not key.startswith("sk-ant-ВАШ") else ""
+    from core import llm
+    return llm.get_api_key()

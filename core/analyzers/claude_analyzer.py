@@ -65,7 +65,7 @@ class ClaudeAnalyzer(HybridAnalyzer):
     def __init__(
         self,
         api_key: str,
-        model: str = "claude-sonnet-4-6",
+        model: str | None = None,   # None → модель из config/llm.yaml
     ) -> None:
         super().__init__()
         self._api_key = api_key
@@ -101,8 +101,7 @@ class ClaudeAnalyzer(HybridAnalyzer):
             traceback.print_exc()
 
     def _call_claude(self, analysis: VacancyAnalysis, vacancy_text: str) -> dict[str, Any]:
-        import anthropic
-        import httpx
+        from core import llm
 
         prompt = _USER_TEMPLATE.format(
             vacancy_text=vacancy_text[:6000],
@@ -110,27 +109,7 @@ class ClaudeAnalyzer(HybridAnalyzer):
             recommendation=analysis.recommendation.value,
             matches=", ".join(analysis.key_matches[:8]) or "—",
         )
-
-        client = anthropic.Anthropic(
-            api_key=self._api_key,
-            http_client=httpx.Client(trust_env=False),
+        return llm.call_json(
+            _SYSTEM_PROMPT, prompt,
+            max_tokens=2000, api_key=self._api_key, model=self._model,
         )
-        response = client.messages.create(
-            model=self._model,
-            max_tokens=2000,
-            system=_SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": prompt}],
-        )
-
-        raw = response.content[0].text.strip()
-        # Strip markdown code-block wrapper if Claude added one
-        if raw.startswith("```"):
-            lines = raw.split("\n")
-            raw = "\n".join(lines[1:])
-            if raw.endswith("```"):
-                raw = raw[: raw.rfind("```")].rstrip()
-        start = raw.find("{")
-        end = raw.rfind("}") + 1
-        if start >= 0 and end > start:
-            raw = raw[start:end]
-        return json.loads(raw)
