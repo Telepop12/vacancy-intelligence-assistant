@@ -55,6 +55,25 @@
       <div class="copy-block" data-copy style="margin-top:.5rem;">{{ pkg.letter }}</div>
     </div>
 
+    {% if pkg.screener_qa %}
+    <div class="card" style="margin-top:1rem;">
+      <h2>Прогноз диалога с ИИ-скринером hh <span class="hint" style="font-weight:normal;">— робот работодателя спросит после отклика; клик по ответу копирует</span></h2>
+      {% for q in pkg.screener_qa %}
+      <div style="border-bottom:1px solid var(--border);padding:.7rem 0;">
+        <div style="font-weight:600;">🤖 {{ q.question }}</div>
+        <div class="copy-block" data-copy style="margin-top:.4rem;">{{ q.answer }}</div>
+        {% if q.value_added %}
+        <div class="hint" style="margin-top:.3rem;">↑ сверх резюме: {{ q.value_added }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+      <p class="hint" style="margin-top:.6rem;">
+        Принцип заготовок: не пересказ строчки резюме, а добавленная конкретика —
+        скринер сверяет ответ с резюме, и новая фактура работает лучше совпадения.
+      </p>
+    </div>
+    {% endif %}
+
     <div class="card" style="margin-top:1rem;">
       <h2>Что зеркалим из вакансии</h2>
       <ul style="margin:.5rem 0 0 1.1rem;">

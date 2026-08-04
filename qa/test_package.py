@@ -23,11 +23,21 @@ _LLM_RESPONSE = {
 }
 
 
+_SCREENER_RESPONSE = {
+    "screener_qa": [
+        {"question": "Расскажите про опыт управления ИТ-бюджетом.",
+         "answer": "Владел бюджетом 200+ млн ₽: CAPEX на инфраструктуру, OPEX на команду и лицензии.",
+         "value_added": "структура CAPEX/OPEX — из факт-базы"},
+    ],
+}
+
+
 @pytest.mark.no_llm
 def test_build_package_happy_path(monkeypatch, tmp_path):
     monkeypatch.setattr(ap, "OUTPUT_DIR", tmp_path)
     monkeypatch.setattr(ap, "_get_api_key", lambda: "sk-test")
     monkeypatch.setattr(ap, "_call_llm", lambda api_key, prompt: _LLM_RESPONSE)
+    monkeypatch.setattr(ap, "_call_screener", lambda prompt: _SCREENER_RESPONSE)
 
     pkg = ap.build_package(
         vacancy_text="Ищем CIO для трансформации",
@@ -42,9 +52,29 @@ def test_build_package_happy_path(monkeypatch, tmp_path):
     assert (tmp_path / "hh_123.json").exists()
     assert (tmp_path / "hh_123.md").exists()
 
+    assert pkg.screener_qa[0].question.startswith("Расскажите")
+    md = (tmp_path / "hh_123.md").read_text(encoding="utf-8")
+    assert "ИИ-скринером" in md
+
     loaded = ap.load_saved_package("hh_123")
     assert loaded is not None
     assert loaded.letter == pkg.letter
+    assert loaded.screener_qa[0].value_added.startswith("структура")
+
+
+@pytest.mark.no_llm
+def test_screener_failure_not_fatal(monkeypatch, tmp_path):
+    """Пакет с письмом ценен и без скринера — сбой второго этапа не рушит всё."""
+    monkeypatch.setattr(ap, "OUTPUT_DIR", tmp_path)
+    monkeypatch.setattr(ap, "_get_api_key", lambda: "sk-test")
+    monkeypatch.setattr(ap, "_call_llm", lambda api_key, prompt: _LLM_RESPONSE)
+    def boom(prompt):
+        raise RuntimeError("LLM недоступен")
+    monkeypatch.setattr(ap, "_call_screener", boom)
+    pkg = ap.build_package(vacancy_text="v", package_id="hh_5", resume_text="r")
+    assert not pkg.error
+    assert pkg.screener_qa == []
+    assert (tmp_path / "hh_5.json").exists()
 
 
 @pytest.mark.no_llm

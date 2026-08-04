@@ -32,6 +32,13 @@ OUTPUT_DIR = BASE_DIR / "output" / "applications"
 
 
 @dataclass
+class ScreenerQA:
+    question: str = ""
+    answer: str = ""
+    value_added: str = ""   # что в ответе есть СВЕРХ резюме (источник факта)
+
+
+@dataclass
 class ApplicationPackage:
     package_id: str = ""            # hh_id или slug по времени
     vacancy_title: str = ""
@@ -43,6 +50,7 @@ class ApplicationPackage:
     variant_hh_url: str = ""        # ссылка на опубликованное резюме hh
     variant_reasoning: str = ""
     hooks: list[str] = field(default_factory=list)  # какие требования вакансии зеркалим
+    screener_qa: list[ScreenerQA] = field(default_factory=list)  # диалог с ИИ-скринером hh
     generated_at: str = ""
     error: str = ""
 
@@ -127,6 +135,68 @@ _USER_TEMPLATE = """\
 
 
 # ---------------------------------------------------------------------------
+# Stage 2: hh AI-screener dialogue forecast
+# ---------------------------------------------------------------------------
+
+_SCREENER_SYSTEM = """\
+Отвечай исключительно на деловом русском языке, живо и без канцелярита.
+Запрещены ИИ-штампы и оборот «X, а не Y».
+
+Контекст: с 2026 года hh.ru ставит работодателям ИИ-помощника, который первым
+читает отклик кандидата и задаёт уточняющие вопросы прямо в чате hh. Обычно
+он переспрашивает то, что уже написано в резюме, сверяя с требованиями
+вакансии («расскажите про опыт управления бюджетом», «какой у вас опыт с X»).
+
+Твоя задача — спрогнозировать вопросы этого скринера по КОНКРЕТНОЙ вакансии
+и подготовить кандидату заготовки ответов.
+
+ЖЕЛЕЗНЫЕ ПРАВИЛА ОТВЕТОВ:
+1. Ответ НЕ пересказывает строчку резюме — он ДОБАВЛЯЕТ слой сверху:
+   конкретику, контекст решения, цифру, деталь из факт-базы, которой в
+   резюме нет. Скринер сверяет с резюме; совпадение слово в слово выглядит
+   как бот, пересказ — как пустота. Ценность = новая информация.
+2. Формат чата: 2-4 коротких предложения, разговорный деловой тон, без
+   приветствий и подписей. Человек печатает в чате, не пишет эссе.
+3. Только факты из резюме и факт-базы; цифры дословно. Если по теме вопроса
+   фактов мало — честный ответ через смежный опыт, без выдумки.
+4. Анти-оверфит: не набивать ответ ключевыми словами вакансии; естественная
+   речь убедительнее идеального совпадения.
+
+Отвечай строго валидным JSON."""
+
+_SCREENER_USER = """\
+ВАКАНСИЯ:
+---
+{vacancy_text}
+---
+Название: {title} · Компания: {company}
+
+РЕЗЮМЕ КАНДИДАТА (то, что скринер уже «прочитал»):
+---
+{resume_text}
+---
+
+ФАКТ-БАЗА (источник добавленной ценности — детали, которых нет в резюме):
+---
+{facts}
+---
+
+Верни ТОЛЬКО валидный JSON:
+{{
+  "screener_qa": [
+    {{
+      "question": "вопрос, как его задаст ИИ-скринер (по требованию вакансии)",
+      "answer": "заготовка ответа в чат: 2-4 предложения, с добавленной ценностью",
+      "value_added": "коротко: что в ответе есть сверх резюме и откуда факт"
+    }}
+  ]
+}}
+6-8 вопросов: по ключевым требованиям вакансии (опыт, масштаб, отрасль,
+инструменты), включая 1-2 «неудобных» (зоны, где резюме кандидата слабее
+требований — там скринер копнёт почти наверняка)."""
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
@@ -197,6 +267,24 @@ def build_package(
         if not pkg.letter:
             pkg.error = "LLM вернул пустое письмо — повторите генерацию"
             return pkg
+
+        # Stage 2: прогноз диалога с ИИ-скринером hh (не фатально при сбое —
+        # пакет с письмом ценен и без него)
+        try:
+            data2 = _call_screener(
+                _SCREENER_USER.format(
+                    vacancy_text=vacancy_text[:6000],
+                    title=title or "—", company=company or "—",
+                    resume_text=resume, facts=load_facts() or "— факт-база пуста —",
+                ),
+            )
+            pkg.screener_qa = [
+                ScreenerQA(**{k: q.get(k, "") for k in ("question", "answer", "value_added")})
+                for q in data2.get("screener_qa") or []
+            ]
+        except Exception:
+            pkg.screener_qa = []
+
         _save_package(pkg)
     except Exception as exc:
         pkg.error = f"Ошибка генерации: {exc}"
@@ -209,7 +297,9 @@ def load_saved_package(package_id: str) -> ApplicationPackage | None:
     if not path.exists():
         return None
     try:
-        return ApplicationPackage(**json.loads(path.read_text(encoding="utf-8")))
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["screener_qa"] = [ScreenerQA(**q) for q in data.get("screener_qa", [])]
+        return ApplicationPackage(**data)
     except (json.JSONDecodeError, TypeError):
         return None
 
@@ -250,6 +340,12 @@ def _save_package(pkg: ApplicationPackage) -> None:
         "",
     ]
     md += [f"- {h}" for h in pkg.hooks]
+    if pkg.screener_qa:
+        md += ["", "## Прогноз диалога с ИИ-скринером hh", ""]
+        for q in pkg.screener_qa:
+            md += [f"**🤖 {q.question}**", "", q.answer, ""]
+            if q.value_added:
+                md += [f"_Сверх резюме: {q.value_added}_", ""]
     (OUTPUT_DIR / f"{sid}.md").write_text("\n".join(md), encoding="utf-8")
 
 
@@ -257,6 +353,13 @@ def _call_llm(api_key: str, prompt: str) -> dict:
     """Thin wrapper over the shared gateway (kept for test monkeypatching)."""
     from core import llm
     return llm.call_json(_SYSTEM_PROMPT, prompt, max_tokens=2500, api_key=api_key)
+
+
+def _call_screener(prompt: str) -> dict:
+    """Stage-2 call: hh AI-screener dialogue forecast."""
+    from core import llm
+    return llm.call_json(_SCREENER_SYSTEM, prompt, max_tokens=4000,
+                         banned_substrings=[", а не "])
 
 
 def _get_api_key() -> str:

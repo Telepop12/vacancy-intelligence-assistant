@@ -26,7 +26,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_PATH = BASE_DIR / "config" / "llm.yaml"
 
 _DEFAULTS = {
-    "model": "claude-sonnet-4-6",
+    "model": "claude-sonnet-5",
+    "effort": "medium",        # у Sonnet 5 medium ≈ high у Sonnet 4.6, дешевле
+    "min_max_tokens": 6000,    # Sonnet 5 думает в счёт max_tokens + токенизатор ~+30%
     "max_json_retries": 1,
 }
 
@@ -88,6 +90,13 @@ def call_json(
     client = anthropic.Anthropic(api_key=key, http_client=httpx.Client(trust_env=False))
     use_model = model or cfg["model"]
 
+    # Sonnet 5+: адаптивное мышление включено по умолчанию и расходует
+    # max_tokens вместе с текстом ответа — держим запас, чтобы не обрезало.
+    max_tokens = max(max_tokens, int(cfg.get("min_max_tokens", 0)))
+    extra: dict = {}
+    if cfg.get("effort"):
+        extra["output_config"] = {"effort": cfg["effort"]}
+
     attempt_prompt, attempt_tokens = prompt, max_tokens
     last_err: Exception | None = None
     data: dict | None = None
@@ -98,9 +107,14 @@ def call_json(
             max_tokens=attempt_tokens,
             system=system,
             messages=[{"role": "user", "content": attempt_prompt}],
+            **extra,
+        )
+        # Sonnet 5+: первым блоком приходит thinking — берём первый текстовый
+        raw_text = next(
+            (b.text for b in response.content if getattr(b, "type", "") == "text"), ""
         )
         try:
-            data = _extract_json(response.content[0].text)
+            data = _extract_json(raw_text)
             break
         except json.JSONDecodeError as exc:
             last_err = exc
@@ -126,9 +140,13 @@ def call_json(
                     f"обороты: {listed}. Перепиши формулировки без них и верни "
                     "СТРОГО валидный JSON."
                 )}],
+                **extra,
+            )
+            retry_text = next(
+                (b.text for b in response.content if getattr(b, "type", "") == "text"), ""
             )
             try:
-                data = _extract_json(response.content[0].text)
+                data = _extract_json(retry_text)
             except json.JSONDecodeError:
                 pass  # keep the first valid answer rather than fail
     return data
