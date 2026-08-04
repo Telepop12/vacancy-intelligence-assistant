@@ -21,7 +21,7 @@ from fastapi.templating import Jinja2Templates
 
 from agents import hh_api
 from agents.career_match import career_match
-from agents import vacancy_store
+from agents import monitor, vacancy_store
 from agents.hh_search import (
     get_state_item, load_search_config, register_vacancy,
     remove_from_state, run_search,
@@ -309,6 +309,52 @@ def vacancy_add(
 
     register_vacancy(_profile, data, vid)
     return RedirectResponse(url=f"/vacancy/{vid}", status_code=303)
+
+
+@app.on_event("startup")
+def _start_monitor_scheduler():
+    """Фоновый мониторинг: цикл каждые interval_hours (config/monitor.yaml)."""
+    import threading
+    import time as _time
+
+    def _loop():
+        while True:
+            cfg = monitor.load_monitor_config()
+            _time.sleep(max(0.5, float(cfg.get("interval_hours", 6))) * 3600)
+            if cfg.get("enabled"):
+                try:
+                    monitor.run_cycle(_profile)
+                except Exception:
+                    pass  # цикл не должен ронять поток; ошибки видны в дайджесте
+
+    threading.Thread(target=_loop, daemon=True, name="vacancy-monitor").start()
+
+
+@app.get("/digest", response_class=HTMLResponse)
+async def digest_page(request: Request):
+    entries = list(reversed(monitor.load_digest()))
+    return templates.TemplateResponse(request, "digest.html", context={
+        "entries": entries,
+        "cfg": monitor.load_monitor_config(),
+        "tg_status": monitor.telegram_status(),
+        "score_color": _score_color,
+        "active_nav": "digest",
+    })
+
+
+@app.post("/monitor/run")
+def monitor_run_now(request: Request):
+    """Запустить цикл мониторинга вручную (поиск + автопакеты + алерт)."""
+    result = monitor.run_cycle(_profile)
+    entries = list(reversed(monitor.load_digest()))
+    return templates.TemplateResponse(request, "digest.html", context={
+        "entries": entries,
+        "cfg": monitor.load_monitor_config(),
+        "tg_status": monitor.telegram_status(),
+        "score_color": _score_color,
+        "run_result": result,
+        "active_nav": "digest",
+    })
 
 
 @app.post("/favorites/toggle/{vid}")
