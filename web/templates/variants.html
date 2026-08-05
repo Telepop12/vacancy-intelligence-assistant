@@ -32,8 +32,10 @@
         На hh.ru отклик отправляется уже существующим резюме, поэтому система
         готовит контент для <strong>постоянных вариантов</strong> под архетипы ролей.
         Факты берутся только из канонического резюме — ничего не выдумывается,
-        меняются акценты и формулировки. Сгенерированный блок копируется в
-        соответствующее резюме на hh один раз.
+        меняются акценты и формулировки. Если в <code>data/resume/published/</code>
+        лежит выгрузка опубликованного резюме, генератор работает как
+        <strong>редактор hh-версии</strong>: сохраняет её структуру и предлагает
+        точечные улучшения, которые легко перенести на hh построчно.
       </p>
       <p class="hint">
         Каноническое резюме: <code>{{ resume_file }}</code>
@@ -60,7 +62,10 @@
       </div>
 
       {% if v and not v.error %}
-      <p class="hint" style="margin:.3rem 0 .8rem;">Сгенерировано: {{ v.generated_at }} ·
+      <p class="hint" style="margin:.3rem 0 .8rem;">Сгенерировано: {{ v.generated_at }}
+        {%- if v.published_at %} · на базе hh-версии от {{ v.published_at }}
+        {%- elif published_dates.get(key) %} · <strong style="color:#b45309;">без учёта hh-версии от
+          {{ published_dates.get(key) }} — перегенерируйте</strong>{% endif %} ·
         <a href="/output/resume_variants/{{ key }}.md" target="_blank">.md</a> ·
         <a href="/output/resume_variants/docx/{{ key }}.docx">.docx для hh</a></p>
 

@@ -96,3 +96,68 @@ def test_corrupt_saved_variant_skipped(monkeypatch, tmp_path):
     monkeypatch.setattr(rv, "OUTPUT_DIR", tmp_path)
     (tmp_path / "bad.json").write_text("{not json", encoding="utf-8")
     assert rv.load_saved_variants() == {}
+
+
+_CLEAN_DATA = {
+    "hh_title": "CIO", "about": "О себе.", "key_skills": ["ERP"],
+    "positions": [{"company": "К", "period": "2020", "title": "CIO",
+                   "bullets": ["Выстроил ИТ-стратегию"]}],
+    "what_changed": "—", "honest_gaps": "—",
+}
+
+
+@pytest.mark.no_llm
+def test_arrow_chain_triggers_retry(monkeypatch, tmp_path):
+    monkeypatch.setattr(rv, "OUTPUT_DIR", tmp_path)
+    monkeypatch.setattr(rv, "_get_api_key", lambda: "sk-test")
+    dirty = dict(_CLEAN_DATA, about="аудит → стратегия → бюджет")
+    calls = []
+
+    def fake_llm(api_key, prompt):
+        calls.append(prompt)
+        return dirty if len(calls) == 1 else _CLEAN_DATA
+
+    monkeypatch.setattr(rv, "_call_llm", fake_llm)
+    v = rv.generate_variant("cio", resume_text="текст")
+    assert not v.error
+    assert len(calls) == 2
+    assert "→" in calls[1]          # retry-фидбек называет пойманный паттерн
+    assert v.about == "О себе."
+
+
+@pytest.mark.no_llm
+def test_published_version_feeds_prompt_and_date(monkeypatch, tmp_path):
+    monkeypatch.setattr(rv, "OUTPUT_DIR", tmp_path)
+    monkeypatch.setattr(rv, "_get_api_key", lambda: "sk-test")
+    monkeypatch.setattr(
+        rv, "load_published",
+        lambda vcfg: ("ОПУБЛИКОВАННЫЙ ТЕКСТ РЕЗЮМЕ HH", "2026-08-05"),
+    )
+    prompts = []
+    monkeypatch.setattr(
+        rv, "_call_llm",
+        lambda api_key, prompt: prompts.append(prompt) or _CLEAN_DATA,
+    )
+    v = rv.generate_variant("cio", resume_text="канон")
+    assert not v.error
+    assert v.published_at == "2026-08-05"
+    assert "ОПУБЛИКОВАННЫЙ ТЕКСТ РЕЗЮМЕ HH" in prompts[0]
+    assert "РЕЖИМ РЕДАКТОРА" in prompts[0]
+    md = (tmp_path / "cio.md").read_text(encoding="utf-8")
+    assert "hh-версия от 2026-08-05" in md
+
+
+@pytest.mark.no_llm
+def test_no_published_file_keeps_canon_mode(monkeypatch, tmp_path):
+    monkeypatch.setattr(rv, "OUTPUT_DIR", tmp_path)
+    monkeypatch.setattr(rv, "_get_api_key", lambda: "sk-test")
+    monkeypatch.setattr(rv, "load_published", lambda vcfg: ("", ""))
+    prompts = []
+    monkeypatch.setattr(
+        rv, "_call_llm",
+        lambda api_key, prompt: prompts.append(prompt) or _CLEAN_DATA,
+    )
+    v = rv.generate_variant("cio", resume_text="канон")
+    assert not v.error
+    assert v.published_at == ""
+    assert "РЕЖИМ РЕДАКТОРА" not in prompts[0]

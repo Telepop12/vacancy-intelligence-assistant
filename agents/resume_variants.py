@@ -56,6 +56,7 @@ class ResumeVariant:
     what_changed: str = ""          # чем этот вариант отличается от канона
     honest_gaps: str = ""           # чего в опыте объективно не хватает для архетипа
     generated_at: str = ""
+    published_at: str = ""          # дата выгрузки hh-версии, на которую опиралась генерация
     error: str = ""
 
 
@@ -71,6 +72,24 @@ def resume_path(cfg: dict | None = None) -> Path:
     cfg = cfg or load_variants_config()
     p = Path(cfg["resume_file"])
     return p if p.is_absolute() else BASE_DIR / p
+
+
+def load_published(vcfg: dict) -> tuple[str, str]:
+    """(текст, дата выгрузки) опубликованной на hh версии; ("", "") если нет.
+
+    Дата — mtime файла: заказчик кладёт свежую выгрузку в data/resume/published/,
+    и момент обновления файла и есть момент актуализации hh-версии.
+    """
+    rel = vcfg.get("published_file")
+    if not rel:
+        return "", ""
+    path = Path(rel)
+    if not path.is_absolute():
+        path = BASE_DIR / path
+    if not path.exists():
+        return "", ""
+    date = datetime.fromtimestamp(path.stat().st_mtime).strftime("%Y-%m-%d")
+    return path.read_text(encoding="utf-8"), date
 
 
 def load_canonical_resume(cfg: dict | None = None) -> str:
@@ -107,10 +126,14 @@ def _save_variant(variant: ResumeVariant) -> None:
 
 def render_variant_md(v: ResumeVariant) -> str:
     """Human-readable, copy-paste-ready document for one variant."""
+    source = (
+        f"опубликованная hh-версия от {v.published_at} + канон"
+        if v.published_at else "каноническое резюме"
+    )
     lines = [
         f"# {v.name}",
         "",
-        f"_Сгенерировано: {v.generated_at} · Источник фактов: каноническое резюме_",
+        f"_Сгенерировано: {v.generated_at} · Источник фактов: {source}_",
         "",
         "## Желаемая должность (заголовок резюме на hh)",
         "",
@@ -206,6 +229,14 @@ KPI, CEO, CIO, CTO, CDTO, CAIO, M&A, MBA, BI, MDM, ITSM, ITIL, DevOps, CI/CD.
 Запрещён контрастный оборот-финализация «X, а не Y» («…подтверждённая позиция,
 а не декларация», «…результат, а не процесс», «не просто …, а …») — смысл пункта
 должен быть ясен без такого противопоставления; просто не пиши вторую половину.
+Запрещены стрелочные цепочки «A → B → C» в любых формулировках — вместо них
+связный текст: «от A до C», «сначала …, затем …».
+Только активный залог от первого лица прошедшего времени («Разработал»,
+«Выстроил», «Сформировал»); безличные формы («Реализованы…», «Выстроены…»)
+запрещены — они выдают сгенерированный текст на фоне живых блоков.
+В списке навыков одно понятие — одна формулировка: нельзя одновременно
+«Цифровая трансформация» и «Digital Transformation», «Искусственный интеллект»
+и «AI»; выбирай русскую, если она общепринята.
 
 Ты — эксперт по executive-резюме для ролей CIO / CTO / CDTO / CAIO уровня Top Management.
 Твоя задача — переакцентировать РЕАЛЬНОЕ резюме кандидата под заданный архетип роли.
@@ -226,6 +257,21 @@ KPI, CEO, CIO, CTO, CDTO, CAIO, M&A, MBA, BI, MDM, ITSM, ITIL, DevOps, CI/CD.
 
 Отвечай строго валидным JSON без markdown и пояснений вокруг."""
 
+_PUBLISHED_BLOCK = """\
+ОПУБЛИКОВАННАЯ НА HH ВЕРСИЯ ЭТОГО ВАРИАНТА (выгрузка {published_at}) — то, что
+работодатель видит прямо сейчас:
+---
+{published_text}
+---
+РЕЖИМ РЕДАКТОРА: раз опубликованная версия есть, работай от неё, а канон
+используй как справочник фактов. Сохраняй структуру и удачные формулировки
+опубликованной версии; предлагай точечные улучшения — стиль, акценты, метрики
+из факт-базы. Опечатки и нарушения стилевых правил (пассивный залог,
+стрелочные цепочки, дубли навыков) исправляй обязательно. Цель — чтобы правки
+легко переносились на hh построчным сравнением.
+
+"""
+
 _USER_TEMPLATE = """\
 КАНОНИЧЕСКОЕ РЕЗЮМЕ (главный источник фактов, мастер-версия):
 ---
@@ -239,7 +285,7 @@ _USER_TEMPLATE = """\
 {facts}
 ---
 
-АРХЕТИП ВАРИАНТА: {name}
+{published_block}АРХЕТИП ВАРИАНТА: {name}
 Заголовок на hh (ориентир): {hh_title_hint}
 
 ФОКУС (усилить, вывести вперёд):
@@ -298,9 +344,18 @@ def generate_variant(key: str, resume_text: str | None = None) -> ResumeVariant:
         variant.error = "Нет ANTHROPIC_API_KEY — генерация вариантов требует LLM"
         return variant
 
+    published_text, published_at = load_published(vcfg)
+    variant.published_at = published_at
+    published_block = ""
+    if published_text:
+        published_block = _PUBLISHED_BLOCK.format(
+            published_at=published_at, published_text=published_text,
+        )
+
     prompt = _USER_TEMPLATE.format(
         resume_text=text,
         facts=load_facts() or "— факт-база пуста —",
+        published_block=published_block,
         name=vcfg["name"],
         hh_title_hint=vcfg.get("hh_title_hint", ""),
         focus=vcfg.get("focus", ""),
@@ -312,14 +367,15 @@ def generate_variant(key: str, resume_text: str | None = None) -> ResumeVariant:
 
     try:
         data = _call_llm(api_key, prompt)
-        if _has_contrast_tic(data):
-            # Deterministic guard: the model slips into the banned "X, а не Y"
-            # rhetoric despite the system prompt — one retry with direct feedback.
+        banned = _find_banned_pattern(data)
+        if banned:
+            # Deterministic guard: the model slips into a banned pattern
+            # despite the system prompt — one retry with direct feedback.
             data = _call_llm(
                 api_key,
-                prompt + "\n\nВАЖНО: в прошлой попытке ты использовал запрещённый "
-                "оборот «…, а не …». Перепиши все формулировки БЕЗ этого "
-                "противопоставления — просто утверждение, без «а не»-части.",
+                prompt + f"\n\nВАЖНО: в прошлой попытке встретился запрещённый "
+                f"паттерн «{banned}». Перепиши все формулировки БЕЗ него, "
+                "по стилевым правилам из системной инструкции.",
             )
         variant.hh_title = data.get("hh_title", "")
         variant.about = data.get("about", "")
@@ -349,13 +405,19 @@ def generate_all(resume_text: str | None = None) -> dict[str, ResumeVariant]:
     return {key: generate_variant(key, resume_text=text) for key in cfg["variants"]}
 
 
-def _has_contrast_tic(data: dict) -> bool:
-    """True if the banned '…, а не …' rhetoric appears in PUBLISHED fields."""
+_BANNED_PATTERNS = (", а не ", "→")
+
+
+def _find_banned_pattern(data: dict) -> str:
+    """Первый запрещённый паттерн в публикуемых полях; '' если чисто."""
     published = [data.get("hh_title", ""), data.get("about", "")]
     published += data.get("key_skills") or []
     for p in data.get("positions") or []:
         published += p.get("bullets") or []
-    return any(", а не " in s for s in published if isinstance(s, str))
+    for pattern in _BANNED_PATTERNS:
+        if any(pattern in s for s in published if isinstance(s, str)):
+            return pattern
+    return ""
 
 
 def _call_llm(api_key: str, prompt: str) -> dict:

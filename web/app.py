@@ -232,13 +232,19 @@ def _positioning_css(level: str) -> str:
 # ---------------------------------------------------------------------------
 
 def _variants_context() -> dict:
+    from agents.resume_variants import load_published
+
     cfg = load_variants_config()
     rp = resume_path(cfg)
+    published_dates = {
+        key: load_published(vcfg)[1] for key, vcfg in cfg["variants"].items()
+    }
     return {
         "cfg_variants": cfg["variants"],
         "saved": load_saved_variants(),
         "resume_file": str(rp),
         "resume_exists": rp.exists(),
+        "published_dates": published_dates,
         "active_nav": "variants",
     }
 
