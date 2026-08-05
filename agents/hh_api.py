@@ -370,7 +370,7 @@ def search_vacancy_ids(
         except HHApiError:
             pass  # fall through to HTML search
 
-    return _search_ids_html(text, area, max_pages, search_field)
+    return _search_ids_html(text, area, max_pages, search_field, extra_params)
 
 
 def _search_ids_api(text, area, max_pages, search_field, extra_params) -> list[str]:
@@ -391,17 +391,31 @@ def _search_ids_api(text, area, max_pages, search_field, extra_params) -> list[s
     return ids
 
 
-def _search_ids_html(text, area, max_pages, search_field) -> list[str]:
+# Маркеры честной пустой выдачи. Если их нет, а вакансий на странице ноль —
+# hh отдал JS-оболочку без результатов (антибот): это ошибка канала, о которой
+# надо кричать, а не молча вернуть «ничего нового» (наблюдалось 2026-08-05).
+_EMPTY_SEARCH_MARKERS = ("ничего не найдено", "не нашлось ни одной вакансии")
+
+
+def _search_ids_html(text, area, max_pages, search_field, extra_params=None) -> list[str]:
     ids: list[str] = []
     seen: set[str] = set()
     for page in range(max_pages):
         params = {"text": text, "search_field": search_field, "page": page}
         if area:
             params["area"] = area
+        if extra_params:
+            params.update(extra_params)
         url = f"{HH_SITE_BASE}/search/vacancy?" + urllib.parse.urlencode(params)
         html = _get_html(url)
         page_ids = [i for i in _SEARCH_ID_RE.findall(html) if i not in seen]
         if not page_ids:
+            low = html.lower()
+            if page == 0 and not any(m in low for m in _EMPTY_SEARCH_MARKERS):
+                raise HHApiError(
+                    "поиск вернул страницу без вакансий (антибот-заглушка hh) — "
+                    "повторите позже"
+                )
             break
         for i in page_ids:
             seen.add(i)

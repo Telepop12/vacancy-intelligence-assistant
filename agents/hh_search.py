@@ -39,6 +39,7 @@ DEFAULT_CONFIG: dict = {
     ],
     "area": 113,            # Россия
     "search_field": "name", # искать только в названии вакансии
+    "order_by": "publication_time",  # свежие первыми — критично для мониторинга
     "max_pages_per_query": 1,
     "max_new_per_run": 30,  # сколько новых вакансий обрабатывать за один запуск
 }
@@ -161,6 +162,12 @@ def run_search(
     # ── Collect ids across queries (order preserved, deduped) ──
     all_ids: list[str] = []
     seen_ids: set[str] = set()
+    # ord_by — параметр сортировки сайта hh (publication_time = свежие первыми).
+    # Без него hh сортирует «по соответствию»: стабильный топ-50, где новые
+    # вакансии могут вообще не появиться на первой странице.
+    extra_params = (
+        {"ord_by": cfg["order_by"]} if cfg.get("order_by") else None
+    )
     for q in queries:
         try:
             ids = hh_api.search_vacancy_ids(
@@ -168,6 +175,7 @@ def run_search(
                 area=cfg.get("area"),
                 max_pages=int(cfg.get("max_pages_per_query", 1)),
                 search_field=cfg.get("search_field", "name"),
+                extra_params=extra_params,
             )
         except hh_api.HHApiError as exc:
             errors.append(f"Запрос «{q}»: {exc}")

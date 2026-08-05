@@ -267,3 +267,53 @@ def test_search_config_defaults(monkeypatch, tmp_path):
     cfg = hh_search.load_search_config()
     assert cfg["queries"]
     assert cfg["search_field"] == "name"
+    assert cfg["order_by"] == "publication_time"
+
+
+# ---------------------------------------------------------------------------
+# HTML search: сортировка и детект антибот-заглушки
+# ---------------------------------------------------------------------------
+
+def _search_page(*ids):
+    links = " ".join(f'<a href="/vacancy/{i}">v</a>' for i in ids)
+    return f"<html><title>Работа</title>{links}</html>"
+
+
+@pytest.mark.no_llm
+def test_html_search_passes_order_param(monkeypatch):
+    monkeypatch.setattr(hh_api, "_token", lambda: "")
+    urls = []
+
+    def fake_get(url):
+        urls.append(url)
+        return _search_page("1234567", "7654321")
+
+    monkeypatch.setattr(hh_api, "_get_html", fake_get)
+    monkeypatch.setattr(hh_api, "_polite_sleep", lambda: None)
+    ids = hh_api.search_vacancy_ids(
+        "CIO", area=1, extra_params={"ord_by": "publication_time"},
+    )
+    assert ids == ["1234567", "7654321"]
+    assert "ord_by=publication_time" in urls[0]
+
+
+@pytest.mark.no_llm
+def test_html_search_stub_page_raises(monkeypatch):
+    monkeypatch.setattr(hh_api, "_token", lambda: "")
+    # Большая страница без единой вакансии и без маркера пустой выдачи —
+    # антибот-заглушка, наблюдалась вживую 2026-08-05
+    monkeypatch.setattr(
+        hh_api, "_get_html", lambda url: "<html>" + "x" * 200_000 + "</html>",
+    )
+    with pytest.raises(hh_api.HHApiError, match="заглушка"):
+        hh_api.search_vacancy_ids("CIO", area=1)
+
+
+@pytest.mark.no_llm
+def test_html_search_honest_empty_result(monkeypatch):
+    monkeypatch.setattr(hh_api, "_token", lambda: "")
+    monkeypatch.setattr(
+        hh_api, "_get_html",
+        lambda url: "<html>По запросу ничего не найдено</html>",
+    )
+    assert hh_api.search_vacancy_ids("Экзотический запрос", area=1) == []
