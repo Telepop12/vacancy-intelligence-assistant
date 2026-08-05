@@ -20,6 +20,7 @@ config/monitor.yaml.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import urllib.parse
 import urllib.request
@@ -33,6 +34,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_PATH = BASE_DIR / "config" / "monitor.yaml"
 DIGEST_PATH = BASE_DIR / "output" / "monitor_digest.json"
 TG_STATE_PATH = BASE_DIR / "output" / "tg_state.json"
+
+log = logging.getLogger("monitor")
 
 DEFAULT_CONFIG = {
     "enabled": True,
@@ -188,6 +191,7 @@ def run_cycle(profile, base_url: str = "http://localhost:8000") -> CycleResult:
     try:
         search = run_search(profile)
     except Exception as exc:
+        log.exception("Цикл мониторинга: поиск упал")
         result.errors.append(f"Поиск: {exc}")
         return result
     result.errors.extend(search.errors[:3])
@@ -207,6 +211,10 @@ def run_cycle(profile, base_url: str = "http://localhost:8000") -> CycleResult:
     )
     result.new_strong = len(strong)
     if not strong:
+        log.info(
+            "Цикл мониторинга: найдено %s, новых %s, сильных нет — тихий цикл",
+            result.found_total, result.new_total,
+        )
         return result
 
     # 3. Автопакеты для топ-N
@@ -229,6 +237,7 @@ def run_cycle(profile, base_url: str = "http://localhost:8000") -> CycleResult:
                 if entry.package_ready:
                     result.packages_built += 1
             except Exception as exc:
+                log.exception("Цикл мониторинга: не собрался пакет %s", it.hh_id)
                 result.errors.append(f"Пакет {it.hh_id}: {exc}")
         digest.append(asdict(entry))
 
@@ -249,4 +258,10 @@ def run_cycle(profile, base_url: str = "http://localhost:8000") -> CycleResult:
                 e["notified"] = True
 
     _save_digest(digest)
+    log.info(
+        "Цикл мониторинга: найдено %s, новых %s, сильных %s, пакетов %s, алерт %s%s",
+        result.found_total, result.new_total, result.new_strong,
+        result.packages_built, "да" if result.notified else "нет",
+        f", ошибки: {result.errors}" if result.errors else "",
+    )
     return result

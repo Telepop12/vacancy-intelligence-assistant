@@ -314,8 +314,13 @@ def vacancy_add(
 @app.on_event("startup")
 def _start_monitor_scheduler():
     """Фоновый мониторинг: цикл каждые interval_hours (config/monitor.yaml)."""
+    import logging
     import threading
     import time as _time
+
+    logging.getLogger("monitor").setLevel(logging.INFO)
+    if not logging.getLogger().handlers:
+        logging.basicConfig(level=logging.WARNING)
 
     def _loop():
         while True:
@@ -325,7 +330,7 @@ def _start_monitor_scheduler():
                 try:
                     monitor.run_cycle(_profile)
                 except Exception:
-                    pass  # цикл не должен ронять поток; ошибки видны в дайджесте
+                    logging.getLogger("monitor").exception("Цикл мониторинга упал")
 
     threading.Thread(target=_loop, daemon=True, name="vacancy-monitor").start()
 
