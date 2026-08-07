@@ -62,6 +62,27 @@ def test_cycle_threshold_and_package_cap(env):
 
 
 @pytest.mark.no_llm
+def test_cycle_lookback_covers_manual_search(env):
+    """Вакансия, оттриажированная вчера ручным поиском, попадает в цикл;
+    старше lookback_hours — нет."""
+    from datetime import timedelta
+    yesterday = (datetime.now() - timedelta(hours=20)).isoformat(timespec="seconds")
+    week_ago = (datetime.now() - timedelta(days=7)).isoformat(timespec="seconds")
+    items = [
+        _item("10", 82, triaged_at=yesterday),
+        _item("11", 75, triaged_at=week_ago),
+    ]
+    env["monkeypatch"].setattr(
+        env["hh_search"], "run_search",
+        lambda profile: SearchRunResult(items=items, new_count=1, found_total=2, skipped_backlog=0),
+    )
+    r = monitor.run_cycle(profile=None)
+    assert r.new_strong == 1
+    digest = monitor.load_digest()
+    assert [e["vid"] for e in digest] == ["10"]
+
+
+@pytest.mark.no_llm
 def test_cycle_known_vacancies_not_repeated(env):
     items = [_item("1", 80)]
     env["monkeypatch"].setattr(

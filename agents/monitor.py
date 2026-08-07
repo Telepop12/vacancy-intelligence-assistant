@@ -25,7 +25,7 @@ import os
 import urllib.parse
 import urllib.request
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import yaml
@@ -42,6 +42,7 @@ DEFAULT_CONFIG = {
     "interval_hours": 6,
     "score_threshold": 60,
     "max_packages_per_cycle": 3,
+    "lookback_hours": 48,   # какой давности триаж ещё считается «новым»
 }
 
 
@@ -196,12 +197,17 @@ def run_cycle(profile, base_url: str = "http://localhost:8000") -> CycleResult:
         return result
     result.errors.extend(search.errors[:3])
 
-    # 2. Новые сильные вакансии этого цикла — те, что триажированы только что
-    #    и не встречались в дайджесте раньше
+    # 2. Новые сильные вакансии — свежетриажированные (в т.ч. ручным поиском
+    #    со страницы /search в пределах lookback_hours) и не встречавшиеся
+    #    в дайджесте. Жёсткое «только сегодня» теряло находки: вакансия 82
+    #    балла, найденная ручным поиском 06.08, не попала бы в цикл 07.08.
+    cutoff = (
+        datetime.now() - timedelta(hours=float(cfg.get("lookback_hours", 48)))
+    ).isoformat(timespec="seconds")
     fresh = [
         it for it in search.items
         if not it.error and it.hh_id not in known
-        and it.triaged_at and it.triaged_at >= result.started_at[:10]
+        and it.triaged_at and it.triaged_at >= cutoff
     ]
     result.found_total = search.found_total
     result.new_total = search.new_count
