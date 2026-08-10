@@ -1,4 +1,4 @@
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+﻿*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
   --primary:     #1e40af;
@@ -1352,3 +1352,119 @@ details[open] .intake-options-toggle::before { content: "－ "; }
 }
 .fav-star:hover { color: #f2b33d; transform: scale(1.15); }
 .fav-star.on { color: #f2b33d; }
+
+/* ═══════════════════════════════════════════════════════════════
+   Кокпит 4b — граф-вид «смысловая модель» (тёмная тема — основная)
+═══════════════════════════════════════════════════════════════ */
+
+.graph-view { display: none; }
+.match-mode-graph .graph-view     { display: flex; flex-direction: column; }
+.match-mode-graph .interview-view { display: none; }
+.match-mode-graph .analyst-view   { display: none; }
+.match-mode-interview .graph-view { display: none; }
+.match-mode-analyst .graph-view   { display: none; }
+
+.graph-view {
+  height: calc(100vh - 54px);
+  background: #0b1220;
+  color: #cbd5e1;
+}
+
+/* линзы */
+.cg-lens-bar {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .45rem .9rem;
+  background: #0f172a; border-bottom: 1px solid #1e293b;
+}
+.cg-lens-title { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: #64748b; }
+.cg-lens-btn {
+  border: 1px solid #1e293b; background: #0b1220; color: #94a3b8;
+  padding: .3rem .8rem; border-radius: 999px; font-size: .8rem; cursor: pointer;
+}
+.cg-lens-btn:hover  { border-color: #334155; color: #e2e8f0; }
+.cg-lens-btn.active { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+.cg-lens-hint { margin-left: auto; font-size: .72rem; color: #475569; }
+
+/* раскладка: холст + перетаскиваемая граница + панель */
+.cg-layout  { flex: 1; display: flex; min-height: 0; }
+.cg-canvas  { flex: 1; min-width: 0; }
+.cg-canvas svg { width: 100%; height: 100%; display: block; }
+.cg-divider {
+  width: 6px; cursor: col-resize; background: #0f172a;
+  border-left: 1px solid #1e293b; border-right: 1px solid #1e293b;
+}
+.cg-divider:hover { background: #1d4ed8; }
+.cg-panel {
+  width: 360px; min-width: 260px; max-width: 640px;
+  background: #0f172a; border-left: 1px solid #1e293b;
+  overflow-y: auto;
+}
+.cg-panel-body { padding: 1rem 1.1rem; }
+.cg-card-tag {
+  display: inline-block; font-size: .7rem; text-transform: uppercase;
+  letter-spacing: .07em; color: #94a3b8; border: 1px solid #334155;
+  padding: .18rem .55rem; border-radius: 999px; margin-bottom: .7rem;
+}
+.cg-tag-strengths    { color: #4ade80; border-color: #14532d; }
+.cg-tag-competencies { color: #60a5fa; border-color: #1e3a8a; }
+.cg-tag-risks        { color: #f87171; border-color: #7f1d1d; }
+.cg-card-text { font-size: .92rem; line-height: 1.55; color: #e2e8f0; }
+.cg-card-hint {
+  margin-top: .9rem; padding: .7rem .8rem; font-size: .8rem; line-height: 1.5;
+  color: #94a3b8; background: #0b1220; border: 1px solid #1e293b; border-radius: 8px;
+}
+.cg-card-hint ul { margin: .4rem 0 0 1.1rem; }
+.cg-card-hint kbd {
+  background: #1e293b; border-radius: 4px; padding: 0 .35rem; font-size: .75rem;
+}
+
+/* граф: рёбра */
+.cg-edge { stroke: #1e293b; stroke-width: 1.5; transition: opacity .25s; }
+.cg-leaf-edge.cg-strengths    { stroke: #14532d; }
+.cg-leaf-edge.cg-competencies { stroke: #1e3a8a; }
+.cg-leaf-edge.cg-risks        { stroke: #7f1d1d; }
+
+/* граф: узлы */
+.cg-node { transition: opacity .25s; }
+.cg-leaf { cursor: pointer; outline: none; }
+.cg-leaf-circle { fill: #0f172a; stroke-width: 2; }
+.cg-strengths    .cg-leaf-circle { stroke: #22c55e; }
+.cg-competencies .cg-leaf-circle { stroke: #3b82f6; }
+.cg-risks        .cg-leaf-circle { stroke: #ef4444; }
+.cg-leaf:hover .cg-leaf-circle,
+.cg-leaf:focus .cg-leaf-circle { fill: #1e293b; }
+.cg-leaf.selected .cg-leaf-circle { stroke-width: 4; fill: #1e293b; }
+.cg-leaf-label { font-size: 11.5px; fill: #94a3b8; }
+.cg-leaf.selected .cg-leaf-label { fill: #e2e8f0; }
+
+.cg-hub-circle { fill: #0b1220; stroke-width: 2.5; }
+.cg-strengths    .cg-hub-circle { stroke: #22c55e; }
+.cg-competencies .cg-hub-circle { stroke: #3b82f6; }
+.cg-risks        .cg-hub-circle { stroke: #ef4444; }
+.cg-hub-label { font-size: 12px; font-weight: 700; fill: #e2e8f0; }
+.cg-hub-count { font-size: 11px; fill: #64748b; }
+
+.cg-center-bg   { fill: #0f172a; stroke: #1e293b; stroke-width: 2; }
+.cg-center-ring { fill: none; stroke-width: 7; stroke-linecap: round; }
+.cg-ring-green   { stroke: #22c55e; }
+.cg-ring-yellow    { stroke: #f59e0b; }
+.cg-ring-red    { stroke: #ef4444; }
+.cg-center-score { font-size: 40px; font-weight: 800; fill: #f8fafc; }
+.cg-center-sub   { font-size: 12px; fill: #64748b; }
+.cg-center-title { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; fill: #475569; }
+
+/* бейдж «?» на рисках — виден только в линзе «Подготовка» */
+.cg-q-badge { font-size: 18px; font-weight: 800; fill: #f87171; opacity: 0; transition: opacity .25s; }
+.lens-prep .cg-risks .cg-q-badge { opacity: 1; }
+
+/* линза «Подготовка»: фокус на рисках */
+.lens-prep .cg-node.cg-strengths,
+.lens-prep .cg-node.cg-competencies,
+.lens-prep .cg-leaf-edge.cg-strengths,
+.lens-prep .cg-leaf-edge.cg-competencies { opacity: .22; }
+
+/* линза «Отклик»: фокус на сильных сторонах */
+.lens-letter .cg-node.cg-risks,
+.lens-letter .cg-node.cg-competencies,
+.lens-letter .cg-leaf-edge.cg-risks,
+.lens-letter .cg-leaf-edge.cg-competencies { opacity: .22; }

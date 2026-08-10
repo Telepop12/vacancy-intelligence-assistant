@@ -50,6 +50,7 @@
     </div>
 
     <div class="cockpit-mode-toggle">
+      <button class="mode-btn" id="btnGraph" onclick="setMode('graph')">🕸 Граф</button>
       <button class="mode-btn active" id="btnInterview" onclick="setMode('interview')">🎯 Собеседование</button>
       <button class="mode-btn" id="btnAnalyst" onclick="setMode('analyst')">🔬 Аналитика</button>
     </div>
@@ -57,6 +58,46 @@
     <a href="/" class="cockpit-back">🏠 Главная</a>
   </div>
 </div>
+
+
+<!-- ══════════════════════════════════════
+     GRAPH MODE — смысловая модель (кокпит 4b)
+══════════════════════════════════════ -->
+<div class="graph-view lens-match" id="graphView">
+  <div class="cg-lens-bar">
+    <span class="cg-lens-title">Линза:</span>
+    <button class="cg-lens-btn active" data-lens="match">1 · Соответствие</button>
+    <button class="cg-lens-btn" data-lens="prep">2 · Подготовка</button>
+    <button class="cg-lens-btn" data-lens="letter">3 · Отклик</button>
+    <span class="cg-lens-hint">клик по узлу — детали · G — классический вид</span>
+  </div>
+  <div class="cg-layout">
+    <div class="cg-canvas">
+      <svg id="cockpitSvg" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div class="cg-divider" id="cgDivider" title="Потяните, чтобы изменить ширину"></div>
+    <aside class="cg-panel" id="cgPanel">
+      <div class="cg-panel-body" id="cgPanelBody"></div>
+    </aside>
+  </div>
+</div>
+
+<script>
+window.COCKPIT_DATA = {
+  score: {{ match.career_match_score }},
+  kw: {{ match.keyword_score }},
+  scoreColor: {{ score_color | tojson }},
+  domains: [
+    { key: "strengths", label: "Сильные стороны",
+      items: [{% for s in match.strategic_strengths %}{ text: {{ s | tojson }} },{% endfor %}] },
+    { key: "competencies", label: "Переносимые компетенции",
+      items: [{% for c in match.transferable_competencies %}{ text: {{ c | tojson }} },{% endfor %}] },
+    { key: "risks", label: "Риски и пробелы",
+      items: [{% for r in match.risks_and_gaps %}{ text: {{ r | tojson }} },{% endfor %}] },
+  ],
+  hrQuestions: {{ analysis.hr_questions | tojson }},
+};
+</script>
 
 
 <!-- ══════════════════════════════════════
@@ -513,6 +554,7 @@
 
 <!-- marked.js for resume Markdown rendering -->
 <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+<script src="/static/cockpit_graph.js"></script>
 
 <!-- ══ JavaScript ══ -->
 <script>
@@ -520,10 +562,13 @@
 
   function setMode(mode) {
     document.body.className = 'match-mode-' + mode;
+    document.getElementById('btnGraph').classList.toggle('active', mode === 'graph');
     document.getElementById('btnInterview').classList.toggle('active', mode === 'interview');
     document.getElementById('btnAnalyst').classList.toggle('active', mode === 'analyst');
     localStorage.setItem(STORAGE_KEY, mode);
+    if (mode === 'graph' && window.cockpitGraph) window.cockpitGraph.activate();
   }
+  window.setMode = setMode;
 
   function showTab(id) {
     document.querySelectorAll('.itab-panel').forEach(p => p.classList.remove('active'));
@@ -551,8 +596,8 @@
     }
   }
 
-  // Restore saved mode
-  setMode(localStorage.getItem(STORAGE_KEY) || 'interview');
+  // Restore saved mode (граф — основной вид кокпита)
+  setMode(localStorage.getItem(STORAGE_KEY) || 'graph');
 </script>
 
 </body>
