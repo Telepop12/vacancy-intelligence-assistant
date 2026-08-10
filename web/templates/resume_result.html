@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Resume Intelligence — Результат</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <title>Resume Intelligence вЂ” Р РµР·СѓР»СЊС‚Р°С‚</title>
+  <link rel="stylesheet" href="/static/style.css?v=2">
 </head>
 <body>
 <div class="page-wrapper">
@@ -13,7 +13,7 @@
 <header>
   <div class="container">
     <h1>Vacancy Intelligence Assistant</h1>
-    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+    <p class="sub">Career Intelligence Platform В· CIO / CTO / CDTO</p>
   </div>
 </header>
 
@@ -21,12 +21,12 @@
   <div class="container">
 
     <div class="actions">
-      <a href="/resume" class="btn">← Новый анализ резюме</a>
+      <a href="/resume" class="btn">в†ђ РќРѕРІС‹Р№ Р°РЅР°Р»РёР· СЂРµР·СЋРјРµ</a>
     </div>
 
-    <!-- ══ Executive Summary + Strategic Positioning ══ -->
+    <!-- в•ђв•ђ Executive Summary + Strategic Positioning в•ђв•ђ -->
     <div class="card card-resume-hero">
-      <h2>Карьерный профиль (Executive Intelligence)</h2>
+      <h2>РљР°СЂСЊРµСЂРЅС‹Р№ РїСЂРѕС„РёР»СЊ (Executive Intelligence)</h2>
       {% if profile.professional_archetype %}
       <div class="archetype-badge">{{ profile.professional_archetype }}</div>
       {% endif %}
@@ -44,7 +44,7 @@
 
       <div class="resume-meta">
         {% if profile.years_experience %}
-        <span class="meta-chip">~{{ profile.years_experience }} лет стажа</span>
+        <span class="meta-chip">~{{ profile.years_experience }} Р»РµС‚ СЃС‚Р°Р¶Р°</span>
         {% endif %}
         {% if profile.leadership_scope %}
         <span class="meta-chip">{{ profile.leadership_scope }} scope</span>
@@ -71,9 +71,9 @@
       {% endif %}
     </div>
 
-    <!-- ══ Positioning Dashboard ══ -->
+    <!-- в•ђв•ђ Positioning Dashboard в•ђв•ђ -->
     <div class="card">
-      <h2>Панель позиционирования</h2>
+      <h2>РџР°РЅРµР»СЊ РїРѕР·РёС†РёРѕРЅРёСЂРѕРІР°РЅРёСЏ</h2>
       <div class="dashboard-grid">
         {% set indicators = [
           ("AI Positioning",             profile.ai_positioning_level.value),
@@ -96,10 +96,10 @@
       </div>
     </div>
 
-    <!-- ══ Trajectory + Strongest Assets ══ -->
+    <!-- в•ђв•ђ Trajectory + Strongest Assets в•ђв•ђ -->
     <div class="row-2col">
       <div class="card">
-        <h2>Анализ карьерной траектории</h2>
+        <h2>РђРЅР°Р»РёР· РєР°СЂСЊРµСЂРЅРѕР№ С‚СЂР°РµРєС‚РѕСЂРёРё</h2>
         {% if profile.trajectory_markers %}
         <ul class="trajectory-list">
           {% for t in profile.trajectory_markers %}
@@ -107,12 +107,12 @@
           {% endfor %}
         </ul>
         {% else %}
-        <p class="empty">—</p>
+        <p class="empty">вЂ”</p>
         {% endif %}
       </div>
 
       <div class="card">
-        <h2>Ключевые сильные стороны</h2>
+        <h2>РљР»СЋС‡РµРІС‹Рµ СЃРёР»СЊРЅС‹Рµ СЃС‚РѕСЂРѕРЅС‹</h2>
         {% if profile.strongest_assets %}
         <ul class="asset-list">
           {% for a in profile.strongest_assets %}
@@ -120,15 +120,15 @@
           {% endfor %}
         </ul>
         {% else %}
-        <p class="empty">—</p>
+        <p class="empty">вЂ”</p>
         {% endif %}
       </div>
     </div>
 
-    <!-- ══ AI Signals + Transformation ══ -->
+    <!-- в•ђв•ђ AI Signals + Transformation в•ђв•ђ -->
     <div class="row-2col">
       <div class="card">
-        <h2>AI-сигналы
+        <h2>AI-СЃРёРіРЅР°Р»С‹
           <span class="signal-count-badge {{ p_css(profile.ai_positioning_level.value) }}">
             {{ profile.ai_signals | length }}
           </span>
@@ -148,12 +148,12 @@
         </details>
         {% endif %}
         {% else %}
-        <p class="empty">AI signals не обнаружены</p>
+        <p class="empty">AI signals РЅРµ РѕР±РЅР°СЂСѓР¶РµРЅС‹</p>
         {% endif %}
       </div>
 
       <div class="card">
-        <h2>Сигналы трансформации
+        <h2>РЎРёРіРЅР°Р»С‹ С‚СЂР°РЅСЃС„РѕСЂРјР°С†РёРё
           <span class="signal-count-badge {{ p_css(profile.transformation_positioning_level.value) }}">
             {{ profile.transformation_experience | length }}
           </span>
@@ -173,18 +173,18 @@
         </details>
         {% endif %}
         {% else %}
-        <p class="empty">Transformation signals не обнаружены</p>
+        <p class="empty">Transformation signals РЅРµ РѕР±РЅР°СЂСѓР¶РµРЅС‹</p>
         {% endif %}
       </div>
     </div>
 
-    <!-- ══ Executive Framing Analysis ══ -->
+    <!-- в•ђв•ђ Executive Framing Analysis в•ђв•ђ -->
     {% if profile.executive_framing_level %}
     <div class="card card-framing">
-      <h2>Анализ управленческой подачи (Executive Framing)</h2>
+      <h2>РђРЅР°Р»РёР· СѓРїСЂР°РІР»РµРЅС‡РµСЃРєРѕР№ РїРѕРґР°С‡Рё (Executive Framing)</h2>
       <div class="framing-row">
         <div class="framing-score-wrap">
-          <div class="framing-label">Оценка управленческого языка</div>
+          <div class="framing-label">РћС†РµРЅРєР° СѓРїСЂР°РІР»РµРЅС‡РµСЃРєРѕРіРѕ СЏР·С‹РєР°</div>
           <div class="framing-bar-bg">
             <div class="framing-bar" style="width:{{ profile.executive_framing_score }}%"></div>
           </div>
@@ -197,45 +197,45 @@
       {% if profile.operational_language_signals or profile.executive_language_signals %}
       <div class="row-2col" style="margin-top:.75rem;margin-bottom:0;">
         <div>
-          <div class="framing-sig-label op">Операционный язык</div>
+          <div class="framing-sig-label op">РћРїРµСЂР°С†РёРѕРЅРЅС‹Р№ СЏР·С‹Рє</div>
           {% if profile.operational_language_signals %}
           <ul class="signal-tag-list" style="margin-top:.3rem;">
             {% for s in profile.operational_language_signals %}
             <li style="background:#fee2e2;color:#991b1b;">{{ s }}</li>
             {% endfor %}
           </ul>
-          {% else %}<p class="empty">—</p>{% endif %}
+          {% else %}<p class="empty">вЂ”</p>{% endif %}
         </div>
         <div>
-          <div class="framing-sig-label ex">Управленческий язык</div>
+          <div class="framing-sig-label ex">РЈРїСЂР°РІР»РµРЅС‡РµСЃРєРёР№ СЏР·С‹Рє</div>
           {% if profile.executive_language_signals %}
           <ul class="signal-tag-list" style="margin-top:.3rem;">
             {% for s in profile.executive_language_signals %}
             <li style="background:#dcfce7;color:#14532d;">{{ s }}</li>
             {% endfor %}
           </ul>
-          {% else %}<p class="empty">—</p>{% endif %}
+          {% else %}<p class="empty">вЂ”</p>{% endif %}
         </div>
       </div>
       {% endif %}
     </div>
     {% endif %}
 
-    <!-- ══ Executive Reframing Opportunities ══ -->
+    <!-- в•ђв•ђ Executive Reframing Opportunities в•ђв•ђ -->
     {% if profile.executive_reframing_opportunities %}
     <div class="card card-reframe">
-      <h2>Возможности переформулировки
+      <h2>Р’РѕР·РјРѕР¶РЅРѕСЃС‚Рё РїРµСЂРµС„РѕСЂРјСѓР»РёСЂРѕРІРєРё
         <span style="font-size:.75rem;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;">
-          — тот же опыт, управленческий язык
+          вЂ” С‚РѕС‚ Р¶Рµ РѕРїС‹С‚, СѓРїСЂР°РІР»РµРЅС‡РµСЃРєРёР№ СЏР·С‹Рє
         </span>
       </h2>
       {% for opp in profile.executive_reframing_opportunities %}
       <div class="reframe-item">
         <div class="reframe-original">
-          <span class="reframe-label">Было:</span> {{ opp.original }}
+          <span class="reframe-label">Р‘С‹Р»Рѕ:</span> {{ opp.original }}
         </div>
         <div class="reframe-suggested">
-          <span class="reframe-label">Рекомендуется:</span> {{ opp.suggested }}
+          <span class="reframe-label">Р РµРєРѕРјРµРЅРґСѓРµС‚СЃСЏ:</span> {{ opp.suggested }}
         </div>
         {% if opp.reason %}
         <div class="reframe-reason">{{ opp.reason }}</div>
@@ -245,12 +245,12 @@
     </div>
     {% endif %}
 
-    <!-- ══ Weak Visibility Areas ══ -->
+    <!-- в•ђв•ђ Weak Visibility Areas в•ђв•ђ -->
     {% if profile.weak_visibility_areas %}
     <div class="card card-weak">
-      <h2>Слабые места в подаче
+      <h2>РЎР»Р°Р±С‹Рµ РјРµСЃС‚Р° РІ РїРѕРґР°С‡Рµ
         <span style="font-size:.75rem;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;">
-          — что есть в опыте, но слабо видно в резюме
+          вЂ” С‡С‚Рѕ РµСЃС‚СЊ РІ РѕРїС‹С‚Рµ, РЅРѕ СЃР»Р°Р±Рѕ РІРёРґРЅРѕ РІ СЂРµР·СЋРјРµ
         </span>
       </h2>
       <ul class="weak-list">
@@ -261,10 +261,10 @@
     </div>
     {% endif %}
 
-    <!-- ══ Technology Domains + Governance ══ -->
+    <!-- в•ђв•ђ Technology Domains + Governance в•ђв•ђ -->
     <div class="row-2col">
       <div class="card">
-        <h2>Технологические домены</h2>
+        <h2>РўРµС…РЅРѕР»РѕРіРёС‡РµСЃРєРёРµ РґРѕРјРµРЅС‹</h2>
         {% if profile.technology_domains %}
         <ul class="match-list">
           {% for d in profile.technology_domains %}
@@ -272,12 +272,12 @@
           {% endfor %}
         </ul>
         {% else %}
-        <p class="empty">—</p>
+        <p class="empty">вЂ”</p>
         {% endif %}
       </div>
 
       <div class="card">
-        <h2>Управление и соответствие (Governance)</h2>
+        <h2>РЈРїСЂР°РІР»РµРЅРёРµ Рё СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ (Governance)</h2>
         {% if profile.governance_signals %}
         <ul class="signal-tag-list gov">
           {% for g in profile.governance_signals %}
@@ -285,12 +285,12 @@
           {% endfor %}
         </ul>
         {% else %}
-        <p class="empty">—</p>
+        <p class="empty">вЂ”</p>
         {% endif %}
       </div>
     </div>
 
-    <!-- ══ Industries + Business Signals ══ -->
+    <!-- в•ђв•ђ Industries + Business Signals в•ђв•ђ -->
     {% if profile.industries or profile.business_signals %}
     <div class="row-2col">
       {% if profile.industries %}
@@ -305,7 +305,7 @@
       {% endif %}
       {% if profile.business_signals %}
       <div class="card">
-        <h2>Сигналы бизнес-влияния</h2>
+        <h2>РЎРёРіРЅР°Р»С‹ Р±РёР·РЅРµСЃ-РІР»РёСЏРЅРёСЏ</h2>
         <ul class="signal-tag-list biz">
           {% for b in profile.business_signals %}
           <li>{{ b }}</li>
@@ -316,10 +316,10 @@
     </div>
     {% endif %}
 
-    <!-- ══ Confidence notes ══ -->
+    <!-- в•ђв•ђ Confidence notes в•ђв•ђ -->
     {% if profile.confidence_notes %}
     <p class="hint" style="margin-top:.5rem;">
-      ⚠ {{ profile.confidence_notes | join(' · ') }}
+      вљ  {{ profile.confidence_notes | join(' В· ') }}
     </p>
     {% endif %}
 
@@ -327,7 +327,7 @@
 </main>
 
 <footer>
-  <div class="container">Vacancy Intelligence Assistant — Resume Intelligence Layer</div>
+  <div class="container">Vacancy Intelligence Assistant вЂ” Resume Intelligence Layer</div>
 </footer>
 </div>
 </body>

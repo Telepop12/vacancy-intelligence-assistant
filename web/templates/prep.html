@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Подготовка к интервью — Vacancy Intelligence Assistant</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <title>РџРѕРґРіРѕС‚РѕРІРєР° Рє РёРЅС‚РµСЂРІСЊСЋ вЂ” Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css?v=2">
   <style>
     .sev{display:inline-block;padding:.1rem .5rem;border-radius:999px;font-size:.68rem;font-weight:700}
     .sev.strong{background:rgba(22,163,74,.12);color:#16a34a}
@@ -32,7 +32,7 @@
 <header>
   <div class="container">
     <h1>Vacancy Intelligence Assistant</h1>
-    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+    <p class="sub">Career Intelligence Platform В· CIO / CTO / CDTO</p>
   </div>
 </header>
 
@@ -40,15 +40,15 @@
   <div class="container">
 
     <div class="card">
-      <h2>Подготовка к интервью</h2>
+      <h2>РџРѕРґРіРѕС‚РѕРІРєР° Рє РёРЅС‚РµСЂРІСЊСЋ</h2>
       <p style="margin:.4rem 0;">
         <strong>{{ pkg.vacancy_title }}</strong>
-        {% if pkg.company %} · {{ pkg.company }}{% endif %}
-        {% if pkg.vacancy_url %} · <a href="{{ pkg.vacancy_url }}" target="_blank">открыть на hh.ru</a>{% endif %}
+        {% if pkg.company %} В· {{ pkg.company }}{% endif %}
+        {% if pkg.vacancy_url %} В· <a href="{{ pkg.vacancy_url }}" target="_blank">РѕС‚РєСЂС‹С‚СЊ РЅР° hh.ru</a>{% endif %}
       </p>
-      <p class="hint">Сгенерировано: {{ pkg.generated_at }}
-        · <a href="/prep/hh/{{ pkg.package_id | replace('hh_','') }}?regenerate=true">перегенерировать</a>
-        · <a href="/output/prep/{{ pkg.package_id }}.md" target="_blank">скачать .md</a></p>
+      <p class="hint">РЎРіРµРЅРµСЂРёСЂРѕРІР°РЅРѕ: {{ pkg.generated_at }}
+        В· <a href="/prep/hh/{{ pkg.package_id | replace('hh_','') }}?regenerate=true">РїРµСЂРµРіРµРЅРµСЂРёСЂРѕРІР°С‚СЊ</a>
+        В· <a href="/output/prep/{{ pkg.package_id }}.md" target="_blank">СЃРєР°С‡Р°С‚СЊ .md</a></p>
     </div>
 
     {% if pkg.error %}
@@ -56,34 +56,34 @@
     {% else %}
 
     <div class="card" style="margin-top:1rem;">
-      <h2>Кто вас будет спрашивать</h2>
+      <h2>РљС‚Рѕ РІР°СЃ Р±СѓРґРµС‚ СЃРїСЂР°С€РёРІР°С‚СЊ</h2>
       <p style="margin:.5rem 0;">{{ pkg.interviewer_profile }}</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:.8rem;">
         <div>
-          <h3 class="variant-h">Козыри под вакансию</h3>
+          <h3 class="variant-h">РљРѕР·С‹СЂРё РїРѕРґ РІР°РєР°РЅСЃРёСЋ</h3>
           <ul style="margin:.3rem 0 0 1.1rem;">{% for t in pkg.top_trumps %}<li>{{ t }}</li>{% endfor %}</ul>
         </div>
         <div>
-          <h3 class="variant-h">Болевые зоны</h3>
+          <h3 class="variant-h">Р‘РѕР»РµРІС‹Рµ Р·РѕРЅС‹</h3>
           <ul style="margin:.3rem 0 0 1.1rem;">{% for r in pkg.top_risks %}<li>{{ r }}</li>{% endfor %}</ul>
         </div>
       </div>
     </div>
 
     <div class="card" style="margin-top:1rem;">
-      <h2>Вопросы по вашему опыту <span class="hint" style="font-weight:normal;">(клик раскрывает заготовку ответа)</span></h2>
+      <h2>Р’РѕРїСЂРѕСЃС‹ РїРѕ РІР°С€РµРјСѓ РѕРїС‹С‚Сѓ <span class="hint" style="font-weight:normal;">(РєР»РёРє СЂР°СЃРєСЂС‹РІР°РµС‚ Р·Р°РіРѕС‚РѕРІРєСѓ РѕС‚РІРµС‚Р°)</span></h2>
       {% for block_key, block_title, block_hint in [
-        ('strong', '🟢 Подача козырей', 'вопросы, на которых можно выиграть — готовьте сильную подачу'),
-        ('warn', '🟡 Зоны подготовки', 'спросят почти наверняка — нужна отрепетированная конкретика'),
-        ('risk', '🔴 Болевые зоны', 'самые неудобные вопросы — отработаны в спарринге ниже'),
+        ('strong', 'рџџў РџРѕРґР°С‡Р° РєРѕР·С‹СЂРµР№', 'РІРѕРїСЂРѕСЃС‹, РЅР° РєРѕС‚РѕСЂС‹С… РјРѕР¶РЅРѕ РІС‹РёРіСЂР°С‚СЊ вЂ” РіРѕС‚РѕРІСЊС‚Рµ СЃРёР»СЊРЅСѓСЋ РїРѕРґР°С‡Сѓ'),
+        ('warn', 'рџџЎ Р—РѕРЅС‹ РїРѕРґРіРѕС‚РѕРІРєРё', 'СЃРїСЂРѕСЃСЏС‚ РїРѕС‡С‚Рё РЅР°РІРµСЂРЅСЏРєР° вЂ” РЅСѓР¶РЅР° РѕС‚СЂРµРїРµС‚РёСЂРѕРІР°РЅРЅР°СЏ РєРѕРЅРєСЂРµС‚РёРєР°'),
+        ('risk', 'рџ”ґ Р‘РѕР»РµРІС‹Рµ Р·РѕРЅС‹', 'СЃР°РјС‹Рµ РЅРµСѓРґРѕР±РЅС‹Рµ РІРѕРїСЂРѕСЃС‹ вЂ” РѕС‚СЂР°Р±РѕС‚Р°РЅС‹ РІ СЃРїР°СЂСЂРёРЅРіРµ РЅРёР¶Рµ'),
       ] %}
       {% set block_items = pkg.qa | selectattr('severity', 'equalto', block_key) | list %}
       {% if block_items %}
-      <h3 class="variant-h" style="margin-top:1rem;">{{ block_title }} <span style="text-transform:none;letter-spacing:0;">— {{ block_hint }}</span></h3>
+      <h3 class="variant-h" style="margin-top:1rem;">{{ block_title }} <span style="text-transform:none;letter-spacing:0;">вЂ” {{ block_hint }}</span></h3>
       {% for q in block_items %}
       <div class="qa-item" onclick="this.classList.toggle('open')">
         <div class="q">{{ q.question }}</div>
-        <div class="src">← {{ q.source }}</div>
+        <div class="src">в†ђ {{ q.source }}</div>
         <div class="a">{{ q.answer }}</div>
       </div>
       {% endfor %}
@@ -92,45 +92,45 @@
     </div>
 
     <div class="card" style="margin-top:1rem;">
-      <h2>Общие и поведенческие вопросы <span class="hint" style="font-weight:normal;">(HR: самопрезентация, конфликты, стиль)</span></h2>
+      <h2>РћР±С‰РёРµ Рё РїРѕРІРµРґРµРЅС‡РµСЃРєРёРµ РІРѕРїСЂРѕСЃС‹ <span class="hint" style="font-weight:normal;">(HR: СЃР°РјРѕРїСЂРµР·РµРЅС‚Р°С†РёСЏ, РєРѕРЅС„Р»РёРєС‚С‹, СЃС‚РёР»СЊ)</span></h2>
       {% for q in pkg.hr_qa %}
       <div class="qa-item" onclick="this.classList.toggle('open')">
         <div class="q">{{ q.question }}</div>
-        <div class="src">тема: {{ q.source }}</div>
+        <div class="src">С‚РµРјР°: {{ q.source }}</div>
         <div class="a">{{ q.answer }}</div>
       </div>
       {% endfor %}
     </div>
 
     <div class="card" style="margin-top:1rem;" id="user-qa">
-      <h2>Спросить двойника <span class="hint" style="font-weight:normal;">— свой вопрос, ответ от вашего лица на ваших фактах</span></h2>
+      <h2>РЎРїСЂРѕСЃРёС‚СЊ РґРІРѕР№РЅРёРєР° <span class="hint" style="font-weight:normal;">вЂ” СЃРІРѕР№ РІРѕРїСЂРѕСЃ, РѕС‚РІРµС‚ РѕС‚ РІР°С€РµРіРѕ Р»РёС†Р° РЅР° РІР°С€РёС… С„Р°РєС‚Р°С…</span></h2>
       {% for q in pkg.user_qa %}
       <div class="qa-item open">
         <div class="q" style="cursor:default;">{{ q.question }}</div>
         <div class="a" style="display:block;">{{ q.answer }}</div>
-        {% if q.source and q.source != 'ваш вопрос' %}
-        <div class="src" style="margin-top:.3rem;">⚠ {{ q.source }}</div>
+        {% if q.source and q.source != 'РІР°С€ РІРѕРїСЂРѕСЃ' %}
+        <div class="src" style="margin-top:.3rem;">вљ  {{ q.source }}</div>
         {% endif %}
       </div>
       {% endfor %}
       <form method="post" action="/prep/{{ pkg.package_id | replace('hh_','') }}/ask" id="ask-form" style="margin-top:.8rem;">
         <div class="field">
           <textarea name="question" rows="2" required
-            placeholder="Например: почему вы ушли с последнего места именно сейчас, в разгар AI-проектов?"
+            placeholder="РќР°РїСЂРёРјРµСЂ: РїРѕС‡РµРјСѓ РІС‹ СѓС€Р»Рё СЃ РїРѕСЃР»РµРґРЅРµРіРѕ РјРµСЃС‚Р° РёРјРµРЅРЅРѕ СЃРµР№С‡Р°СЃ, РІ СЂР°Р·РіР°СЂ AI-РїСЂРѕРµРєС‚РѕРІ?"
             style="width:100%;"></textarea>
         </div>
-        <button type="submit" class="btn-submit" id="ask-btn">Получить ответ (~20 сек)</button>
+        <button type="submit" class="btn-submit" id="ask-btn">РџРѕР»СѓС‡РёС‚СЊ РѕС‚РІРµС‚ (~20 СЃРµРє)</button>
       </form>
       <script>
       document.getElementById('ask-form').addEventListener('submit', function () {
         var b = document.getElementById('ask-btn');
-        b.disabled = true; b.textContent = 'Двойник думает…';
+        b.disabled = true; b.textContent = 'Р”РІРѕР№РЅРёРє РґСѓРјР°РµС‚вЂ¦';
       });
       </script>
     </div>
 
     <div class="card" style="margin-top:1rem;">
-      <h2>Ваши вопросы работодателю</h2>
+      <h2>Р’Р°С€Рё РІРѕРїСЂРѕСЃС‹ СЂР°Р±РѕС‚РѕРґР°С‚РµР»СЋ</h2>
       {% for q in pkg.employer_questions %}
       <div class="qa-item">
         <div class="q" style="cursor:default;">{{ q.question }}</div>
@@ -140,15 +140,15 @@
     </div>
 
     <div class="card" style="margin-top:1rem;">
-      <h2>Purple Team — спарринг по болевым зонам</h2>
+      <h2>Purple Team вЂ” СЃРїР°СЂСЂРёРЅРі РїРѕ Р±РѕР»РµРІС‹Рј Р·РѕРЅР°Рј</h2>
       {% for r in pkg.purple_rounds %}
       <div class="pt-round">
-        <p class="pt-att"><strong>🔴 Вопрос:</strong> {{ r.attack }}</p>
-        <p class="pt-imp"><strong>✅ Ответ:</strong> {{ r.improved_answer }}</p>
+        <p class="pt-att"><strong>рџ”ґ Р’РѕРїСЂРѕСЃ:</strong> {{ r.attack }}</p>
+        <p class="pt-imp"><strong>вњ… РћС‚РІРµС‚:</strong> {{ r.improved_answer }}</p>
         <details style="margin-top:.5rem;">
-          <summary class="hint" style="cursor:pointer;">Показать разбор раунда</summary>
-          <p class="pt-def" style="margin-top:.5rem;"><strong>🔵 Первый ответ двойника:</strong> {{ r.defense }}</p>
-          <p class="pt-jud"><strong>⚖ Судья:</strong> {{ r.verdict }}</p>
+          <summary class="hint" style="cursor:pointer;">РџРѕРєР°Р·Р°С‚СЊ СЂР°Р·Р±РѕСЂ СЂР°СѓРЅРґР°</summary>
+          <p class="pt-def" style="margin-top:.5rem;"><strong>рџ”µ РџРµСЂРІС‹Р№ РѕС‚РІРµС‚ РґРІРѕР№РЅРёРєР°:</strong> {{ r.defense }}</p>
+          <p class="pt-jud"><strong>вљ– РЎСѓРґСЊСЏ:</strong> {{ r.verdict }}</p>
         </details>
       </div>
       {% endfor %}
@@ -156,12 +156,12 @@
 
     {% endif %}
 
-    <p style="margin-top:1rem;"><a href="/search">← к результатам поиска</a></p>
+    <p style="margin-top:1rem;"><a href="/search">в†ђ Рє СЂРµР·СѓР»СЊС‚Р°С‚Р°Рј РїРѕРёСЃРєР°</a></p>
   </div>
 </main>
 
 <footer>
-  <div class="container">Vacancy Intelligence Assistant · Подготовка к интервью</div>
+  <div class="container">Vacancy Intelligence Assistant В· РџРѕРґРіРѕС‚РѕРІРєР° Рє РёРЅС‚РµСЂРІСЊСЋ</div>
 </footer>
 </div>
 </body>

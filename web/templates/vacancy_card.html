@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Вакансия — Vacancy Intelligence Assistant</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <title>Р’Р°РєР°РЅСЃРёСЏ вЂ” Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css?v=2">
 </head>
 <body>
 <div class="page-wrapper">
@@ -15,7 +15,7 @@
 <header>
   <div class="container">
     <h1>Vacancy Intelligence Assistant</h1>
-    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+    <p class="sub">Career Intelligence Platform В· CIO / CTO / CDTO</p>
   </div>
 </header>
 
@@ -23,11 +23,11 @@
   <div class="container">
 
     <div class="card">
-      <h2>{{ rec.title or data.name or 'Вакансия' }}</h2>
+      <h2>{{ rec.title or data.name or 'Р’Р°РєР°РЅСЃРёСЏ' }}</h2>
       <p style="margin:.4rem 0;">
         {{ rec.company or data.employer or '' }}
-        {% if rec.area or data.area %} · {{ rec.area or data.area }}{% endif %}
-        {% if rec.url or data.alternate_url %} · <a href="{{ rec.url or data.alternate_url }}" target="_blank">источник</a>{% endif %}
+        {% if rec.area or data.area %} В· {{ rec.area or data.area }}{% endif %}
+        {% if rec.url or data.alternate_url %} В· <a href="{{ rec.url or data.alternate_url }}" target="_blank">РёСЃС‚РѕС‡РЅРёРє</a>{% endif %}
       </p>
 
       {% if rec %}
@@ -44,10 +44,10 @@
 
       <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem;align-items:center;">
         <button class="fav-star {{ 'on' if is_favorite else '' }}" data-vid="{{ vid }}"
-                title="В избранное" style="font-size:1.4rem;">★</button>
-        <a class="btn-submit" style="text-decoration:none;" href="/analyze/{{ vid }}">Полный анализ</a>
-        <a class="btn-submit" style="text-decoration:none;" href="/package/{{ vid }}">Пакет отклика</a>
-        <a class="btn-submit" style="text-decoration:none;" href="/prep/{{ vid }}">Подготовка к интервью</a>
+                title="Р’ РёР·Р±СЂР°РЅРЅРѕРµ" style="font-size:1.4rem;">в…</button>
+        <a class="btn-submit" style="text-decoration:none;" href="/analyze/{{ vid }}">РџРѕР»РЅС‹Р№ Р°РЅР°Р»РёР·</a>
+        <a class="btn-submit" style="text-decoration:none;" href="/package/{{ vid }}">РџР°РєРµС‚ РѕС‚РєР»РёРєР°</a>
+        <a class="btn-submit" style="text-decoration:none;" href="/prep/{{ vid }}">РџРѕРґРіРѕС‚РѕРІРєР° Рє РёРЅС‚РµСЂРІСЊСЋ</a>
       </div>
       <script>
       document.querySelectorAll('.fav-star').forEach(function (btn) {
@@ -58,25 +58,25 @@
         });
       });
       </script>
-      <p class="hint" style="margin-top:.8rem;">Пакет отклика и подготовка генерируются 1–4 минуты при первом открытии, дальше — из кеша. Вакансия сохранена в базе и видна в таблице поиска.</p>
+      <p class="hint" style="margin-top:.8rem;">РџР°РєРµС‚ РѕС‚РєР»РёРєР° Рё РїРѕРґРіРѕС‚РѕРІРєР° РіРµРЅРµСЂРёСЂСѓСЋС‚СЃСЏ 1вЂ“4 РјРёРЅСѓС‚С‹ РїСЂРё РїРµСЂРІРѕРј РѕС‚РєСЂС‹С‚РёРё, РґР°Р»СЊС€Рµ вЂ” РёР· РєРµС€Р°. Р’Р°РєР°РЅСЃРёСЏ СЃРѕС…СЂР°РЅРµРЅР° РІ Р±Р°Р·Рµ Рё РІРёРґРЅР° РІ С‚Р°Р±Р»РёС†Рµ РїРѕРёСЃРєР°.</p>
     </div>
 
     {% if data.description %}
     <div class="card" style="margin-top:1rem;">
-      <h2>Описание</h2>
+      <h2>РћРїРёСЃР°РЅРёРµ</h2>
       <details open>
-        <summary class="hint" style="cursor:pointer;">свернуть/развернуть</summary>
+        <summary class="hint" style="cursor:pointer;">СЃРІРµСЂРЅСѓС‚СЊ/СЂР°Р·РІРµСЂРЅСѓС‚СЊ</summary>
         <div style="white-space:pre-wrap;margin-top:.6rem;font-size:.9rem;line-height:1.55;">{{ data.description[:6000] }}</div>
       </details>
     </div>
     {% endif %}
 
-    <p style="margin-top:1rem;"><a href="/search">← к поиску</a></p>
+    <p style="margin-top:1rem;"><a href="/search">в†ђ Рє РїРѕРёСЃРєСѓ</a></p>
   </div>
 </main>
 
 <footer>
-  <div class="container">Vacancy Intelligence Assistant · Карточка вакансии</div>
+  <div class="container">Vacancy Intelligence Assistant В· РљР°СЂС‚РѕС‡РєР° РІР°РєР°РЅСЃРёРё</div>
 </footer>
 </div>
 </body>

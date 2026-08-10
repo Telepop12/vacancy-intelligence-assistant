@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Избранное — Vacancy Intelligence Assistant</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <title>РР·Р±СЂР°РЅРЅРѕРµ вЂ” Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css?v=2">
 </head>
 <body>
 <div class="page-wrapper">
@@ -15,23 +15,23 @@
 <header>
   <div class="container">
     <h1>Vacancy Intelligence Assistant</h1>
-    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+    <p class="sub">Career Intelligence Platform В· CIO / CTO / CDTO</p>
   </div>
 </header>
 
 <main>
   <div class="container">
     <div class="card">
-      <h2>Избранные вакансии <span class="hint" style="font-weight:normal;">({{ rows | length }})</span></h2>
+      <h2>РР·Р±СЂР°РЅРЅС‹Рµ РІР°РєР°РЅСЃРёРё <span class="hint" style="font-weight:normal;">({{ rows | length }})</span></h2>
       <p class="hint" style="margin:.4rem 0 1rem;">
-        Сохранённые вакансии живут независимо от запусков поиска и переоценок.
-        Тексты закешированы — анализ и пакеты работают даже когда hh.ru недоступен.
+        РЎРѕС…СЂР°РЅС‘РЅРЅС‹Рµ РІР°РєР°РЅСЃРёРё Р¶РёРІСѓС‚ РЅРµР·Р°РІРёСЃРёРјРѕ РѕС‚ Р·Р°РїСѓСЃРєРѕРІ РїРѕРёСЃРєР° Рё РїРµСЂРµРѕС†РµРЅРѕРє.
+        РўРµРєСЃС‚С‹ Р·Р°РєРµС€РёСЂРѕРІР°РЅС‹ вЂ” Р°РЅР°Р»РёР· Рё РїР°РєРµС‚С‹ СЂР°Р±РѕС‚Р°СЋС‚ РґР°Р¶Рµ РєРѕРіРґР° hh.ru РЅРµРґРѕСЃС‚СѓРїРµРЅ.
       </p>
 
       {% if rows %}
       <table class="results-table" style="width:100%;">
         <thead>
-          <tr><th>Балл</th><th>Рекомендация</th><th>Вакансия</th><th></th></tr>
+          <tr><th>Р‘Р°Р»Р»</th><th>Р РµРєРѕРјРµРЅРґР°С†РёСЏ</th><th>Р’Р°РєР°РЅСЃРёСЏ</th><th></th></tr>
         </thead>
         <tbody>
           {% for r in rows %}
@@ -40,19 +40,19 @@
             <td><span class="rec-label">{{ r.recommendation }}</span></td>
             <td>
               <a href="/vacancy/{{ r.vid }}"><strong>{{ r.title }}</strong></a>
-              <div class="hint">{{ r.company }}{% if r.area %} · {{ r.area }}{% endif %}
-                {% if r.url %} · <a href="{{ r.url }}" target="_blank">источник</a>{% endif %}</div>
+              <div class="hint">{{ r.company }}{% if r.area %} В· {{ r.area }}{% endif %}
+                {% if r.url %} В· <a href="{{ r.url }}" target="_blank">РёСЃС‚РѕС‡РЅРёРє</a>{% endif %}</div>
               {% if r.key_matches %}
               <div class="hint" style="margin-top:.15rem;">{{ r.key_matches | join(', ') }}</div>
               {% endif %}
             </td>
             <td style="white-space:nowrap;">
-              <a class="btn-inline" href="/analyze/{{ r.vid }}">Полный анализ</a><br>
-              <a class="btn-inline" href="/package/{{ r.vid }}" style="margin-top:.3rem;display:inline-block;">Пакет отклика</a><br>
-              <a class="btn-inline" href="/prep/{{ r.vid }}" style="margin-top:.3rem;display:inline-block;">Подготовка</a><br>
+              <a class="btn-inline" href="/analyze/{{ r.vid }}">РџРѕР»РЅС‹Р№ Р°РЅР°Р»РёР·</a><br>
+              <a class="btn-inline" href="/package/{{ r.vid }}" style="margin-top:.3rem;display:inline-block;">РџР°РєРµС‚ РѕС‚РєР»РёРєР°</a><br>
+              <a class="btn-inline" href="/prep/{{ r.vid }}" style="margin-top:.3rem;display:inline-block;">РџРѕРґРіРѕС‚РѕРІРєР°</a><br>
               <form method="post" action="/vacancy/{{ r.vid }}/delete" style="margin-top:.3rem;"
-                    onsubmit="return confirm('Удалить вакансию из избранного и базы?');">
-                <button type="submit" class="btn-inline" style="color:#dc2626;border-color:#dc2626;">Удалить</button>
+                    onsubmit="return confirm('РЈРґР°Р»РёС‚СЊ РІР°РєР°РЅСЃРёСЋ РёР· РёР·Р±СЂР°РЅРЅРѕРіРѕ Рё Р±Р°Р·С‹?');">
+                <button type="submit" class="btn-inline" style="color:#dc2626;border-color:#dc2626;">РЈРґР°Р»РёС‚СЊ</button>
               </form>
             </td>
           </tr>
@@ -60,14 +60,14 @@
         </tbody>
       </table>
       {% else %}
-      <p class="hint">Пока пусто. Отметьте вакансии звёздочкой ★ в результатах поиска или на карточке вакансии.</p>
+      <p class="hint">РџРѕРєР° РїСѓСЃС‚Рѕ. РћС‚РјРµС‚СЊС‚Рµ РІР°РєР°РЅСЃРёРё Р·РІС‘Р·РґРѕС‡РєРѕР№ в… РІ СЂРµР·СѓР»СЊС‚Р°С‚Р°С… РїРѕРёСЃРєР° РёР»Рё РЅР° РєР°СЂС‚РѕС‡РєРµ РІР°РєР°РЅСЃРёРё.</p>
       {% endif %}
     </div>
   </div>
 </main>
 
 <footer>
-  <div class="container">Vacancy Intelligence Assistant · Избранное</div>
+  <div class="container">Vacancy Intelligence Assistant В· РР·Р±СЂР°РЅРЅРѕРµ</div>
 </footer>
 </div>
 </body>

@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Результат анализа — Vacancy Intelligence Assistant</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <title>Р РµР·СѓР»СЊС‚Р°С‚ Р°РЅР°Р»РёР·Р° вЂ” Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css?v=2">
 </head>
 <body>
 <div class="page-wrapper">
@@ -13,7 +13,7 @@
 <header>
   <div class="container">
     <h1>Vacancy Intelligence Assistant</h1>
-    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+    <p class="sub">Career Intelligence Platform В· CIO / CTO / CDTO</p>
   </div>
 </header>
 
@@ -21,12 +21,12 @@
   <div class="container">
 
     <div class="actions">
-      <a href="/vacancy" class="btn">← Новый анализ</a>
-      <a href="/output/{{ md_filename }}" class="btn" download>↓ Markdown</a>
-      <a href="/output/{{ json_filename }}" class="btn" download>↓ JSON</a>
+      <a href="/vacancy" class="btn">в†ђ РќРѕРІС‹Р№ Р°РЅР°Р»РёР·</a>
+      <a href="/output/{{ md_filename }}" class="btn" download>в†“ Markdown</a>
+      <a href="/output/{{ json_filename }}" class="btn" download>в†“ JSON</a>
     </div>
 
-    <!-- ══ Vacancy Intake summary ══ -->
+    <!-- в•ђв•ђ Vacancy Intake summary в•ђв•ђ -->
     {% if analysis.intake_source_type %}
     <div class="card card-intake">
       <h2>Vacancy Intake</h2>
@@ -35,7 +35,7 @@
           <span class="intake-label">Source</span>
           <span class="intake-value">{{ analysis.intake_source_type }}
             {% if analysis.intake_source_name and analysis.intake_source_name != analysis.intake_source_type %}
-            · <span class="intake-name">{{ analysis.intake_source_name }}</span>
+            В· <span class="intake-name">{{ analysis.intake_source_name }}</span>
             {% endif %}
           </span>
         </div>
@@ -67,16 +67,16 @@
           <span class="intake-label">Confidence</span>
           <span class="intake-confidence-badge {{ confidence_color }}">{{ analysis.intake_confidence }}</span>
           {% if analysis.intake_confidence_notes %}
-          <span class="intake-notes">{{ analysis.intake_confidence_notes | join(' · ') }}</span>
+          <span class="intake-notes">{{ analysis.intake_confidence_notes | join(' В· ') }}</span>
           {% endif %}
         </div>
       </div>
     </div>
     {% endif %}
 
-    <!-- ══ Score + recommendation ══ -->
+    <!-- в•ђв•ђ Score + recommendation в•ђв•ђ -->
     <div class="card">
-      <h2>Результат анализа</h2>
+      <h2>Р РµР·СѓР»СЊС‚Р°С‚ Р°РЅР°Р»РёР·Р°</h2>
       <div class="score-row">
         <div>
           <div class="score-label">Match Score</div>
@@ -95,46 +95,46 @@
       </div>
     </div>
 
-    <!-- ══ LLM insights (full width) ══ -->
+    <!-- в•ђв•ђ LLM insights (full width) в•ђв•ђ -->
     {% set llm_any = analysis.semantic_summary or analysis.role_level_fit
                      or analysis.strategic_vs_operational_balance
                      or analysis.target_role_alignment or analysis.authority_signals %}
     {% if llm_any %}
     <div class="card card-llm">
       {% set llm_is_pending = analysis.semantic_summary == LLM_PENDING %}
-      <h2>LLM-инсайты {% if llm_is_pending %}<span class="llm-badge">placeholder</span>{% endif %}</h2>
+      <h2>LLM-РёРЅСЃР°Р№С‚С‹ {% if llm_is_pending %}<span class="llm-badge">placeholder</span>{% endif %}</h2>
 
       {% if analysis.semantic_summary %}
       <div class="llm-field">
-        <div class="llm-label">Семантическое резюме</div>
+        <div class="llm-label">РЎРµРјР°РЅС‚РёС‡РµСЃРєРѕРµ СЂРµР·СЋРјРµ</div>
         <div class="llm-value">{{ analysis.semantic_summary }}</div>
       </div>
       {% endif %}
 
       {% if analysis.role_level_fit %}
       <div class="llm-field">
-        <div class="llm-label">Соответствие уровню роли</div>
+        <div class="llm-label">РЎРѕРѕС‚РІРµС‚СЃС‚РІРёРµ СѓСЂРѕРІРЅСЋ СЂРѕР»Рё</div>
         <div class="llm-value">{{ analysis.role_level_fit }}</div>
       </div>
       {% endif %}
 
       {% if analysis.strategic_vs_operational_balance %}
       <div class="llm-field">
-        <div class="llm-label">Баланс стратегия / операционка</div>
+        <div class="llm-label">Р‘Р°Р»Р°РЅСЃ СЃС‚СЂР°С‚РµРіРёСЏ / РѕРїРµСЂР°С†РёРѕРЅРєР°</div>
         <div class="llm-value">{{ analysis.strategic_vs_operational_balance }}</div>
       </div>
       {% endif %}
 
       {% if analysis.target_role_alignment %}
       <div class="llm-field">
-        <div class="llm-label">Соответствие целевой роли</div>
+        <div class="llm-label">РЎРѕРѕС‚РІРµС‚СЃС‚РІРёРµ С†РµР»РµРІРѕР№ СЂРѕР»Рё</div>
         <div class="llm-value">{{ analysis.target_role_alignment }}</div>
       </div>
       {% endif %}
 
       {% if analysis.authority_signals %}
       <div class="llm-field">
-        <div class="llm-label">Сигналы полномочий</div>
+        <div class="llm-label">РЎРёРіРЅР°Р»С‹ РїРѕР»РЅРѕРјРѕС‡РёР№</div>
         <ul class="plain-list">
           {% for sig in analysis.authority_signals %}
           <li>{{ sig }}</li>
@@ -145,7 +145,7 @@
     </div>
     {% endif %}
 
-    <!-- ══ Decision Intelligence (full width) ══ -->
+    <!-- в•ђв•ђ Decision Intelligence (full width) в•ђв•ђ -->
     {% set di_has_content = analysis.strategic_rationale and analysis.strategic_rationale != LLM_PENDING %}
     {% set di_has_lists = analysis.career_risks or analysis.career_opportunities or analysis.strategic_validation_questions %}
     {% set di_has_scenarios = (analysis.best_case_scenario and analysis.best_case_scenario != LLM_PENDING) or (analysis.worst_case_scenario and analysis.worst_case_scenario != LLM_PENDING) %}
@@ -161,7 +161,7 @@
       <div class="di-grid">
         {% if analysis.career_opportunities %}
         <div class="di-col">
-          <h3>Карьерные возможности</h3>
+          <h3>РљР°СЂСЊРµСЂРЅС‹Рµ РІРѕР·РјРѕР¶РЅРѕСЃС‚Рё</h3>
           <ul class="opportunity-list">
             {% for o in analysis.career_opportunities %}
             <li>{{ o }}</li>
@@ -171,7 +171,7 @@
         {% endif %}
         {% if analysis.career_risks %}
         <div class="di-col">
-          <h3>Карьерные риски</h3>
+          <h3>РљР°СЂСЊРµСЂРЅС‹Рµ СЂРёСЃРєРё</h3>
           <ul class="di-risk-list">
             {% for r in analysis.career_risks %}
             <li>{{ r }}</li>
@@ -200,7 +200,7 @@
       {% endif %}
 
       {% if analysis.strategic_validation_questions %}
-      <h3 class="di-subhead">Стратегические вопросы для валидации</h3>
+      <h3 class="di-subhead">РЎС‚СЂР°С‚РµРіРёС‡РµСЃРєРёРµ РІРѕРїСЂРѕСЃС‹ РґР»СЏ РІР°Р»РёРґР°С†РёРё</h3>
       <ol class="validation-list">
         {% for q in analysis.strategic_validation_questions %}
         <li>{{ q }}</li>
@@ -210,10 +210,10 @@
     </div>
     {% endif %}
 
-    <!-- ══ Evolutionary Potential (full width) ══ -->
+    <!-- в•ђв•ђ Evolutionary Potential (full width) в•ђв•ђ -->
     {% if analysis.evolutionary_potential and analysis.evolutionary_potential != LLM_PENDING %}
     <div class="card card-evo">
-      <h2>Эволюционный потенциал
+      <h2>Р­РІРѕР»СЋС†РёРѕРЅРЅС‹Р№ РїРѕС‚РµРЅС†РёР°Р»
         <span class="evo-badge {{ evo_level }}">{{ analysis.evolutionary_potential }}</span>
       </h2>
 
@@ -223,7 +223,7 @@
 
       {% if analysis.strategic_opportunity_signals %}
       <div class="evo-signals-wrap">
-        <div class="evo-signals-label">Сигналы возможности</div>
+        <div class="evo-signals-label">РЎРёРіРЅР°Р»С‹ РІРѕР·РјРѕР¶РЅРѕСЃС‚Рё</div>
         <ul class="signal-list">
           {% for sig in analysis.strategic_opportunity_signals %}
           <li>{{ sig }}</li>
@@ -234,10 +234,10 @@
     </div>
     {% endif %}
 
-    <!-- ══ Key matches + Risks — 2 columns ══ -->
+    <!-- в•ђв•ђ Key matches + Risks вЂ” 2 columns в•ђв•ђ -->
     <div class="row-2col">
       <div class="card">
-        <h2>Ключевые совпадения с профилем</h2>
+        <h2>РљР»СЋС‡РµРІС‹Рµ СЃРѕРІРїР°РґРµРЅРёСЏ СЃ РїСЂРѕС„РёР»РµРј</h2>
         {% if analysis.key_matches %}
         <ul class="match-list">
           {% for kw in analysis.key_matches %}
@@ -245,12 +245,12 @@
           {% endfor %}
         </ul>
         {% else %}
-        <p class="empty">Совпадений не обнаружено</p>
+        <p class="empty">РЎРѕРІРїР°РґРµРЅРёР№ РЅРµ РѕР±РЅР°СЂСѓР¶РµРЅРѕ</p>
         {% endif %}
       </div>
 
       <div class="card">
-        <h2>Риски и красные флаги</h2>
+        <h2>Р РёСЃРєРё Рё РєСЂР°СЃРЅС‹Рµ С„Р»Р°РіРё</h2>
         {% if analysis.risks %}
         <ul class="risk-list">
           {% for r in analysis.risks %}
@@ -258,19 +258,19 @@
           {% endfor %}
         </ul>
         {% else %}
-        <p class="no-risk">✓ Существенных рисков не выявлено</p>
+        <p class="no-risk">вњ“ РЎСѓС‰РµСЃС‚РІРµРЅРЅС‹С… СЂРёСЃРєРѕРІ РЅРµ РІС‹СЏРІР»РµРЅРѕ</p>
         {% endif %}
       </div>
     </div>
 
-    <!-- ══ Auxiliary section ══ -->
+    <!-- в•ђв•ђ Auxiliary section в•ђв•ђ -->
     <div class="section-aux">
-      <div class="section-aux-label">Рабочие материалы</div>
+      <div class="section-aux-label">Р Р°Р±РѕС‡РёРµ РјР°С‚РµСЂРёР°Р»С‹</div>
 
-      <!-- HR questions + Resume tips — 2 columns -->
+      <!-- HR questions + Resume tips вЂ” 2 columns -->
       <div class="row-2col">
         <div class="card">
-          <h2>Вопросы к HR</h2>
+          <h2>Р’РѕРїСЂРѕСЃС‹ Рє HR</h2>
           <ol class="plain-list">
             {% for q in analysis.hr_questions %}
             <li>{{ q }}</li>
@@ -279,7 +279,7 @@
         </div>
 
         <div class="card">
-          <h2>Рекомендации по адаптации резюме</h2>
+          <h2>Р РµРєРѕРјРµРЅРґР°С†РёРё РїРѕ Р°РґР°РїС‚Р°С†РёРё СЂРµР·СЋРјРµ</h2>
           <ul class="plain-list">
             {% for tip in analysis.resume_tips %}
             <li>{{ tip }}</li>
@@ -288,9 +288,9 @@
         </div>
       </div>
 
-      <!-- HR response letter — full width -->
+      <!-- HR response letter вЂ” full width -->
       <div class="card">
-        <h2>Шаблон ответа HR</h2>
+        <h2>РЁР°Р±Р»РѕРЅ РѕС‚РІРµС‚Р° HR</h2>
         <pre class="hr-letter">{{ analysis.hr_response }}</pre>
       </div>
     </div>
@@ -299,7 +299,7 @@
 </main>
 
 <footer>
-  <div class="container">Vacancy Intelligence Assistant — Web MVP</div>
+  <div class="container">Vacancy Intelligence Assistant вЂ” Web MVP</div>
 </footer>
 
 </div><!-- /page-wrapper -->

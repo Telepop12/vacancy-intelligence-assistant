@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Career Match — Vacancy Intelligence Assistant</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <title>Career Match вЂ” Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css?v=2">
 </head>
 <body>
 <div class="page-wrapper">
@@ -13,7 +13,7 @@
 <header>
   <div class="container">
     <h1>Vacancy Intelligence Assistant</h1>
-    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+    <p class="sub">Career Intelligence Platform В· CIO / CTO / CDTO</p>
   </div>
 </header>
 
@@ -29,30 +29,30 @@
     <div class="card">
       <h2>Career Match Analysis</h2>
       <p style="font-size:.9rem;color:var(--muted);margin-bottom:1.25rem;">
-        Глубокий анализ соответствия вакансии с учётом полной карьерной траектории:
-        transferable competencies, скрытая релевантность, стратегический fit.
+        Р“Р»СѓР±РѕРєРёР№ Р°РЅР°Р»РёР· СЃРѕРѕС‚РІРµС‚СЃС‚РІРёСЏ РІР°РєР°РЅСЃРёРё СЃ СѓС‡С‘С‚РѕРј РїРѕР»РЅРѕР№ РєР°СЂСЊРµСЂРЅРѕР№ С‚СЂР°РµРєС‚РѕСЂРёРё:
+        transferable competencies, СЃРєСЂС‹С‚Р°СЏ СЂРµР»РµРІР°РЅС‚РЅРѕСЃС‚СЊ, СЃС‚СЂР°С‚РµРіРёС‡РµСЃРєРёР№ fit.
       </p>
 
       <form method="post" action="/match/analyze" enctype="multipart/form-data">
         <div class="row-2col">
           <div class="field">
-            <label>Вакансия</label>
+            <label>Р’Р°РєР°РЅСЃРёСЏ</label>
             <textarea name="vacancy_text" rows="14"
-              placeholder="Вставьте текст вакансии…">{{ prefill_vacancy or "" }}</textarea>
-            <p class="hint">или</p>
+              placeholder="Р’СЃС‚Р°РІСЊС‚Рµ С‚РµРєСЃС‚ РІР°РєР°РЅСЃРёРёвЂ¦">{{ prefill_vacancy or "" }}</textarea>
+            <p class="hint">РёР»Рё</p>
             <input type="file" name="vacancy_file" accept=".txt,.md,.json" class="file-input">
           </div>
           <div class="field">
-            <label>Резюме <span class="hint-inline">.docx · .pdf · .txt · .md</span></label>
+            <label>Р РµР·СЋРјРµ <span class="hint-inline">.docx В· .pdf В· .txt В· .md</span></label>
             <textarea name="resume_text" rows="14"
-              placeholder="Вставьте текст резюме…">{{ prefill_resume or "" }}</textarea>
-            <p class="hint">или</p>
+              placeholder="Р’СЃС‚Р°РІСЊС‚Рµ С‚РµРєСЃС‚ СЂРµР·СЋРјРµвЂ¦">{{ prefill_resume or "" }}</textarea>
+            <p class="hint">РёР»Рё</p>
             <input type="file" name="resume_file"
                    accept=".docx,.pdf,.txt,.md" class="file-input">
           </div>
         </div>
 
-        <button type="submit" class="btn-submit">Запустить Career Match</button>
+        <button type="submit" class="btn-submit">Р—Р°РїСѓСЃС‚РёС‚СЊ Career Match</button>
       </form>
     </div>
 
@@ -61,7 +61,7 @@
 </main>
 
 <footer>
-  <div class="container">Vacancy Intelligence Assistant — Career Match Layer</div>
+  <div class="container">Vacancy Intelligence Assistant вЂ” Career Match Layer</div>
 </footer>
 </div>
 </body>

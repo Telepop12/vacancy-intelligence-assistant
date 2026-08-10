@@ -1,28 +1,28 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Career Match — Результат</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <title>Career Match вЂ” Р РµР·СѓР»СЊС‚Р°С‚</title>
+  <link rel="stylesheet" href="/static/style.css?v=2">
 </head>
 
 <body class="match-mode-interview">
 
-<!-- ══════════════════════════════════════
-     COCKPIT BAR — fixed, always visible
-══════════════════════════════════════ -->
+<!-- в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+     COCKPIT BAR вЂ” fixed, always visible
+в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ -->
 <div class="cockpit-bar">
   <div class="cockpit-inner">
 
     <div class="cockpit-scores">
       <div class="cockpit-score-block">
-        <div class="cockpit-score-label">Карьерный матч</div>
+        <div class="cockpit-score-label">РљР°СЂСЊРµСЂРЅС‹Р№ РјР°С‚С‡</div>
         <div class="cockpit-score-num {{ score_color }}">{{ match.career_match_score }}</div>
       </div>
       <div class="cockpit-vs">vs</div>
       <div class="cockpit-score-block">
-        <div class="cockpit-score-label">Ключевые слова</div>
+        <div class="cockpit-score-label">РљР»СЋС‡РµРІС‹Рµ СЃР»РѕРІР°</div>
         <div class="cockpit-score-num {{ kw_color }}">{{ match.keyword_score }}</div>
       </div>
     </div>
@@ -31,7 +31,7 @@
       <span class="cockpit-rec-badge {{ action_color(match.recommendation_label) }}">
         {{ match.recommendation_label }}
       </span>
-      <div class="cockpit-rec-label">ИИ · полный анализ карьеры</div>
+      <div class="cockpit-rec-label">РР В· РїРѕР»РЅС‹Р№ Р°РЅР°Р»РёР· РєР°СЂСЊРµСЂС‹</div>
     </div>
 
     <div class="cockpit-dots">
@@ -50,32 +50,32 @@
     </div>
 
     <div class="cockpit-mode-toggle">
-      <button class="mode-btn" id="btnGraph" onclick="setMode('graph')">🕸 Граф</button>
-      <button class="mode-btn active" id="btnInterview" onclick="setMode('interview')">🎯 Собеседование</button>
-      <button class="mode-btn" id="btnAnalyst" onclick="setMode('analyst')">🔬 Аналитика</button>
+      <button class="mode-btn" id="btnGraph" onclick="setMode('graph')">рџ•ё Р“СЂР°С„</button>
+      <button class="mode-btn active" id="btnInterview" onclick="setMode('interview')">рџЋЇ РЎРѕР±РµСЃРµРґРѕРІР°РЅРёРµ</button>
+      <button class="mode-btn" id="btnAnalyst" onclick="setMode('analyst')">рџ”¬ РђРЅР°Р»РёС‚РёРєР°</button>
     </div>
 
-    <a href="/" class="cockpit-back">🏠 Главная</a>
+    <a href="/" class="cockpit-back">рџЏ  Р“Р»Р°РІРЅР°СЏ</a>
   </div>
 </div>
 
 
-<!-- ══════════════════════════════════════
-     GRAPH MODE — смысловая модель (кокпит 4b)
-══════════════════════════════════════ -->
+<!-- в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+     GRAPH MODE вЂ” СЃРјС‹СЃР»РѕРІР°СЏ РјРѕРґРµР»СЊ (РєРѕРєРїРёС‚ 4b)
+в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ -->
 <div class="graph-view lens-match" id="graphView">
   <div class="cg-lens-bar">
-    <span class="cg-lens-title">Линза:</span>
-    <button class="cg-lens-btn active" data-lens="match">1 · Соответствие</button>
-    <button class="cg-lens-btn" data-lens="prep">2 · Подготовка</button>
-    <button class="cg-lens-btn" data-lens="letter">3 · Отклик</button>
-    <span class="cg-lens-hint">клик по узлу — детали · G — классический вид</span>
+    <span class="cg-lens-title">Р›РёРЅР·Р°:</span>
+    <button class="cg-lens-btn active" data-lens="match">1 В· РЎРѕРѕС‚РІРµС‚СЃС‚РІРёРµ</button>
+    <button class="cg-lens-btn" data-lens="prep">2 В· РџРѕРґРіРѕС‚РѕРІРєР°</button>
+    <button class="cg-lens-btn" data-lens="letter">3 В· РћС‚РєР»РёРє</button>
+    <span class="cg-lens-hint">РєР»РёРє РїРѕ СѓР·Р»Сѓ вЂ” РґРµС‚Р°Р»Рё В· G вЂ” РєР»Р°СЃСЃРёС‡РµСЃРєРёР№ РІРёРґ</span>
   </div>
   <div class="cg-layout">
     <div class="cg-canvas">
       <svg id="cockpitSvg" preserveAspectRatio="xMidYMid meet"></svg>
     </div>
-    <div class="cg-divider" id="cgDivider" title="Потяните, чтобы изменить ширину"></div>
+    <div class="cg-divider" id="cgDivider" title="РџРѕС‚СЏРЅРёС‚Рµ, С‡С‚РѕР±С‹ РёР·РјРµРЅРёС‚СЊ С€РёСЂРёРЅСѓ"></div>
     <aside class="cg-panel" id="cgPanel">
       <div class="cg-panel-body" id="cgPanelBody"></div>
     </aside>
@@ -88,11 +88,11 @@ window.COCKPIT_DATA = {
   kw: {{ match.keyword_score }},
   scoreColor: {{ score_color | tojson }},
   domains: [
-    { key: "strengths", label: "Сильные стороны",
+    { key: "strengths", label: "РЎРёР»СЊРЅС‹Рµ СЃС‚РѕСЂРѕРЅС‹",
       items: [{% for s in match.strategic_strengths %}{ text: {{ s | tojson }} },{% endfor %}] },
-    { key: "competencies", label: "Переносимые компетенции",
+    { key: "competencies", label: "РџРµСЂРµРЅРѕСЃРёРјС‹Рµ РєРѕРјРїРµС‚РµРЅС†РёРё",
       items: [{% for c in match.transferable_competencies %}{ text: {{ c | tojson }} },{% endfor %}] },
-    { key: "risks", label: "Риски и пробелы",
+    { key: "risks", label: "Р РёСЃРєРё Рё РїСЂРѕР±РµР»С‹",
       items: [{% for r in match.risks_and_gaps %}{ text: {{ r | tojson }} },{% endfor %}] },
   ],
   hrQuestions: {{ analysis.hr_questions | tojson }},
@@ -100,19 +100,19 @@ window.COCKPIT_DATA = {
 </script>
 
 
-<!-- ══════════════════════════════════════
+<!-- в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
      INTERVIEW MODE
-══════════════════════════════════════ -->
+в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ -->
 <div class="interview-view" id="interviewView">
 
   <div class="itab-nav">
-    <button class="itab-btn active" onclick="showTab('idash')">🏠 Дашборд</button>
-    <button class="itab-btn" onclick="showTab('istrengths')">💪 Сильные стороны</button>
-    <button class="itab-btn" onclick="showTab('irisks')">⚠️ Риски</button>
-    <button class="itab-btn" onclick="showTab('icompetencies')">↔ Компетенции</button>
-    <button class="itab-btn" onclick="showTab('iresume')">📄 Резюме</button>
-    <button class="itab-btn" onclick="showTab('iprep')">📋 Подготовка</button>
-    <button class="itab-btn" onclick="showTab('iconclusion')">✅ Заключение</button>
+    <button class="itab-btn active" onclick="showTab('idash')">рџЏ  Р”Р°С€Р±РѕСЂРґ</button>
+    <button class="itab-btn" onclick="showTab('istrengths')">рџ’Є РЎРёР»СЊРЅС‹Рµ СЃС‚РѕСЂРѕРЅС‹</button>
+    <button class="itab-btn" onclick="showTab('irisks')">вљ пёЏ Р РёСЃРєРё</button>
+    <button class="itab-btn" onclick="showTab('icompetencies')">в†” РљРѕРјРїРµС‚РµРЅС†РёРё</button>
+    <button class="itab-btn" onclick="showTab('iresume')">рџ“„ Р РµР·СЋРјРµ</button>
+    <button class="itab-btn" onclick="showTab('iprep')">рџ“‹ РџРѕРґРіРѕС‚РѕРІРєР°</button>
+    <button class="itab-btn" onclick="showTab('iconclusion')">вњ… Р—Р°РєР»СЋС‡РµРЅРёРµ</button>
   </div>
 
   <div class="itab-panels">
@@ -121,53 +121,53 @@ window.COCKPIT_DATA = {
     <div class="itab-panel active" id="tab-idash">
       <div class="dash-grid interview-dash">
         <div class="dash-card dash-summary">
-          <div class="dash-card-header">📋 Обзор кандидата</div>
+          <div class="dash-card-header">рџ“‹ РћР±Р·РѕСЂ РєР°РЅРґРёРґР°С‚Р°</div>
           <div class="dash-card-preview">{{ match.executive_summary }}</div>
-          <button class="dash-more-btn" onclick="showTab('iconclusion')">Подробнее →</button>
+          <button class="dash-more-btn" onclick="showTab('iconclusion')">РџРѕРґСЂРѕР±РЅРµРµ в†’</button>
         </div>
         <div class="dash-card dash-trajectory">
-          <div class="dash-card-header">📈 Карьерная траектория</div>
+          <div class="dash-card-header">рџ“€ РљР°СЂСЊРµСЂРЅР°СЏ С‚СЂР°РµРєС‚РѕСЂРёСЏ</div>
           <div class="dash-card-preview">{{ match.trajectory_analysis }}</div>
-          <button class="dash-more-btn" onclick="gotoSection('sec-trajectory','iconclusion')">Подробнее →</button>
+          <button class="dash-more-btn" onclick="gotoSection('sec-trajectory','iconclusion')">РџРѕРґСЂРѕР±РЅРµРµ в†’</button>
         </div>
         <div class="dash-card dash-strengths">
-          <div class="dash-card-header">💪 Сильные стороны</div>
+          <div class="dash-card-header">рџ’Є РЎРёР»СЊРЅС‹Рµ СЃС‚РѕСЂРѕРЅС‹</div>
           <div class="dash-card-preview">
             {% for s in match.strategic_strengths[:3] %}
             <div class="dash-item strength">{{ s }}</div>
             {% endfor %}
           </div>
-          <button class="dash-more-btn" onclick="showTab('istrengths')">Подробнее →</button>
+          <button class="dash-more-btn" onclick="showTab('istrengths')">РџРѕРґСЂРѕР±РЅРµРµ в†’</button>
         </div>
         <div class="dash-card dash-competencies">
-          <div class="dash-card-header">↔ Переносимые компетенции</div>
+          <div class="dash-card-header">в†” РџРµСЂРµРЅРѕСЃРёРјС‹Рµ РєРѕРјРїРµС‚РµРЅС†РёРё</div>
           <div class="dash-card-preview">
             {% for c in match.transferable_competencies[:3] %}
             <div class="dash-item competency">{{ c }}</div>
             {% endfor %}
           </div>
-          <button class="dash-more-btn" onclick="showTab('icompetencies')">Подробнее →</button>
+          <button class="dash-more-btn" onclick="showTab('icompetencies')">РџРѕРґСЂРѕР±РЅРµРµ в†’</button>
         </div>
         <div class="dash-card dash-risks">
-          <div class="dash-card-header">⚠️ Риски и пробелы</div>
+          <div class="dash-card-header">вљ пёЏ Р РёСЃРєРё Рё РїСЂРѕР±РµР»С‹</div>
           <div class="dash-card-preview">
             {% for r in match.risks_and_gaps[:3] %}
             <div class="dash-item risk">{{ r }}</div>
             {% endfor %}
           </div>
-          <button class="dash-more-btn" onclick="showTab('irisks')">Подробнее →</button>
+          <button class="dash-more-btn" onclick="showTab('irisks')">РџРѕРґСЂРѕР±РЅРµРµ в†’</button>
         </div>
         <div class="dash-card dash-conclusion">
-          <div class="dash-card-header">✅ Заключение</div>
+          <div class="dash-card-header">вњ… Р—Р°РєР»СЋС‡РµРЅРёРµ</div>
           <div class="dash-card-preview">{{ match.final_recommendation }}</div>
-          <button class="dash-more-btn" onclick="showTab('iconclusion')">Подробнее →</button>
+          <button class="dash-more-btn" onclick="showTab('iconclusion')">РџРѕРґСЂРѕР±РЅРµРµ в†’</button>
         </div>
       </div>
     </div>
 
     <!-- STRENGTHS -->
     <div class="itab-panel" id="tab-istrengths">
-      <div class="itab-section-title">Сильные стороны — используй в разговоре</div>
+      <div class="itab-section-title">РЎРёР»СЊРЅС‹Рµ СЃС‚РѕСЂРѕРЅС‹ вЂ” РёСЃРїРѕР»СЊР·СѓР№ РІ СЂР°Р·РіРѕРІРѕСЂРµ</div>
       <div class="itab-cards-grid">
         {% for s in match.strategic_strengths %}
         <div class="itab-card strength">{{ s }}</div>
@@ -177,7 +177,7 @@ window.COCKPIT_DATA = {
 
     <!-- RISKS -->
     <div class="itab-panel" id="tab-irisks">
-      <div class="itab-section-title">Риски и пробелы — готовься к этим вопросам</div>
+      <div class="itab-section-title">Р РёСЃРєРё Рё РїСЂРѕР±РµР»С‹ вЂ” РіРѕС‚РѕРІСЊСЃСЏ Рє СЌС‚РёРј РІРѕРїСЂРѕСЃР°Рј</div>
       <div class="itab-cards-list">
         {% for r in match.risks_and_gaps %}
         <div class="itab-card risk">{{ r }}</div>
@@ -187,7 +187,7 @@ window.COCKPIT_DATA = {
 
     <!-- COMPETENCIES -->
     <div class="itab-panel" id="tab-icompetencies">
-      <div class="itab-section-title">Переносимые компетенции — аргументы для нестандартных вопросов</div>
+      <div class="itab-section-title">РџРµСЂРµРЅРѕСЃРёРјС‹Рµ РєРѕРјРїРµС‚РµРЅС†РёРё вЂ” Р°СЂРіСѓРјРµРЅС‚С‹ РґР»СЏ РЅРµСЃС‚Р°РЅРґР°СЂС‚РЅС‹С… РІРѕРїСЂРѕСЃРѕРІ</div>
       <div class="itab-cards-grid">
         {% for c in match.transferable_competencies %}
         <div class="itab-card competency">{{ c }}</div>
@@ -199,11 +199,11 @@ window.COCKPIT_DATA = {
     <div class="itab-panel" id="tab-iresume">
       <div class="itab-2col">
         <div>
-          <div class="itab-section-title">Стратегическое позиционирование</div>
+          <div class="itab-section-title">РЎС‚СЂР°С‚РµРіРёС‡РµСЃРєРѕРµ РїРѕР·РёС†РёРѕРЅРёСЂРѕРІР°РЅРёРµ</div>
           {% if resume.strategic_positioning %}
           <p class="itab-text conclusion" style="margin-bottom:1rem;">{{ resume.strategic_positioning }}</p>
           {% endif %}
-          <div class="itab-section-title">Сильные стороны</div>
+          <div class="itab-section-title">РЎРёР»СЊРЅС‹Рµ СЃС‚РѕСЂРѕРЅС‹</div>
           <div class="itab-cards-list">
             {% for a in resume.strongest_assets[:5] %}
             <div class="itab-card strength">{{ a }}</div>
@@ -211,13 +211,13 @@ window.COCKPIT_DATA = {
           </div>
         </div>
         <div>
-          <div class="itab-section-title">Карьерные траектории</div>
+          <div class="itab-section-title">РљР°СЂСЊРµСЂРЅС‹Рµ С‚СЂР°РµРєС‚РѕСЂРёРё</div>
           <ul class="trajectory-list" style="margin-bottom:1rem;">
             {% for t in resume.trajectory_markers %}
             <li>{{ t }}</li>
             {% endfor %}
           </ul>
-          <div class="itab-section-title">Технологические домены</div>
+          <div class="itab-section-title">РўРµС…РЅРѕР»РѕРіРёС‡РµСЃРєРёРµ РґРѕРјРµРЅС‹</div>
           <ul class="match-list">
             {% for d in resume.technology_domains %}
             <li>{{ d }}</li>
@@ -225,7 +225,7 @@ window.COCKPIT_DATA = {
           </ul>
           {% if resume.industries %}
           <div style="margin-top:.75rem;font-size:.8rem;color:var(--muted);">
-            Отрасли: {{ resume.industries | join(' · ') }}
+            РћС‚СЂР°СЃР»Рё: {{ resume.industries | join(' В· ') }}
           </div>
           {% endif %}
         </div>
@@ -234,7 +234,7 @@ window.COCKPIT_DATA = {
       {% if resume.raw_text %}
       <details style="margin-top:1rem;" open>
         <summary style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);cursor:pointer;user-select:none;">
-          Полный текст резюме
+          РџРѕР»РЅС‹Р№ С‚РµРєСЃС‚ СЂРµР·СЋРјРµ
         </summary>
         <div id="resume-rendered-interview"
              class="resume-rendered"
@@ -252,13 +252,13 @@ window.COCKPIT_DATA = {
     <div class="itab-panel" id="tab-iprep">
       <div class="itab-2col">
         <div>
-          <div class="itab-section-title">Вопросы к HR</div>
+          <div class="itab-section-title">Р’РѕРїСЂРѕСЃС‹ Рє HR</div>
           <ol class="plain-list" style="padding-left:1.2rem;">
             {% for q in analysis.hr_questions %}
             <li style="list-style:decimal;padding:.35rem 0;font-size:.88rem;border-bottom:1px solid var(--border);">{{ q }}</li>
             {% endfor %}
           </ol>
-          <div class="itab-section-title" style="margin-top:1rem;">Советы по резюме</div>
+          <div class="itab-section-title" style="margin-top:1rem;">РЎРѕРІРµС‚С‹ РїРѕ СЂРµР·СЋРјРµ</div>
           <ul class="plain-list">
             {% for tip in analysis.resume_tips %}
             <li style="padding:.3rem 0;font-size:.85rem;border-bottom:1px solid var(--border);">{{ tip }}</li>
@@ -266,7 +266,7 @@ window.COCKPIT_DATA = {
           </ul>
         </div>
         <div>
-          <div class="itab-section-title">Сопроводительное письмо</div>
+          <div class="itab-section-title">РЎРѕРїСЂРѕРІРѕРґРёС‚РµР»СЊРЅРѕРµ РїРёСЃСЊРјРѕ</div>
           <pre class="hr-letter" style="font-size:.82rem;max-height:calc(100vh - 200px);overflow-y:auto;">{{ analysis.hr_response }}</pre>
         </div>
       </div>
@@ -276,7 +276,7 @@ window.COCKPIT_DATA = {
     <div class="itab-panel" id="tab-iconclusion">
       <div class="itab-2col">
         <div>
-          <div class="itab-section-title">Заключение executive-рекрутера</div>
+          <div class="itab-section-title">Р—Р°РєР»СЋС‡РµРЅРёРµ executive-СЂРµРєСЂСѓС‚РµСЂР°</div>
           {% if match.final_recommendation %}
           <p class="itab-text conclusion" style="margin-bottom:1.25rem;">{{ match.final_recommendation }}</p>
           {% endif %}
@@ -286,7 +286,7 @@ window.COCKPIT_DATA = {
           {% endif %}
         </div>
         <div>
-          <div class="itab-section-title">Панель позиционирования</div>
+          <div class="itab-section-title">РџР°РЅРµР»СЊ РїРѕР·РёС†РёРѕРЅРёСЂРѕРІР°РЅРёСЏ</div>
           <div class="itab-dashboard">
             {% for label, level in [
               ("AI Positioning",   resume.ai_positioning_level.value),
@@ -313,9 +313,9 @@ window.COCKPIT_DATA = {
 </div>
 
 
-<!-- ══════════════════════════════════════
+<!-- в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
      ANALYST MODE
-══════════════════════════════════════ -->
+в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ -->
 <div class="analyst-view" id="analystView">
   <div class="analyst-layout">
 
@@ -350,15 +350,15 @@ window.COCKPIT_DATA = {
       </div>
 
       <nav class="analyst-nav-list">
-        <a class="anav-link active" onclick="showSection('sec-dashboard')">🏠 Главная панель</a>
-        <a class="anav-link" onclick="showSection('sec-summary')">📋 Обзор</a>
-        <a class="anav-link" onclick="showSection('sec-strengths')">💪 Сильные стороны</a>
-        <a class="anav-link" onclick="showSection('sec-risks')">⚠️ Риски</a>
-        <a class="anav-link" onclick="showSection('sec-competencies')">↔ Компетенции</a>
-        <a class="anav-link" onclick="showSection('sec-trajectory')">📈 Траектория</a>
-        <a class="anav-link" onclick="showSection('sec-resume')">📄 Резюме</a>
-        <a class="anav-link" onclick="showSection('sec-prep')">📋 Подготовка</a>
-        <a class="anav-link" onclick="showSection('sec-conclusion')">✅ Заключение</a>
+        <a class="anav-link active" onclick="showSection('sec-dashboard')">рџЏ  Р“Р»Р°РІРЅР°СЏ РїР°РЅРµР»СЊ</a>
+        <a class="anav-link" onclick="showSection('sec-summary')">рџ“‹ РћР±Р·РѕСЂ</a>
+        <a class="anav-link" onclick="showSection('sec-strengths')">рџ’Є РЎРёР»СЊРЅС‹Рµ СЃС‚РѕСЂРѕРЅС‹</a>
+        <a class="anav-link" onclick="showSection('sec-risks')">вљ пёЏ Р РёСЃРєРё</a>
+        <a class="anav-link" onclick="showSection('sec-competencies')">в†” РљРѕРјРїРµС‚РµРЅС†РёРё</a>
+        <a class="anav-link" onclick="showSection('sec-trajectory')">рџ“€ РўСЂР°РµРєС‚РѕСЂРёСЏ</a>
+        <a class="anav-link" onclick="showSection('sec-resume')">рџ“„ Р РµР·СЋРјРµ</a>
+        <a class="anav-link" onclick="showSection('sec-prep')">рџ“‹ РџРѕРґРіРѕС‚РѕРІРєР°</a>
+        <a class="anav-link" onclick="showSection('sec-conclusion')">вњ… Р—Р°РєР»СЋС‡РµРЅРёРµ</a>
       </nav>
 
       <div class="analyst-meta">
@@ -372,87 +372,87 @@ window.COCKPIT_DATA = {
       <div class="asec" id="sec-dashboard">
         <div class="dash-grid">
           <div class="dash-card dash-summary">
-            <div class="dash-card-header">📋 Обзор кандидата</div>
+            <div class="dash-card-header">рџ“‹ РћР±Р·РѕСЂ РєР°РЅРґРёРґР°С‚Р°</div>
             <div class="dash-card-preview">{{ match.executive_summary }}</div>
-            <button class="dash-more-btn" onclick="showSection('sec-summary')">Подробнее →</button>
+            <button class="dash-more-btn" onclick="showSection('sec-summary')">РџРѕРґСЂРѕР±РЅРµРµ в†’</button>
           </div>
           <div class="dash-card dash-trajectory">
-            <div class="dash-card-header">📈 Карьерная траектория</div>
+            <div class="dash-card-header">рџ“€ РљР°СЂСЊРµСЂРЅР°СЏ С‚СЂР°РµРєС‚РѕСЂРёСЏ</div>
             <div class="dash-card-preview">{{ match.trajectory_analysis }}</div>
-            <button class="dash-more-btn" onclick="showSection('sec-trajectory')">Подробнее →</button>
+            <button class="dash-more-btn" onclick="showSection('sec-trajectory')">РџРѕРґСЂРѕР±РЅРµРµ в†’</button>
           </div>
           <div class="dash-card dash-strengths">
-            <div class="dash-card-header">💪 Сильные стороны</div>
+            <div class="dash-card-header">рџ’Є РЎРёР»СЊРЅС‹Рµ СЃС‚РѕСЂРѕРЅС‹</div>
             <div class="dash-card-preview">
               {% for s in match.strategic_strengths[:3] %}
               <div class="dash-item strength">{{ s }}</div>
               {% endfor %}
             </div>
-            <button class="dash-more-btn" onclick="showSection('sec-strengths')">Подробнее →</button>
+            <button class="dash-more-btn" onclick="showSection('sec-strengths')">РџРѕРґСЂРѕР±РЅРµРµ в†’</button>
           </div>
           <div class="dash-card dash-competencies">
-            <div class="dash-card-header">↔ Переносимые компетенции</div>
+            <div class="dash-card-header">в†” РџРµСЂРµРЅРѕСЃРёРјС‹Рµ РєРѕРјРїРµС‚РµРЅС†РёРё</div>
             <div class="dash-card-preview">
               {% for c in match.transferable_competencies[:3] %}
               <div class="dash-item competency">{{ c }}</div>
               {% endfor %}
             </div>
-            <button class="dash-more-btn" onclick="showSection('sec-competencies')">Подробнее →</button>
+            <button class="dash-more-btn" onclick="showSection('sec-competencies')">РџРѕРґСЂРѕР±РЅРµРµ в†’</button>
           </div>
           <div class="dash-card dash-risks">
-            <div class="dash-card-header">⚠️ Риски и пробелы</div>
+            <div class="dash-card-header">вљ пёЏ Р РёСЃРєРё Рё РїСЂРѕР±РµР»С‹</div>
             <div class="dash-card-preview">
               {% for r in match.risks_and_gaps[:3] %}
               <div class="dash-item risk">{{ r }}</div>
               {% endfor %}
             </div>
-            <button class="dash-more-btn" onclick="showSection('sec-risks')">Подробнее →</button>
+            <button class="dash-more-btn" onclick="showSection('sec-risks')">РџРѕРґСЂРѕР±РЅРµРµ в†’</button>
           </div>
           <div class="dash-card dash-conclusion">
-            <div class="dash-card-header">✅ Заключение</div>
+            <div class="dash-card-header">вњ… Р—Р°РєР»СЋС‡РµРЅРёРµ</div>
             <div class="dash-card-preview">{{ match.final_recommendation }}</div>
-            <button class="dash-more-btn" onclick="showSection('sec-conclusion')">Подробнее →</button>
+            <button class="dash-more-btn" onclick="showSection('sec-conclusion')">РџРѕРґСЂРѕР±РЅРµРµ в†’</button>
           </div>
         </div>
       </div>
 
       <div class="asec hidden" id="sec-summary">
-        <h2 class="asec-title">Обзор кандидата</h2>
+        <h2 class="asec-title">РћР±Р·РѕСЂ РєР°РЅРґРёРґР°С‚Р°</h2>
         {% if match.executive_summary %}
         <p class="match-summary">{{ match.executive_summary }}</p>
         {% endif %}
       </div>
 
       <div class="asec hidden" id="sec-strengths">
-        <h2 class="asec-title">Сильные стороны</h2>
+        <h2 class="asec-title">РЎРёР»СЊРЅС‹Рµ СЃС‚РѕСЂРѕРЅС‹</h2>
         {% for s in match.strategic_strengths %}
         <div class="itab-card strength" style="margin-bottom:.5rem;">{{ s }}</div>
         {% endfor %}
       </div>
 
       <div class="asec hidden" id="sec-risks">
-        <h2 class="asec-title">Риски и пробелы</h2>
+        <h2 class="asec-title">Р РёСЃРєРё Рё РїСЂРѕР±РµР»С‹</h2>
         {% for r in match.risks_and_gaps %}
         <div class="itab-card risk" style="margin-bottom:.5rem;">{{ r }}</div>
         {% endfor %}
       </div>
 
       <div class="asec hidden" id="sec-competencies">
-        <h2 class="asec-title">Переносимые компетенции</h2>
+        <h2 class="asec-title">РџРµСЂРµРЅРѕСЃРёРјС‹Рµ РєРѕРјРїРµС‚РµРЅС†РёРё</h2>
         {% for c in match.transferable_competencies %}
         <div class="itab-card competency" style="margin-bottom:.5rem;">{{ c }}</div>
         {% endfor %}
       </div>
 
       <div class="asec hidden" id="sec-trajectory">
-        <h2 class="asec-title">Анализ карьерной траектории</h2>
+        <h2 class="asec-title">РђРЅР°Р»РёР· РєР°СЂСЊРµСЂРЅРѕР№ С‚СЂР°РµРєС‚РѕСЂРёРё</h2>
         {% if match.trajectory_analysis %}
         <p class="trajectory-text">{{ match.trajectory_analysis }}</p>
         {% endif %}
       </div>
 
       <div class="asec hidden" id="sec-resume">
-        <h2 class="asec-title">Профиль кандидата</h2>
+        <h2 class="asec-title">РџСЂРѕС„РёР»СЊ РєР°РЅРґРёРґР°С‚Р°</h2>
         <div class="row-2col">
           <div>
             {% if resume.strategic_positioning %}
@@ -461,19 +461,19 @@ window.COCKPIT_DATA = {
               <p>{{ resume.strategic_positioning }}</p>
             </div>
             {% endif %}
-            <div class="itab-section-title">Сильные стороны</div>
+            <div class="itab-section-title">РЎРёР»СЊРЅС‹Рµ СЃС‚РѕСЂРѕРЅС‹</div>
             {% for a in resume.strongest_assets %}
             <div class="itab-card strength" style="margin-bottom:.35rem;">{{ a }}</div>
             {% endfor %}
           </div>
           <div>
-            <div class="itab-section-title">Карьерные траектории</div>
+            <div class="itab-section-title">РљР°СЂСЊРµСЂРЅС‹Рµ С‚СЂР°РµРєС‚РѕСЂРёРё</div>
             <ul class="trajectory-list" style="margin-bottom:1rem;">
               {% for t in resume.trajectory_markers %}
               <li>{{ t }}</li>
               {% endfor %}
             </ul>
-            <div class="itab-section-title">Технологические домены</div>
+            <div class="itab-section-title">РўРµС…РЅРѕР»РѕРіРёС‡РµСЃРєРёРµ РґРѕРјРµРЅС‹</div>
             <ul class="match-list" style="margin-bottom:.75rem;">
               {% for d in resume.technology_domains %}
               <li>{{ d }}</li>
@@ -502,7 +502,7 @@ window.COCKPIT_DATA = {
       {% if resume.raw_text %}
       <details style="margin-top:1.25rem;" open>
         <summary style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);cursor:pointer;user-select:none;">
-          Полный текст резюме
+          РџРѕР»РЅС‹Р№ С‚РµРєСЃС‚ СЂРµР·СЋРјРµ
         </summary>
         <div id="resume-rendered-analyst" class="resume-rendered" style="margin-top:.6rem;"></div>
         <script>
@@ -514,16 +514,16 @@ window.COCKPIT_DATA = {
       </div>
 
       <div class="asec hidden" id="sec-prep">
-        <h2 class="asec-title">Подготовка к интервью</h2>
+        <h2 class="asec-title">РџРѕРґРіРѕС‚РѕРІРєР° Рє РёРЅС‚РµСЂРІСЊСЋ</h2>
         <div class="row-2col">
           <div>
-            <div class="itab-section-title">Вопросы к HR</div>
+            <div class="itab-section-title">Р’РѕРїСЂРѕСЃС‹ Рє HR</div>
             <ol class="plain-list" style="padding-left:1.2rem;margin-bottom:1.25rem;">
               {% for q in analysis.hr_questions %}
               <li style="list-style:decimal;padding:.4rem 0;font-size:.9rem;border-bottom:1px solid var(--border);">{{ q }}</li>
               {% endfor %}
             </ol>
-            <div class="itab-section-title">Советы по адаптации резюме</div>
+            <div class="itab-section-title">РЎРѕРІРµС‚С‹ РїРѕ Р°РґР°РїС‚Р°С†РёРё СЂРµР·СЋРјРµ</div>
             <ul class="plain-list">
               {% for tip in analysis.resume_tips %}
               <li style="padding:.35rem 0;font-size:.88rem;border-bottom:1px solid var(--border);">{{ tip }}</li>
@@ -531,19 +531,19 @@ window.COCKPIT_DATA = {
             </ul>
           </div>
           <div>
-            <div class="itab-section-title">Сопроводительное письмо</div>
+            <div class="itab-section-title">РЎРѕРїСЂРѕРІРѕРґРёС‚РµР»СЊРЅРѕРµ РїРёСЃСЊРјРѕ</div>
             <pre class="hr-letter">{{ analysis.hr_response }}</pre>
           </div>
         </div>
       </div>
 
       <div class="asec hidden" id="sec-conclusion">
-        <h2 class="asec-title">Заключение executive-рекрутера</h2>
+        <h2 class="asec-title">Р—Р°РєР»СЋС‡РµРЅРёРµ executive-СЂРµРєСЂСѓС‚РµСЂР°</h2>
         {% if match.final_recommendation %}
         <p class="final-rec-text">{{ match.final_recommendation }}</p>
         {% endif %}
         {% if match.confidence_notes %}
-        <p class="hint" style="margin-top:1rem;">⚠ {{ match.confidence_notes | join(' · ') }}</p>
+        <p class="hint" style="margin-top:1rem;">вљ  {{ match.confidence_notes | join(' В· ') }}</p>
         {% endif %}
       </div>
 
@@ -554,9 +554,9 @@ window.COCKPIT_DATA = {
 
 <!-- marked.js for resume Markdown rendering -->
 <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
-<script src="/static/cockpit_graph.js"></script>
+<script src="/static/cockpit_graph.js?v=2"></script>
 
-<!-- ══ JavaScript ══ -->
+<!-- в•ђв•ђ JavaScript в•ђв•ђ -->
 <script>
   const STORAGE_KEY = 'matchViewMode';
 
@@ -596,7 +596,7 @@ window.COCKPIT_DATA = {
     }
   }
 
-  // Restore saved mode (граф — основной вид кокпита)
+  // Restore saved mode (РіСЂР°С„ вЂ” РѕСЃРЅРѕРІРЅРѕР№ РІРёРґ РєРѕРєРїРёС‚Р°)
   setMode(localStorage.getItem(STORAGE_KEY) || 'graph');
 </script>
 

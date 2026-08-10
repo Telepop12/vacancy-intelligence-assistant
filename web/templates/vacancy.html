@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Анализ вакансии — Vacancy Intelligence Assistant</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <title>РђРЅР°Р»РёР· РІР°РєР°РЅСЃРёРё вЂ” Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css?v=2">
 </head>
 <body>
 <div class="page-wrapper">
@@ -15,7 +15,7 @@
 <header>
   <div class="container">
     <h1>Vacancy Intelligence Assistant</h1>
-    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+    <p class="sub">Career Intelligence Platform В· CIO / CTO / CDTO</p>
   </div>
 </header>
 
@@ -27,37 +27,37 @@
     {% endif %}
 
     <div class="card">
-      <h2>Анализ вакансии</h2>
+      <h2>РђРЅР°Р»РёР· РІР°РєР°РЅСЃРёРё</h2>
       <form method="post" action="/analyze" enctype="multipart/form-data">
         <input type="hidden" name="source_type" value="text">
 
         <div class="field">
-          <label for="vacancy">Текст вакансии</label>
+          <label for="vacancy">РўРµРєСЃС‚ РІР°РєР°РЅСЃРёРё</label>
           <textarea id="vacancy" name="vacancy_text" rows="14"
-            placeholder="Вставьте полный текст вакансии — название позиции, задачи, требования, условия…">{{ prefill or "" }}</textarea>
+            placeholder="Р’СЃС‚Р°РІСЊС‚Рµ РїРѕР»РЅС‹Р№ С‚РµРєСЃС‚ РІР°РєР°РЅСЃРёРё вЂ” РЅР°Р·РІР°РЅРёРµ РїРѕР·РёС†РёРё, Р·Р°РґР°С‡Рё, С‚СЂРµР±РѕРІР°РЅРёСЏ, СѓСЃР»РѕРІРёСЏвЂ¦">{{ prefill or "" }}</textarea>
         </div>
 
         <details class="intake-options">
-          <summary class="intake-options-toggle">Дополнительные параметры</summary>
+          <summary class="intake-options-toggle">Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹</summary>
           <div class="intake-options-body">
             <div class="row-2col intake-row">
               <div class="field">
-                <label for="vacancy_file">Загрузить файл <span class="hint-inline">.txt · .md · .json</span></label>
+                <label for="vacancy_file">Р—Р°РіСЂСѓР·РёС‚СЊ С„Р°Р№Р» <span class="hint-inline">.txt В· .md В· .json</span></label>
                 <input type="file" id="vacancy_file" name="vacancy_file"
                        accept=".txt,.md,.json" class="file-input">
-                <p class="hint">Если загружен файл — текст выше игнорируется</p>
+                <p class="hint">Р•СЃР»Рё Р·Р°РіСЂСѓР¶РµРЅ С„Р°Р№Р» вЂ” С‚РµРєСЃС‚ РІС‹С€Рµ РёРіРЅРѕСЂРёСЂСѓРµС‚СЃСЏ</p>
               </div>
               <div class="field">
-                <label for="vacancy_url">URL вакансии <span class="hint-inline">hh.ru и другие</span></label>
+                <label for="vacancy_url">URL РІР°РєР°РЅСЃРёРё <span class="hint-inline">hh.ru Рё РґСЂСѓРіРёРµ</span></label>
                 <input type="url" id="vacancy_url" name="vacancy_url"
-                       placeholder="https://hh.ru/vacancy/…" class="url-input">
-                <p class="hint">Ссылки hh.ru парсятся со всеми метаданными, прочие сайты — универсальным парсером.</p>
+                       placeholder="https://hh.ru/vacancy/вЂ¦" class="url-input">
+                <p class="hint">РЎСЃС‹Р»РєРё hh.ru РїР°СЂСЃСЏС‚СЃСЏ СЃРѕ РІСЃРµРјРё РјРµС‚Р°РґР°РЅРЅС‹РјРё, РїСЂРѕС‡РёРµ СЃР°Р№С‚С‹ вЂ” СѓРЅРёРІРµСЂСЃР°Р»СЊРЅС‹Рј РїР°СЂСЃРµСЂРѕРј.</p>
               </div>
             </div>
             <div class="field">
-              <label>Формат текста</label>
+              <label>Р¤РѕСЂРјР°С‚ С‚РµРєСЃС‚Р°</label>
               <div class="source-type-group">
-                <label class="radio-option"><input type="radio" name="source_type" value="text" checked> Обычный текст</label>
+                <label class="radio-option"><input type="radio" name="source_type" value="text" checked> РћР±С‹С‡РЅС‹Р№ С‚РµРєСЃС‚</label>
                 <label class="radio-option"><input type="radio" name="source_type" value="html"> HTML</label>
                 <label class="radio-option"><input type="radio" name="source_type" value="json"> JSON</label>
               </div>
@@ -65,17 +65,17 @@
           </div>
         </details>
 
-        <button type="submit" class="btn-submit">Проанализировать вакансию</button>
+        <button type="submit" class="btn-submit">РџСЂРѕР°РЅР°Р»РёР·РёСЂРѕРІР°С‚СЊ РІР°РєР°РЅСЃРёСЋ</button>
       </form>
     </div>
 
-    <p class="hint" style="margin-top:.5rem;">Профиль кандидата: <strong>{{ profile_name }}</strong></p>
+    <p class="hint" style="margin-top:.5rem;">РџСЂРѕС„РёР»СЊ РєР°РЅРґРёРґР°С‚Р°: <strong>{{ profile_name }}</strong></p>
 
   </div>
 </main>
 
 <footer>
-  <div class="container">Vacancy Intelligence Assistant · Анализ вакансий</div>
+  <div class="container">Vacancy Intelligence Assistant В· РђРЅР°Р»РёР· РІР°РєР°РЅСЃРёР№</div>
 </footer>
 </div>
 </body>
