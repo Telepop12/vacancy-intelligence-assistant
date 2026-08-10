@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Р’Р°СЂРёР°РЅС‚С‹ СЂРµР·СЋРјРµ вЂ” Vacancy Intelligence Assistant</title>
+  <title>Варианты резюме — Vacancy Intelligence Assistant</title>
   <link rel="stylesheet" href="/static/style.css?v=2">
 </head>
 <body>
@@ -15,7 +15,7 @@
 <header>
   <div class="container">
     <h1>Vacancy Intelligence Assistant</h1>
-    <p class="sub">Career Intelligence Platform В· CIO / CTO / CDTO</p>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
   </div>
 </header>
 
@@ -27,24 +27,24 @@
     {% endfor %}
 
     <div class="card">
-      <h2>Р’Р°СЂРёР°РЅС‚С‹ СЂРµР·СЋРјРµ РґР»СЏ hh.ru</h2>
+      <h2>Варианты резюме для hh.ru</h2>
       <p class="hint" style="margin-bottom:.6rem;">
-        РќР° hh.ru РѕС‚РєР»РёРє РѕС‚РїСЂР°РІР»СЏРµС‚СЃСЏ СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёРј СЂРµР·СЋРјРµ, РїРѕСЌС‚РѕРјСѓ СЃРёСЃС‚РµРјР°
-        РіРѕС‚РѕРІРёС‚ РєРѕРЅС‚РµРЅС‚ РґР»СЏ <strong>РїРѕСЃС‚РѕСЏРЅРЅС‹С… РІР°СЂРёР°РЅС‚РѕРІ</strong> РїРѕРґ Р°СЂС…РµС‚РёРїС‹ СЂРѕР»РµР№.
-        Р¤Р°РєС‚С‹ Р±РµСЂСѓС‚СЃСЏ С‚РѕР»СЊРєРѕ РёР· РєР°РЅРѕРЅРёС‡РµСЃРєРѕРіРѕ СЂРµР·СЋРјРµ вЂ” РЅРёС‡РµРіРѕ РЅРµ РІС‹РґСѓРјС‹РІР°РµС‚СЃСЏ,
-        РјРµРЅСЏСЋС‚СЃСЏ Р°РєС†РµРЅС‚С‹ Рё С„РѕСЂРјСѓР»РёСЂРѕРІРєРё. Р•СЃР»Рё РІ <code>data/resume/published/</code>
-        Р»РµР¶РёС‚ РІС‹РіСЂСѓР·РєР° РѕРїСѓР±Р»РёРєРѕРІР°РЅРЅРѕРіРѕ СЂРµР·СЋРјРµ, РіРµРЅРµСЂР°С‚РѕСЂ СЂР°Р±РѕС‚Р°РµС‚ РєР°Рє
-        <strong>СЂРµРґР°РєС‚РѕСЂ hh-РІРµСЂСЃРёРё</strong>: СЃРѕС…СЂР°РЅСЏРµС‚ РµС‘ СЃС‚СЂСѓРєС‚СѓСЂСѓ Рё РїСЂРµРґР»Р°РіР°РµС‚
-        С‚РѕС‡РµС‡РЅС‹Рµ СѓР»СѓС‡С€РµРЅРёСЏ, РєРѕС‚РѕСЂС‹Рµ Р»РµРіРєРѕ РїРµСЂРµРЅРµСЃС‚Рё РЅР° hh РїРѕСЃС‚СЂРѕС‡РЅРѕ.
+        На hh.ru отклик отправляется уже существующим резюме, поэтому система
+        готовит контент для <strong>постоянных вариантов</strong> под архетипы ролей.
+        Факты берутся только из канонического резюме — ничего не выдумывается,
+        меняются акценты и формулировки. Если в <code>data/resume/published/</code>
+        лежит выгрузка опубликованного резюме, генератор работает как
+        <strong>редактор hh-версии</strong>: сохраняет её структуру и предлагает
+        точечные улучшения, которые легко перенести на hh построчно.
       </p>
       <p class="hint">
-        РљР°РЅРѕРЅРёС‡РµСЃРєРѕРµ СЂРµР·СЋРјРµ: <code>{{ resume_file }}</code>
-        {% if resume_exists %}<span style="color:green;">вЂ” РЅР°Р№РґРµРЅРѕ</span>
-        {% else %}<span style="color:red;">вЂ” РќР• РќРђР™Р”Р•РќРћ, РіРµРЅРµСЂР°С†РёСЏ РЅРµРІРѕР·РјРѕР¶РЅР°</span>{% endif %}
+        Каноническое резюме: <code>{{ resume_file }}</code>
+        {% if resume_exists %}<span style="color:green;">— найдено</span>
+        {% else %}<span style="color:red;">— НЕ НАЙДЕНО, генерация невозможна</span>{% endif %}
       </p>
       <form method="post" action="/variants/generate" id="gen-all-form" style="margin-top:.7rem;">
         <input type="hidden" name="key" value="">
-        <button type="submit" class="btn-submit gen-btn">РЎРіРµРЅРµСЂРёСЂРѕРІР°С‚СЊ РІСЃРµ РІР°СЂРёР°РЅС‚С‹ (3вЂ“5 РјРёРЅСѓС‚)</button>
+        <button type="submit" class="btn-submit gen-btn">Сгенерировать все варианты (3–5 минут)</button>
       </form>
     </div>
 
@@ -56,33 +56,33 @@
         <form method="post" action="/variants/generate" style="margin:0;">
           <input type="hidden" name="key" value="{{ key }}">
           <button type="submit" class="btn-inline gen-btn">
-            {{ 'РџРµСЂРµРіРµРЅРµСЂРёСЂРѕРІР°С‚СЊ' if v else 'РЎРіРµРЅРµСЂРёСЂРѕРІР°С‚СЊ' }}
+            {{ 'Перегенерировать' if v else 'Сгенерировать' }}
           </button>
         </form>
       </div>
 
       {% if v and not v.error %}
-      <p class="hint" style="margin:.3rem 0 .8rem;">РЎРіРµРЅРµСЂРёСЂРѕРІР°РЅРѕ: {{ v.generated_at }}
-        {%- if v.published_at %} В· РЅР° Р±Р°Р·Рµ hh-РІРµСЂСЃРёРё РѕС‚ {{ v.published_at }}
-        {%- elif published_dates.get(key) %} В· <strong style="color:#b45309;">Р±РµР· СѓС‡С‘С‚Р° hh-РІРµСЂСЃРёРё РѕС‚
-          {{ published_dates.get(key) }} вЂ” РїРµСЂРµРіРµРЅРµСЂРёСЂСѓР№С‚Рµ</strong>{% endif %} В·
-        <a href="/output/resume_variants/{{ key }}.md" target="_blank">.md</a> В·
-        <a href="/output/resume_variants/docx/{{ key }}.docx">.docx РґР»СЏ hh</a></p>
+      <p class="hint" style="margin:.3rem 0 .8rem;">Сгенерировано: {{ v.generated_at }}
+        {%- if v.published_at %} · на базе hh-версии от {{ v.published_at }}
+        {%- elif published_dates.get(key) %} · <strong style="color:#b45309;">без учёта hh-версии от
+          {{ published_dates.get(key) }} — перегенерируйте</strong>{% endif %} ·
+        <a href="/output/resume_variants/{{ key }}.md" target="_blank">.md</a> ·
+        <a href="/output/resume_variants/docx/{{ key }}.docx">.docx для hh</a></p>
 
-      <h3 class="variant-h">Р—Р°РіРѕР»РѕРІРѕРє СЂРµР·СЋРјРµ</h3>
+      <h3 class="variant-h">Заголовок резюме</h3>
       <div class="copy-block" data-copy>{{ v.hh_title }}</div>
 
-      <h3 class="variant-h">Рћ СЃРµР±Рµ</h3>
+      <h3 class="variant-h">О себе</h3>
       <div class="copy-block" data-copy>{{ v.about }}</div>
 
-      <h3 class="variant-h">РљР»СЋС‡РµРІС‹Рµ РЅР°РІС‹РєРё</h3>
-      <div class="copy-block" data-copy>{{ v.key_skills | join(' В· ') }}</div>
+      <h3 class="variant-h">Ключевые навыки</h3>
+      <div class="copy-block" data-copy>{{ v.key_skills | join(' · ') }}</div>
 
       <details style="margin-top:.6rem;">
-        <summary class="hint" style="cursor:pointer;">РђРєС†РµРЅС‚С‹ РїРѕ РїРѕР·РёС†РёСЏРј ({{ v.positions | length }})</summary>
+        <summary class="hint" style="cursor:pointer;">Акценты по позициям ({{ v.positions | length }})</summary>
         {% for p in v.positions %}
         <div style="margin:.6rem 0 0 .5rem;">
-          <strong>{{ p.company }}</strong> В· {{ p.period }} вЂ” {{ p.title }}
+          <strong>{{ p.company }}</strong> · {{ p.period }} — {{ p.title }}
           <ul style="margin:.2rem 0 0 1.1rem;">
             {% for b in p.bullets %}<li>{{ b }}</li>{% endfor %}
           </ul>
@@ -91,15 +91,15 @@
       </details>
 
       <details style="margin-top:.4rem;">
-        <summary class="hint" style="cursor:pointer;">Р§С‚Рѕ РёР·РјРµРЅРµРЅРѕ Рё С‡РµСЃС‚РЅС‹Рµ РїСЂРѕР±РµР»С‹</summary>
-        <p style="margin:.4rem 0 0 .5rem;"><strong>РЎРјРµС‰РµРЅРёРµ Р°РєС†РµРЅС‚РѕРІ:</strong> {{ v.what_changed }}</p>
-        <p style="margin:.4rem 0 0 .5rem;"><strong>РџСЂРѕР±РµР»С‹ РїРѕРґ Р°СЂС…РµС‚РёРї:</strong> {{ v.honest_gaps }}</p>
+        <summary class="hint" style="cursor:pointer;">Что изменено и честные пробелы</summary>
+        <p style="margin:.4rem 0 0 .5rem;"><strong>Смещение акцентов:</strong> {{ v.what_changed }}</p>
+        <p style="margin:.4rem 0 0 .5rem;"><strong>Пробелы под архетип:</strong> {{ v.honest_gaps }}</p>
       </details>
 
       {% elif v and v.error %}
       <div class="error-box" style="margin-top:.6rem;">{{ v.error }}</div>
       {% else %}
-      <p class="hint" style="margin-top:.4rem;">Р•С‰С‘ РЅРµ СЃРіРµРЅРµСЂРёСЂРѕРІР°РЅ.</p>
+      <p class="hint" style="margin-top:.4rem;">Ещё не сгенерирован.</p>
       {% endif %}
     </div>
     {% endfor %}
@@ -108,18 +108,18 @@
 </main>
 
 <footer>
-  <div class="container">Vacancy Intelligence Assistant В· Р’Р°СЂРёР°РЅС‚С‹ СЂРµР·СЋРјРµ</div>
+  <div class="container">Vacancy Intelligence Assistant · Варианты резюме</div>
 </footer>
 </div>
 <script>
 document.querySelectorAll('form').forEach(function (f) {
   f.addEventListener('submit', function () {
     var btn = f.querySelector('.gen-btn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Р“РµРЅРµСЂРёСЂСѓСЋвЂ¦ РЅРµ Р·Р°РєСЂС‹РІР°Р№С‚Рµ СЃС‚СЂР°РЅРёС†Сѓ'; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Генерирую… не закрывайте страницу'; }
   });
 });
 document.querySelectorAll('[data-copy]').forEach(function (el) {
-  el.title = 'РќР°Р¶РјРёС‚Рµ, С‡С‚РѕР±С‹ СЃРєРѕРїРёСЂРѕРІР°С‚СЊ';
+  el.title = 'Нажмите, чтобы скопировать';
   el.addEventListener('click', function () {
     navigator.clipboard.writeText(el.textContent.trim()).then(function () {
       el.classList.add('copied');

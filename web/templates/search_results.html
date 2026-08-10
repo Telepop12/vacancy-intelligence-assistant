@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Р РµР·СѓР»СЊС‚Р°С‚С‹ РїРѕРёСЃРєР° вЂ” Vacancy Intelligence Assistant</title>
+  <title>Результаты поиска — Vacancy Intelligence Assistant</title>
   <link rel="stylesheet" href="/static/style.css?v=2">
 </head>
 <body>
@@ -15,7 +15,7 @@
 <header>
   <div class="container">
     <h1>Vacancy Intelligence Assistant</h1>
-    <p class="sub">Career Intelligence Platform В· CIO / CTO / CDTO</p>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
   </div>
 </header>
 
@@ -23,19 +23,19 @@
   <div class="container">
 
     <div class="card">
-      <h2>Р РµР·СѓР»СЊС‚Р°С‚С‹ Р°РІС‚РѕРїРѕРёСЃРєР°</h2>
+      <h2>Результаты автопоиска</h2>
       <p class="hint" style="margin-bottom:.6rem;">
-        РќР°Р№РґРµРЅРѕ РїРѕ Р·Р°РїСЂРѕСЃР°Рј: <strong>{{ result.found_total }}</strong> В·
-        РЅРѕРІС‹С… РѕС†РµРЅРµРЅРѕ: <strong>{{ result.new_count }}</strong>
-        {% if result.skipped_backlog %} В· РѕС‚Р»РѕР¶РµРЅРѕ РґРѕ СЃР»РµРґСѓСЋС‰РµРіРѕ Р·Р°РїСѓСЃРєР°: <strong>{{ result.skipped_backlog }}</strong>{% endif %} В·
-        РІСЃРµРіРѕ РІ Р±Р°Р·Рµ: <strong>{{ result.items | length }}</strong>
+        Найдено по запросам: <strong>{{ result.found_total }}</strong> ·
+        новых оценено: <strong>{{ result.new_count }}</strong>
+        {% if result.skipped_backlog %} · отложено до следующего запуска: <strong>{{ result.skipped_backlog }}</strong>{% endif %} ·
+        всего в базе: <strong>{{ result.items | length }}</strong>
       </p>
 
       {% if result.errors %}
       <div class="error-box">{{ result.errors[0] }}</div>
       {% if result.errors | length > 1 %}
       <details style="margin:.5rem 0 1rem;">
-        <summary class="hint" style="cursor:pointer;">РџРѕРґСЂРѕР±РЅРѕСЃС‚Рё РѕР± РѕС€РёР±РєР°С… ({{ result.errors | length - 1 }})</summary>
+        <summary class="hint" style="cursor:pointer;">Подробности об ошибках ({{ result.errors | length - 1 }})</summary>
         {% for e in result.errors[1:] %}
         <p class="hint" style="margin:.3rem 0 0 .5rem;">{{ e }}</p>
         {% endfor %}
@@ -47,9 +47,9 @@
       <table class="search-table">
         <thead>
           <tr>
-            <th>Р‘Р°Р»Р»</th>
-            <th>Р РµРєРѕРјРµРЅРґР°С†РёСЏ</th>
-            <th>Р’Р°РєР°РЅСЃРёСЏ</th>
+            <th>Балл</th>
+            <th>Рекомендация</th>
+            <th>Вакансия</th>
             <th></th>
           </tr>
         </thead>
@@ -59,9 +59,9 @@
             <td><span class="score-badge {{ score_color(item.score) }}">{{ item.score }}</span></td>
             <td><span class="rec-badge {{ action_color(item.recommendation) }}">{{ item.recommendation }}</span></td>
             <td>
-              <a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.title or ('Р’Р°РєР°РЅСЃРёСЏ ' ~ item.hh_id) }}</a>
+              <a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.title or ('Вакансия ' ~ item.hh_id) }}</a>
               <div class="vac-meta">
-                {{ item.company }}{% if item.area %} В· {{ item.area }}{% endif %}{% if item.salary %} В· {{ item.salary }}{% endif %}{% if item.published_at %} В· {{ item.published_at }}{% endif %}
+                {{ item.company }}{% if item.area %} · {{ item.area }}{% endif %}{% if item.salary %} · {{ item.salary }}{% endif %}{% if item.published_at %} · {{ item.published_at }}{% endif %}
               </div>
               {% if item.key_matches %}
               <div class="hint" style="margin-top:.15rem;">{{ item.key_matches | join(', ') }}</div>
@@ -69,27 +69,27 @@
             </td>
             <td style="white-space:nowrap;">
               <button class="fav-star {{ 'on' if item.hh_id in (favorites | default([])) else '' }}"
-                      data-vid="{{ item.hh_id }}" title="Р’ РёР·Р±СЂР°РЅРЅРѕРµ">в…</button>
-              <a class="btn-inline" href="/analyze/{{ item.hh_id }}">РџРѕР»РЅС‹Р№ Р°РЅР°Р»РёР·</a><br>
-              <a class="btn-inline" href="/package/{{ item.hh_id }}" style="margin-top:.3rem;display:inline-block;">РџР°РєРµС‚ РѕС‚РєР»РёРєР°</a><br>
-              <a class="btn-inline" href="/prep/{{ item.hh_id }}" style="margin-top:.3rem;display:inline-block;">РџРѕРґРіРѕС‚РѕРІРєР°</a>
+                      data-vid="{{ item.hh_id }}" title="В избранное">★</button>
+              <a class="btn-inline" href="/analyze/{{ item.hh_id }}">Полный анализ</a><br>
+              <a class="btn-inline" href="/package/{{ item.hh_id }}" style="margin-top:.3rem;display:inline-block;">Пакет отклика</a><br>
+              <a class="btn-inline" href="/prep/{{ item.hh_id }}" style="margin-top:.3rem;display:inline-block;">Подготовка</a>
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
       {% else %}
-      <p>РџРѕРєР° РЅРёС‡РµРіРѕ РЅРµ РЅР°Р№РґРµРЅРѕ. РџРѕРїСЂРѕР±СѓР№С‚Рµ РёР·РјРµРЅРёС‚СЊ Р·Р°РїСЂРѕСЃС‹.</p>
+      <p>Пока ничего не найдено. Попробуйте изменить запросы.</p>
       {% endif %}
     </div>
 
-    <p style="margin-top:1rem;"><a href="/search">в†ђ РќРѕРІС‹Р№ РїРѕРёСЃРє</a></p>
+    <p style="margin-top:1rem;"><a href="/search">← Новый поиск</a></p>
 
   </div>
 </main>
 
 <footer>
-  <div class="container">Vacancy Intelligence Assistant В· РђРІС‚РѕРїРѕРёСЃРє hh.ru</div>
+  <div class="container">Vacancy Intelligence Assistant · Автопоиск hh.ru</div>
 </footer>
 </div>
 <script>

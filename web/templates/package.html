@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>РџР°РєРµС‚ РѕС‚РєР»РёРєР° вЂ” Vacancy Intelligence Assistant</title>
+  <title>Пакет отклика — Vacancy Intelligence Assistant</title>
   <link rel="stylesheet" href="/static/style.css?v=2">
 </head>
 <body>
@@ -15,7 +15,7 @@
 <header>
   <div class="container">
     <h1>Vacancy Intelligence Assistant</h1>
-    <p class="sub">Career Intelligence Platform В· CIO / CTO / CDTO</p>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
   </div>
 </header>
 
@@ -23,14 +23,14 @@
   <div class="container">
 
     <div class="card">
-      <h2>РџР°РєРµС‚ РѕС‚РєР»РёРєР°</h2>
+      <h2>Пакет отклика</h2>
       <p style="margin:.4rem 0;">
         <strong>{{ pkg.vacancy_title }}</strong>
-        {% if pkg.company %} В· {{ pkg.company }}{% endif %}
-        {% if pkg.vacancy_url %} В· <a href="{{ pkg.vacancy_url }}" target="_blank">РѕС‚РєСЂС‹С‚СЊ РЅР° hh.ru</a>{% endif %}
+        {% if pkg.company %} · {{ pkg.company }}{% endif %}
+        {% if pkg.vacancy_url %} · <a href="{{ pkg.vacancy_url }}" target="_blank">открыть на hh.ru</a>{% endif %}
       </p>
-      <p class="hint">РЎРіРµРЅРµСЂРёСЂРѕРІР°РЅРѕ: {{ pkg.generated_at }}
-        В· <a href="/package/hh/{{ pkg.package_id | replace('hh_','') }}?regenerate=true">РїРµСЂРµРіРµРЅРµСЂРёСЂРѕРІР°С‚СЊ</a></p>
+      <p class="hint">Сгенерировано: {{ pkg.generated_at }}
+        · <a href="/package/hh/{{ pkg.package_id | replace('hh_','') }}?regenerate=true">перегенерировать</a></p>
     </div>
 
     {% if pkg.error %}
@@ -38,66 +38,66 @@
     {% else %}
 
     <div class="card" style="margin-top:1rem;">
-      <h2>РљР°РєРёРј СЂРµР·СЋРјРµ РѕС‚РєР»РёРєР°С‚СЊСЃСЏ</h2>
+      <h2>Каким резюме откликаться</h2>
       <p style="margin:.5rem 0;"><strong>{{ pkg.variant_name }}</strong>
-        {% if pkg.variant_hh_url %} В· <a href="{{ pkg.variant_hh_url }}" target="_blank">РѕС‚РєСЂС‹С‚СЊ СЂРµР·СЋРјРµ РЅР° hh.ru в†’</a>{% endif %}
+        {% if pkg.variant_hh_url %} · <a href="{{ pkg.variant_hh_url }}" target="_blank">открыть резюме на hh.ru →</a>{% endif %}
       </p>
       <p class="hint">{{ pkg.variant_reasoning }}</p>
       {% if not pkg.variant_hh_url %}
       <p class="hint" style="margin-top:.4rem;">
-        РљРѕРЅС‚РµРЅС‚ СЌС‚РѕРіРѕ РІР°СЂРёР°РЅС‚Р° вЂ” РІ СЂР°Р·РґРµР»Рµ <a href="/variants">В«Р’Р°СЂРёР°РЅС‚С‹ СЂРµР·СЋРјРµВ»</a>.
+        Контент этого варианта — в разделе <a href="/variants">«Варианты резюме»</a>.
       </p>
       {% endif %}
     </div>
 
     <div class="card" style="margin-top:1rem;">
-      <h2>РЎРѕРїСЂРѕРІРѕРґРёС‚РµР»СЊРЅРѕРµ РїРёСЃСЊРјРѕ <span class="hint" style="font-weight:normal;">({{ word_count }} СЃР»РѕРІ вЂ” РєР»РёРє РїРѕ С‚РµРєСЃС‚Сѓ РєРѕРїРёСЂСѓРµС‚)</span></h2>
+      <h2>Сопроводительное письмо <span class="hint" style="font-weight:normal;">({{ word_count }} слов — клик по тексту копирует)</span></h2>
       <div class="copy-block" data-copy style="margin-top:.5rem;">{{ pkg.letter }}</div>
     </div>
 
     {% if pkg.screener_qa %}
     <div class="card" style="margin-top:1rem;">
-      <h2>РџСЂРѕРіРЅРѕР· РґРёР°Р»РѕРіР° СЃ РР-СЃРєСЂРёРЅРµСЂРѕРј hh <span class="hint" style="font-weight:normal;">вЂ” СЂРѕР±РѕС‚ СЂР°Р±РѕС‚РѕРґР°С‚РµР»СЏ СЃРїСЂРѕСЃРёС‚ РїРѕСЃР»Рµ РѕС‚РєР»РёРєР°; РєР»РёРє РїРѕ РѕС‚РІРµС‚Сѓ РєРѕРїРёСЂСѓРµС‚</span></h2>
+      <h2>Прогноз диалога с ИИ-скринером hh <span class="hint" style="font-weight:normal;">— робот работодателя спросит после отклика; клик по ответу копирует</span></h2>
       {% for q in pkg.screener_qa %}
       <div style="border-bottom:1px solid var(--border);padding:.7rem 0;">
-        <div style="font-weight:600;">рџ¤– {{ q.question }}</div>
+        <div style="font-weight:600;">🤖 {{ q.question }}</div>
         <div class="copy-block" data-copy style="margin-top:.4rem;">{{ q.answer }}</div>
         {% if q.value_added %}
-        <div class="hint" style="margin-top:.3rem;">в†‘ СЃРІРµСЂС… СЂРµР·СЋРјРµ: {{ q.value_added }}</div>
+        <div class="hint" style="margin-top:.3rem;">↑ сверх резюме: {{ q.value_added }}</div>
         {% endif %}
       </div>
       {% endfor %}
       <p class="hint" style="margin-top:.6rem;">
-        РџСЂРёРЅС†РёРї Р·Р°РіРѕС‚РѕРІРѕРє: РЅРµ РїРµСЂРµСЃРєР°Р· СЃС‚СЂРѕС‡РєРё СЂРµР·СЋРјРµ, Р° РґРѕР±Р°РІР»РµРЅРЅР°СЏ РєРѕРЅРєСЂРµС‚РёРєР° вЂ”
-        СЃРєСЂРёРЅРµСЂ СЃРІРµСЂСЏРµС‚ РѕС‚РІРµС‚ СЃ СЂРµР·СЋРјРµ, Рё РЅРѕРІР°СЏ С„Р°РєС‚СѓСЂР° СЂР°Р±РѕС‚Р°РµС‚ Р»СѓС‡С€Рµ СЃРѕРІРїР°РґРµРЅРёСЏ.
+        Принцип заготовок: не пересказ строчки резюме, а добавленная конкретика —
+        скринер сверяет ответ с резюме, и новая фактура работает лучше совпадения.
       </p>
     </div>
     {% endif %}
 
     <div class="card" style="margin-top:1rem;">
-      <h2>Р§С‚Рѕ Р·РµСЂРєР°Р»РёРј РёР· РІР°РєР°РЅСЃРёРё</h2>
+      <h2>Что зеркалим из вакансии</h2>
       <ul style="margin:.5rem 0 0 1.1rem;">
         {% for h in pkg.hooks %}<li>{{ h }}</li>{% endfor %}
       </ul>
       <p class="hint" style="margin-top:.6rem;">
-        РџСЂРѕРІРµСЂСЊ РєР°Р¶РґС‹Р№ РїСѓРЅРєС‚ РїРµСЂРµРґ РѕС‚РїСЂР°РІРєРѕР№: РїРёСЃСЊРјРѕ СЃС‚СЂРѕРёС‚СЃСЏ С‚РѕР»СЊРєРѕ РЅР° С„Р°РєС‚Р°С…
-        СЂРµР·СЋРјРµ Рё С„Р°РєС‚-Р±Р°Р·С‹, РЅРѕ С„РёРЅР°Р»СЊРЅР°СЏ РѕС‚РІРµС‚СЃС‚РІРµРЅРЅРѕСЃС‚СЊ Р·Р° С„РѕСЂРјСѓР»РёСЂРѕРІРєРё вЂ” С‚РІРѕСЏ.
+        Проверь каждый пункт перед отправкой: письмо строится только на фактах
+        резюме и факт-базы, но финальная ответственность за формулировки — твоя.
       </p>
     </div>
 
     {% endif %}
 
-    <p style="margin-top:1rem;"><a href="/search">в†ђ Рє СЂРµР·СѓР»СЊС‚Р°С‚Р°Рј РїРѕРёСЃРєР°</a></p>
+    <p style="margin-top:1rem;"><a href="/search">← к результатам поиска</a></p>
   </div>
 </main>
 
 <footer>
-  <div class="container">Vacancy Intelligence Assistant В· РџР°РєРµС‚ РѕС‚РєР»РёРєР°</div>
+  <div class="container">Vacancy Intelligence Assistant · Пакет отклика</div>
 </footer>
 </div>
 <script>
 document.querySelectorAll('[data-copy]').forEach(function (el) {
-  el.title = 'РќР°Р¶РјРёС‚Рµ, С‡С‚РѕР±С‹ СЃРєРѕРїРёСЂРѕРІР°С‚СЊ';
+  el.title = 'Нажмите, чтобы скопировать';
   el.addEventListener('click', function () {
     navigator.clipboard.writeText(el.textContent.trim()).then(function () {
       el.classList.add('copied');

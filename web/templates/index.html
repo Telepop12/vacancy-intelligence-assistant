@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
@@ -13,12 +13,12 @@
     <div class="home-header-inner">
       <div>
         <h1>Vacancy Intelligence Assistant</h1>
-        <p class="sub">Career Intelligence Platform РґР»СЏ CIO / CTO / CDTO</p>
+        <p class="sub">Career Intelligence Platform для CIO / CTO / CDTO</p>
       </div>
       <nav class="home-nav">
-        <a href="/" class="home-nav-item active">рџ“Љ РђРЅР°Р»РёР· РІР°РєР°РЅСЃРёР№</a>
-        <a href="/resume" class="home-nav-item">рџ“„ Resume Intelligence</a>
-        <a href="/match" class="home-nav-item">рџЋЇ Career Match</a>
+        <a href="/" class="home-nav-item active">📊 Анализ вакансий</a>
+        <a href="/resume" class="home-nav-item">📄 Resume Intelligence</a>
+        <a href="/match" class="home-nav-item">🎯 Career Match</a>
       </nav>
     </div>
   </div>
@@ -34,57 +34,57 @@
     <!-- Feature cards -->
     <div class="home-features">
       <div class="home-feature-card active-feature">
-        <div class="hf-icon">рџ“Љ</div>
-        <div class="hf-title">РђРЅР°Р»РёР· РІР°РєР°РЅСЃРёРё</div>
+        <div class="hf-icon">📊</div>
+        <div class="hf-title">Анализ вакансии</div>
         <div class="hf-desc">Keyword score + Decision Intelligence + Evolutionary Potential</div>
       </div>
       <a href="/resume" class="home-feature-card home-feature-link">
-        <div class="hf-icon">рџ“„</div>
+        <div class="hf-icon">📄</div>
         <div class="hf-title">Resume Intelligence</div>
-        <div class="hf-desc">Executive profile В· AI signals В· Trajectory В· Framing analysis</div>
+        <div class="hf-desc">Executive profile · AI signals · Trajectory · Framing analysis</div>
       </a>
       <a href="/match" class="home-feature-card home-feature-link">
-        <div class="hf-icon">рџЋЇ</div>
+        <div class="hf-icon">🎯</div>
         <div class="hf-title">Career Match</div>
-        <div class="hf-desc">РЎРѕРїРѕСЃС‚Р°РІР»РµРЅРёРµ СЂРµР·СЋРјРµ + РІР°РєР°РЅСЃРёРё В· Full career analysis В· Sonnet</div>
+        <div class="hf-desc">Сопоставление резюме + вакансии · Full career analysis · Sonnet</div>
       </a>
     </div>
 
     <!-- Vacancy analysis form -->
     <div class="card">
       <h2 style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:1rem;">
-        РђРЅР°Р»РёР· РІР°РєР°РЅСЃРёРё
+        Анализ вакансии
       </h2>
       <form method="post" action="/analyze" enctype="multipart/form-data">
         <input type="hidden" name="source_type" value="text">
 
         <div class="field">
-          <label for="vacancy">РўРµРєСЃС‚ РІР°РєР°РЅСЃРёРё</label>
+          <label for="vacancy">Текст вакансии</label>
           <textarea id="vacancy" name="vacancy_text" rows="14"
-            placeholder="Р’СЃС‚Р°РІСЊС‚Рµ РїРѕР»РЅС‹Р№ С‚РµРєСЃС‚ РІР°РєР°РЅСЃРёРё вЂ” РЅР°Р·РІР°РЅРёРµ РїРѕР·РёС†РёРё, Р·Р°РґР°С‡Рё, С‚СЂРµР±РѕРІР°РЅРёСЏ, СѓСЃР»РѕРІРёСЏвЂ¦">{{ prefill or "" }}</textarea>
+            placeholder="Вставьте полный текст вакансии — название позиции, задачи, требования, условия…">{{ prefill or "" }}</textarea>
         </div>
 
         <details class="intake-options">
-          <summary class="intake-options-toggle">Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹</summary>
+          <summary class="intake-options-toggle">Дополнительные параметры</summary>
           <div class="intake-options-body">
             <div class="row-2col intake-row">
               <div class="field">
-                <label for="vacancy_file">Р—Р°РіСЂСѓР·РёС‚СЊ С„Р°Р№Р» <span class="hint-inline">.txt В· .md В· .json</span></label>
+                <label for="vacancy_file">Загрузить файл <span class="hint-inline">.txt · .md · .json</span></label>
                 <input type="file" id="vacancy_file" name="vacancy_file"
                        accept=".txt,.md,.json" class="file-input">
-                <p class="hint">Р•СЃР»Рё Р·Р°РіСЂСѓР¶РµРЅ С„Р°Р№Р» вЂ” С‚РµРєСЃС‚ РІС‹С€Рµ РёРіРЅРѕСЂРёСЂСѓРµС‚СЃСЏ</p>
+                <p class="hint">Если загружен файл — текст выше игнорируется</p>
               </div>
               <div class="field">
-                <label for="vacancy_url">URL РІР°РєР°РЅСЃРёРё <span class="hint-inline">stub</span></label>
+                <label for="vacancy_url">URL вакансии <span class="hint-inline">stub</span></label>
                 <input type="url" id="vacancy_url" name="vacancy_url"
-                       placeholder="https://hh.ru/vacancy/вЂ¦" class="url-input">
-                <p class="hint">РџР°СЂСЃРёРЅРі URL вЂ” РІ СЂР°Р·СЂР°Р±РѕС‚РєРµ.</p>
+                       placeholder="https://hh.ru/vacancy/…" class="url-input">
+                <p class="hint">Парсинг URL — в разработке.</p>
               </div>
             </div>
             <div class="field">
-              <label>Р¤РѕСЂРјР°С‚ С‚РµРєСЃС‚Р°</label>
+              <label>Формат текста</label>
               <div class="source-type-group">
-                <label class="radio-option"><input type="radio" name="source_type" value="text" checked> РћР±С‹С‡РЅС‹Р№ С‚РµРєСЃС‚</label>
+                <label class="radio-option"><input type="radio" name="source_type" value="text" checked> Обычный текст</label>
                 <label class="radio-option"><input type="radio" name="source_type" value="html"> HTML</label>
                 <label class="radio-option"><input type="radio" name="source_type" value="json"> JSON</label>
               </div>
@@ -92,17 +92,17 @@
           </div>
         </details>
 
-        <button type="submit" class="btn-submit">РџСЂРѕР°РЅР°Р»РёР·РёСЂРѕРІР°С‚СЊ РІР°РєР°РЅСЃРёСЋ</button>
+        <button type="submit" class="btn-submit">Проанализировать вакансию</button>
       </form>
     </div>
 
-    <p class="hint" style="margin-top:.5rem;">РџСЂРѕС„РёР»СЊ РєР°РЅРґРёРґР°С‚Р°: <strong>{{ profile_name }}</strong></p>
+    <p class="hint" style="margin-top:.5rem;">Профиль кандидата: <strong>{{ profile_name }}</strong></p>
 
   </div>
 </main>
 
 <footer>
-  <div class="container">Vacancy Intelligence Assistant В· Career Intelligence Platform</div>
+  <div class="container">Vacancy Intelligence Assistant · Career Intelligence Platform</div>
 </footer>
 
 </body>

@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>РџРѕРёСЃРє hh.ru вЂ” Vacancy Intelligence Assistant</title>
+  <title>Поиск hh.ru — Vacancy Intelligence Assistant</title>
   <link rel="stylesheet" href="/static/style.css?v=2">
 </head>
 <body>
@@ -15,7 +15,7 @@
 <header>
   <div class="container">
     <h1>Vacancy Intelligence Assistant</h1>
-    <p class="sub">Career Intelligence Platform В· CIO / CTO / CDTO</p>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
   </div>
 </header>
 
@@ -27,60 +27,60 @@
     {% endif %}
 
     <div class="card">
-      <h2>РђРІС‚РѕРїРѕРёСЃРє РІР°РєР°РЅСЃРёР№ РЅР° hh.ru</h2>
+      <h2>Автопоиск вакансий на hh.ru</h2>
       <p class="hint" style="margin-bottom:1rem;">
-        РЎРёСЃС‚РµРјР° РЅР°Р№РґС‘С‚ РІР°РєР°РЅСЃРёРё РїРѕ Р·Р°РїСЂРѕСЃР°Рј РЅРёР¶Рµ, Р·Р°РіСЂСѓР·РёС‚ РїРѕР»РЅС‹Рµ РѕРїРёСЃР°РЅРёСЏ РЅРѕРІС‹С…
-        Рё РѕС†РµРЅРёС‚ РєР°Р¶РґСѓСЋ РїРѕ РїСЂРѕС„РёР»СЋ РєР°РЅРґРёРґР°С‚Р°. Р—Р°РіСЂСѓР·РєР° РёРґС‘С‚ СЃ РїР°СѓР·Р°РјРё, С‡С‚РѕР±С‹
-        hh.ru РЅРµ РїСЂРёРЅСЏР» РµС‘ Р·Р° Р°С‚Р°РєСѓ СЂРѕР±РѕС‚Р° вЂ” Р·Р°РїСѓСЃРє Р·Р°РЅРёРјР°РµС‚ 1вЂ“2 РјРёРЅСѓС‚С‹,
-        РЅРµ Р·Р°РєСЂС‹РІР°Р№С‚Рµ СЃС‚СЂР°РЅРёС†Сѓ.
+        Система найдёт вакансии по запросам ниже, загрузит полные описания новых
+        и оценит каждую по профилю кандидата. Загрузка идёт с паузами, чтобы
+        hh.ru не принял её за атаку робота — запуск занимает 1–2 минуты,
+        не закрывайте страницу.
       </p>
       <form method="post" action="/search/run" id="search-form">
         <div class="field">
-          <label for="queries">РџРѕРёСЃРєРѕРІС‹Рµ Р·Р°РїСЂРѕСЃС‹ <span class="hint-inline">РїРѕ РѕРґРЅРѕРјСѓ РІ СЃС‚СЂРѕРєРµ В· РёС‰СѓС‚СЃСЏ РІ РЅР°Р·РІР°РЅРёРё РІР°РєР°РЅСЃРёРё</span></label>
+          <label for="queries">Поисковые запросы <span class="hint-inline">по одному в строке · ищутся в названии вакансии</span></label>
           <textarea id="queries" name="queries" rows="7">{{ queries }}</textarea>
         </div>
         <div class="field">
           <label class="radio-option" style="display:inline-flex;align-items:center;gap:.4rem;">
             <input type="checkbox" name="rescan" value="1">
-            РџРµСЂРµРѕС†РµРЅРёС‚СЊ РІСЃРµ РЅР°Р№РґРµРЅРЅС‹Рµ (РёРіРЅРѕСЂРёСЂРѕРІР°С‚СЊ РёСЃС‚РѕСЂРёСЋ Р·Р°РїСѓСЃРєРѕРІ)
+            Переоценить все найденные (игнорировать историю запусков)
           </label>
         </div>
-        <button type="submit" class="btn-submit" id="search-btn">РќР°Р№С‚Рё Рё РѕС†РµРЅРёС‚СЊ</button>
+        <button type="submit" class="btn-submit" id="search-btn">Найти и оценить</button>
       </form>
       <p class="hint" style="margin-top:.7rem;">
-        Р РµРіРёРѕРЅ Рё Р»РёРјРёС‚С‹ РЅР°СЃС‚СЂР°РёРІР°СЋС‚СЃСЏ РІ <code>config/hh_search.yaml</code>.
+        Регион и лимиты настраиваются в <code>config/hh_search.yaml</code>.
       </p>
     </div>
 
     <div class="card" style="margin-top:1rem;">
-      <h2>Р”РѕР±Р°РІРёС‚СЊ РІР°РєР°РЅСЃРёСЋ РІСЂСѓС‡РЅСѓСЋ</h2>
+      <h2>Добавить вакансию вручную</h2>
       <p class="hint" style="margin-bottom:1rem;">
-        Р”Р»СЏ РІР°РєР°РЅСЃРёР№, РєРѕС‚РѕСЂС‹Рµ РЅРµ РїР°СЂСЃСЏС‚СЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё (Р°РЅС‚Рё-Р±РѕС‚ hh, Р°СЂС…РёРІ,
-        РґСЂСѓРіРёРµ РїР»РѕС‰Р°РґРєРё): РІСЃС‚Р°РІСЊС‚Рµ СЃСЃС‹Р»РєСѓ вЂ” СЃРёСЃС‚РµРјР° РїРѕРїСЂРѕР±СѓРµС‚ Р·Р°РіСЂСѓР·РёС‚СЊ СЃР°РјР°;
-        РЅРµ РїРѕР»СѓС‡РёС‚СЃСЏ РёР»Рё РїР»РѕС‰Р°РґРєР° РґСЂСѓРіР°СЏ вЂ” РІСЃС‚Р°РІСЊС‚Рµ С‚РµРєСЃС‚ РѕРїРёСЃР°РЅРёСЏ. Р’Р°РєР°РЅСЃРёСЏ
-        РїРѕРїР°РґС‘С‚ РІ РѕР±С‰РёР№ РєРѕРЅРІРµР№РµСЂ: РѕС†РµРЅРєР° + РїРѕР»РЅС‹Р№ Р°РЅР°Р»РёР·, РїР°РєРµС‚ РѕС‚РєР»РёРєР°,
-        РїРѕРґРіРѕС‚РѕРІРєР° Рє РёРЅС‚РµСЂРІСЊСЋ.
+        Для вакансий, которые не парсятся автоматически (анти-бот hh, архив,
+        другие площадки): вставьте ссылку — система попробует загрузить сама;
+        не получится или площадка другая — вставьте текст описания. Вакансия
+        попадёт в общий конвейер: оценка + полный анализ, пакет отклика,
+        подготовка к интервью.
       </p>
       <form method="post" action="/vacancy/add" id="add-form">
         <div class="field">
-          <label for="vac_url">РЎСЃС‹Р»РєР° РЅР° РІР°РєР°РЅСЃРёСЋ <span class="hint-inline">РЅРµРѕР±СЏР·Р°С‚РµР»СЊРЅРѕ, РµСЃР»Рё РІСЃС‚Р°РІР»РµРЅ С‚РµРєСЃС‚</span></label>
-          <input type="text" id="vac_url" name="vac_url" placeholder="https://hh.ru/vacancy/вЂ¦ РёР»Рё РґСЂСѓРіР°СЏ РїР»РѕС‰Р°РґРєР°">
+          <label for="vac_url">Ссылка на вакансию <span class="hint-inline">необязательно, если вставлен текст</span></label>
+          <input type="text" id="vac_url" name="vac_url" placeholder="https://hh.ru/vacancy/… или другая площадка">
         </div>
         <div class="field" style="display:flex;gap:.8rem;flex-wrap:wrap;">
           <span style="flex:1;min-width:200px;">
-            <label for="vac_title">РќР°Р·РІР°РЅРёРµ <span class="hint-inline">РЅРµРѕР±СЏР·Р°С‚РµР»СЊРЅРѕ</span></label>
-            <input type="text" id="vac_title" name="vac_title" placeholder="Р”РёСЂРµРєС‚РѕСЂ РїРѕ РРў" style="width:100%;">
+            <label for="vac_title">Название <span class="hint-inline">необязательно</span></label>
+            <input type="text" id="vac_title" name="vac_title" placeholder="Директор по ИТ" style="width:100%;">
           </span>
           <span style="flex:1;min-width:200px;">
-            <label for="vac_company">РљРѕРјРїР°РЅРёСЏ <span class="hint-inline">РЅРµРѕР±СЏР·Р°С‚РµР»СЊРЅРѕ</span></label>
-            <input type="text" id="vac_company" name="vac_company" placeholder="РћРћРћ вЂ¦" style="width:100%;">
+            <label for="vac_company">Компания <span class="hint-inline">необязательно</span></label>
+            <input type="text" id="vac_company" name="vac_company" placeholder="ООО …" style="width:100%;">
           </span>
         </div>
         <div class="field">
-          <label for="vac_text">РўРµРєСЃС‚ РІР°РєР°РЅСЃРёРё <span class="hint-inline">РІСЃС‚Р°РІСЊС‚Рµ РѕРїРёСЃР°РЅРёРµ С†РµР»РёРєРѕРј, РµСЃР»Рё СЃСЃС‹Р»РєР° РЅРµ С‡РёС‚Р°РµС‚СЃСЏ</span></label>
-          <textarea id="vac_text" name="vac_text" rows="6" placeholder="РћР±СЏР·Р°РЅРЅРѕСЃС‚РёвЂ¦ РўСЂРµР±РѕРІР°РЅРёСЏвЂ¦ РЈСЃР»РѕРІРёСЏвЂ¦"></textarea>
+          <label for="vac_text">Текст вакансии <span class="hint-inline">вставьте описание целиком, если ссылка не читается</span></label>
+          <textarea id="vac_text" name="vac_text" rows="6" placeholder="Обязанности… Требования… Условия…"></textarea>
         </div>
-        <button type="submit" class="btn-submit" id="add-btn">Р”РѕР±Р°РІРёС‚СЊ Рё РѕС†РµРЅРёС‚СЊ</button>
+        <button type="submit" class="btn-submit" id="add-btn">Добавить и оценить</button>
       </form>
     </div>
 
@@ -88,14 +88,14 @@
 </main>
 
 <footer>
-  <div class="container">Vacancy Intelligence Assistant В· РђРІС‚РѕРїРѕРёСЃРє hh.ru</div>
+  <div class="container">Vacancy Intelligence Assistant · Автопоиск hh.ru</div>
 </footer>
 </div>
 <script>
 document.getElementById('search-form').addEventListener('submit', function () {
   var btn = document.getElementById('search-btn');
   btn.disabled = true;
-  btn.textContent = 'РС‰Сѓ Рё РѕС†РµРЅРёРІР°СЋвЂ¦ СЌС‚Рѕ РјРѕР¶РµС‚ Р·Р°РЅСЏС‚СЊ 1вЂ“2 РјРёРЅСѓС‚С‹';
+  btn.textContent = 'Ищу и оцениваю… это может занять 1–2 минуты';
 });
 </script>
 </body>

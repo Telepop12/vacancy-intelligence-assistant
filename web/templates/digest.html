@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>РќРѕРІРѕРµ вЂ” Vacancy Intelligence Assistant</title>
+  <title>Новое — Vacancy Intelligence Assistant</title>
   <link rel="stylesheet" href="/static/style.css?v=2">
 </head>
 <body>
@@ -15,7 +15,7 @@
 <header>
   <div class="container">
     <h1>Vacancy Intelligence Assistant</h1>
-    <p class="sub">Career Intelligence Platform В· CIO / CTO / CDTO</p>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
   </div>
 </header>
 
@@ -23,56 +23,56 @@
   <div class="container">
 
     <div class="card">
-      <h2>РњРѕРЅРёС‚РѕСЂРёРЅРі РЅРѕРІС‹С… РІР°РєР°РЅСЃРёР№</h2>
+      <h2>Мониторинг новых вакансий</h2>
       <p class="hint" style="margin:.4rem 0 .8rem;">
-        РљР°Р¶РґС‹Рµ {{ cfg.interval_hours }} С‡ СЃРёСЃС‚РµРјР° РёС‰РµС‚ РЅРѕРІС‹Рµ РІР°РєР°РЅСЃРёРё; РІСЃС‘ СЃ Р±Р°Р»Р»РѕРј
-        {{ cfg.score_threshold }}+ РїРѕРїР°РґР°РµС‚ СЃСЋРґР°, РґР»СЏ С‚РѕРїРѕРІС‹С… СЃСЂР°Р·Сѓ РіРѕС‚РѕРІРёС‚СЃСЏ РїР°РєРµС‚ РѕС‚РєР»РёРєР°.
-        РќР°СЃС‚СЂРѕР№РєРё вЂ” <code>config/monitor.yaml</code>.
+        Каждые {{ cfg.interval_hours }} ч система ищет новые вакансии; всё с баллом
+        {{ cfg.score_threshold }}+ попадает сюда, для топовых сразу готовится пакет отклика.
+        Настройки — <code>config/monitor.yaml</code>.
       </p>
 
       {% if tg_status == 'ready' %}
-      <p class="hint">рџ“± Telegram-Р°Р»РµСЂС‚С‹: <span style="color:green;">РїРѕРґРєР»СЋС‡РµРЅС‹</span></p>
+      <p class="hint">📱 Telegram-алерты: <span style="color:green;">подключены</span></p>
       {% elif tg_status == 'waiting_chat' %}
-      <p class="hint">рџ“± Telegram: С‚РѕРєРµРЅ РЅР°Р№РґРµРЅ вЂ” <strong>РЅР°РїРёС€РёС‚Рµ РІР°С€РµРјСѓ Р±РѕС‚Сѓ Р»СЋР±РѕРµ СЃРѕРѕР±С‰РµРЅРёРµ</strong>, С‡С‚РѕР±С‹ РѕРЅ СѓР·РЅР°Р» РІР°С€ С‡Р°С‚ (РїРѕСЃР»Рµ СЌС‚РѕРіРѕ Р°Р»РµСЂС‚С‹ Р·Р°СЂР°Р±РѕС‚Р°СЋС‚).</p>
+      <p class="hint">📱 Telegram: токен найден — <strong>напишите вашему боту любое сообщение</strong>, чтобы он узнал ваш чат (после этого алерты заработают).</p>
       {% else %}
-      <p class="hint">рџ“± Telegram-Р°Р»РµСЂС‚С‹ РІС‹РєР»СЋС‡РµРЅС‹. Р§С‚РѕР±С‹ РІРєР»СЋС‡РёС‚СЊ: @BotFather в†’ /newbot в†’ С‚РѕРєРµРЅ РІ <code>.env</code> СЃС‚СЂРѕРєРѕР№ <code>TG_BOT_TOKEN=вЂ¦</code> в†’ РЅР°РїРёСЃР°С‚СЊ Р±РѕС‚Сѓ Р»СЋР±РѕРµ СЃРѕРѕР±С‰РµРЅРёРµ.</p>
+      <p class="hint">📱 Telegram-алерты выключены. Чтобы включить: @BotFather → /newbot → токен в <code>.env</code> строкой <code>TG_BOT_TOKEN=…</code> → написать боту любое сообщение.</p>
       {% endif %}
 
       <form method="post" action="/monitor/run" id="run-form" style="margin-top:.6rem;">
-        <button type="submit" class="btn-submit" id="run-btn">Р—Р°РїСѓСЃС‚РёС‚СЊ С†РёРєР» СЃРµР№С‡Р°СЃ</button>
+        <button type="submit" class="btn-submit" id="run-btn">Запустить цикл сейчас</button>
       </form>
 
       {% if run_result %}
       <p class="hint" style="margin-top:.6rem;">
-        Р¦РёРєР» {{ run_result.started_at }}: РІ РІС‹РґР°С‡Рµ hh {{ run_result.found_total }} РІР°РєР°РЅСЃРёР№,
-        РёР· РЅРёС… РЅРѕРІС‹С… {{ run_result.new_total }}
-        {%- if run_result.new_total == 0 %} (РІСЃРµ СѓР¶Рµ РѕС†РµРЅРµРЅС‹ СЂР°РЅРµРµ вЂ” РЅРѕРІС‹С… РїСѓР±Р»РёРєР°С†РёР№ РЅРµ Р±С‹Р»Рѕ){% endif %},
-        СЃРёР»СЊРЅС‹С… {{ run_result.new_strong }}, РїР°РєРµС‚РѕРІ СЃРѕР±СЂР°РЅРѕ {{ run_result.packages_built }},
-        Р°Р»РµСЂС‚ {{ 'РѕС‚РїСЂР°РІР»РµРЅ' if run_result.notified else 'РЅРµ РѕС‚РїСЂР°РІР»СЏР»СЃСЏ' }}.
-        {% for e in run_result.errors %}<br>вљ  {{ e }}{% endfor %}
+        Цикл {{ run_result.started_at }}: в выдаче hh {{ run_result.found_total }} вакансий,
+        из них новых {{ run_result.new_total }}
+        {%- if run_result.new_total == 0 %} (все уже оценены ранее — новых публикаций не было){% endif %},
+        сильных {{ run_result.new_strong }}, пакетов собрано {{ run_result.packages_built }},
+        алерт {{ 'отправлен' if run_result.notified else 'не отправлялся' }}.
+        {% for e in run_result.errors %}<br>⚠ {{ e }}{% endfor %}
       </p>
       {% endif %}
     </div>
 
     <div class="card" style="margin-top:1rem;">
-      <h2>РќР°Р№РґРµРЅРѕ РјРѕРЅРёС‚РѕСЂРёРЅРіРѕРј <span class="hint" style="font-weight:normal;">({{ entries | length }})</span></h2>
+      <h2>Найдено мониторингом <span class="hint" style="font-weight:normal;">({{ entries | length }})</span></h2>
       {% if entries %}
       <table class="results-table" style="width:100%;">
-        <thead><tr><th>Р‘Р°Р»Р»</th><th>Р’Р°РєР°РЅСЃРёСЏ</th><th>РќР°Р№РґРµРЅРѕ</th><th></th></tr></thead>
+        <thead><tr><th>Балл</th><th>Вакансия</th><th>Найдено</th><th></th></tr></thead>
         <tbody>
           {% for e in entries %}
           <tr>
             <td><span class="score-badge {{ score_color(e.score) }}">{{ e.score }}</span></td>
             <td>
               <a href="/vacancy/{{ e.vid }}"><strong>{{ e.title }}</strong></a>
-              <div class="hint">{{ e.company }} В· {{ e.recommendation }}</div>
+              <div class="hint">{{ e.company }} · {{ e.recommendation }}</div>
             </td>
             <td class="hint" style="white-space:nowrap;">{{ e.found_at[:16] | replace('T', ' ') }}</td>
             <td style="white-space:nowrap;">
               {% if e.package_ready %}
-              <a class="btn-inline" href="/package/{{ e.vid }}">рџ“Ё РџР°РєРµС‚ РіРѕС‚РѕРІ</a>
+              <a class="btn-inline" href="/package/{{ e.vid }}">📨 Пакет готов</a>
               {% else %}
-              <a class="btn-inline" href="/package/{{ e.vid }}">РЎРѕР±СЂР°С‚СЊ РїР°РєРµС‚</a>
+              <a class="btn-inline" href="/package/{{ e.vid }}">Собрать пакет</a>
               {% endif %}
             </td>
           </tr>
@@ -80,7 +80,7 @@
         </tbody>
       </table>
       {% else %}
-      <p class="hint">РџРѕРєР° РїСѓСЃС‚Рѕ вЂ” РґР°Р№РґР¶РµСЃС‚ РЅР°РїРѕР»РЅРёС‚СЃСЏ РїРѕСЃР»Рµ РїРµСЂРІРѕРіРѕ С†РёРєР»Р° СЃ РЅР°С…РѕРґРєР°РјРё.</p>
+      <p class="hint">Пока пусто — дайджест наполнится после первого цикла с находками.</p>
       {% endif %}
     </div>
 
@@ -88,14 +88,14 @@
 </main>
 
 <footer>
-  <div class="container">Vacancy Intelligence Assistant В· РњРѕРЅРёС‚РѕСЂРёРЅРі</div>
+  <div class="container">Vacancy Intelligence Assistant · Мониторинг</div>
 </footer>
 </div>
 <script>
 document.getElementById('run-form').addEventListener('submit', function () {
   var b = document.getElementById('run-btn');
   b.disabled = true;
-  b.textContent = 'РС‰Сѓ, РѕС†РµРЅРёРІР°СЋ, СЃРѕР±РёСЂР°СЋ РїР°РєРµС‚С‹вЂ¦ СЌС‚Рѕ Р·Р°Р№РјС‘С‚ РЅРµСЃРєРѕР»СЊРєРѕ РјРёРЅСѓС‚';
+  b.textContent = 'Ищу, оцениваю, собираю пакеты… это займёт несколько минут';
 });
 </script>
 </body>
