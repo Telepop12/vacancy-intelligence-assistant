@@ -34,12 +34,21 @@
     return node;
   }
 
-  // «В УРАЛХИМ (2018–2023) — …» → «УРАЛХИМ · 2018–2023», иначе первые слова
+  // «В УРАЛХИМ (2018–2023) — …» → «УРАЛХИМ · 2018–2023», иначе первые слова.
+  // Обрезка — только по границе слова, без висячей пунктуации на конце.
   function shortLabel(text) {
     const m = text.match(/^В\s+([^(]{2,40})\s*\(([^)]{2,20})\)/);
     if (m) return m[1].trim().replace(/[«»]/g, "") + " · " + m[2].trim();
-    const words = text.split(/\s+/).slice(0, 5).join(" ");
-    return words.length > 44 ? words.slice(0, 42) + "…" : words;
+    const words = text.trim().split(/\s+/);
+    let out = "";
+    for (const w of words) {
+      const next = out ? out + " " + w : w;
+      if (next.length > 42) break;
+      out = next;
+    }
+    if (!out) out = text.slice(0, 40);
+    out = out.replace(/[,;:.(«\-–—]+$/, "");
+    return out.length < text.trim().length ? out + "…" : out;
   }
 
   // перенос подписи узла на строки ≤ 20 символов, максимум 3 строки
@@ -86,13 +95,15 @@
         class: `cg-edge cg-${domain.key}`,
       }, gEdges);
 
-      // листья веером наружу от центра через хаб
+      // листья веером наружу от центра через хаб; при 4+ листьях соседи
+      // чередуются по радиусу («шахматка»), чтобы подписи не наезжали
       const n = domain.items.length;
-      const spread = Math.min(150, 34 * Math.max(n - 1, 1));
+      const spread = Math.min(168, 42 * Math.max(n - 1, 1));
       domain.items.forEach((item, i) => {
         const angle = hubAngles[domain.key] +
           (n === 1 ? 0 : -spread / 2 + (spread / (n - 1)) * i);
-        const [lx, ly] = polar(hx, hy, LEAF_R, angle);
+        const r = LEAF_R - (n > 3 && i % 2 ? 32 : 0);
+        const [lx, ly] = polar(hx, hy, r, angle);
         item._x = lx; item._y = ly;
 
         el("line", {

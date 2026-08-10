@@ -1399,7 +1399,7 @@ details[open] .intake-options-toggle::before { content: "－ "; }
   background: #0f172a; border-left: 1px solid #1e293b;
   overflow-y: auto;
 }
-.cg-panel-body { padding: 1rem 1.1rem; }
+.cg-panel-body { padding: 1rem 1.4rem 1rem 1.1rem; overflow-wrap: break-word; }
 .cg-card-tag {
   display: inline-block; font-size: .7rem; text-transform: uppercase;
   letter-spacing: .07em; color: #94a3b8; border: 1px solid #334155;
