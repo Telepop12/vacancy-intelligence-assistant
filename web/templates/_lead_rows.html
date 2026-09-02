@@ -1,0 +1,126 @@
+{#
+  Единая строка ленты лидов — один формат для hh-рассылок, LinkedIn и карьерных
+  сайтов. Импорт: {% from '_lead_rows.html' import lead_styles, lead_row with context %}
+  Ожидает в контексте: score_color, action_color, favorites.
+#}
+{% macro lead_styles() -%}
+<style>
+  .search-table.compact td { padding: .4rem .55rem; vertical-align: top; }
+  .search-table.compact .vac-meta { margin-top: .1rem; }
+  .src-badge { display: inline-block; font-size: .7rem; line-height: 1.4; padding: .1rem .5rem;
+               border-radius: .7rem; background: #eceff4; color: #334; white-space: nowrap; }
+  .src-hh { background: #fde7e7; color: #9b1c1c; }
+  .src-linkedin { background: #e3efff; color: #0a4d9c; }
+  .src-career { background: #e8f7ec; color: #1b6b3a; }
+  .lr-rec { font-size: .66rem; padding: .05rem .45rem; margin-left: .45rem; vertical-align: middle; }
+  .lr-date { white-space: nowrap; font-size: .85rem; }
+  .lr-act { white-space: nowrap; }
+  .lr-act form { display: inline; }
+  .lr-paste summary { cursor: pointer; }
+  .lr-paste textarea { width: 100%; margin-top: .3rem; }
+  .flt-bar { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; margin: .4rem 0 .8rem; }
+  .flt { border: 1px solid #c9d1e0; background: #fff; border-radius: .7rem; padding: .15rem .7rem;
+         cursor: pointer; font-size: .85rem; }
+  .flt.on { background: #1e40af; color: #fff; border-color: #1e40af; }
+  .flt-bar label { font-size: .85rem; margin-left: .6rem; }
+  tr.lr-hidden { display: none; }
+</style>
+{%- endmacro %}
+
+{% macro lead_row(r) -%}
+<tr data-kind="{{ r.kind }}" data-age="{{ r.age_days }}" data-score="{{ r.score if r.score is not none else -1 }}" data-date="{{ r.date }}">
+  <td>
+    {% if r.score is not none %}<span class="score-badge {{ score_color(r.score) }}">{{ r.score }}</span>
+    {% else %}<span class="hint" title="LinkedIn не парсится автоматически — вставьте текст, и вакансия получит оценку">—</span>{% endif %}
+  </td>
+  <td><span class="src-badge src-{{ r.kind }}">{{ r.source_label }}</span></td>
+  <td>
+    <a href="{{ r.url }}" target="_blank" rel="noopener">{{ r.title }}</a>
+    {% if r.recommendation %}<span class="rec-badge lr-rec {{ action_color(r.recommendation) }}">{{ r.recommendation }}</span>{% endif %}
+    <div class="vac-meta">
+      {{ r.company }}{% if r.area %} · {{ r.area }}{% endif %}{% if r.salary %} · {{ r.salary }}{% endif %}{% if r.resume_variant %} · для {{ r.resume_variant }}{% endif %}{% if r.key_matches %} · <span class="hint">{{ r.key_matches | join(', ') }}</span>{% endif %}
+    </div>
+    {% if r.kind == 'linkedin' %}
+    <details class="lr-paste">
+      <summary class="hint">Вставить текст вакансии</summary>
+      <form method="post" action="/vacancy/add">
+        <input type="hidden" name="vac_url" value="{{ r.url }}">
+        <input type="hidden" name="vac_title" value="{{ r.title }}">
+        <input type="hidden" name="vac_company" value="{{ r.company }}">
+        <textarea name="vac_text" rows="5" placeholder="Полный текст вакансии со страницы LinkedIn…"></textarea>
+        <button type="submit" class="btn-inline" style="margin-top:.3rem;">Добавить в конвейер</button>
+      </form>
+    </details>
+    {% endif %}
+  </td>
+  <td class="lr-date">
+    {{ r.date }}
+    {% if r.times_seen > 1 %}<div class="hint">×{{ r.times_seen }}</div>{% endif %}
+    {% if r.checked_at %}<div class="hint" title="Страница вакансии проверена, заявки принимаются">✓ открыта</div>{% endif %}
+  </td>
+  <td class="lr-act">
+    {% if r.vid %}
+      <button class="fav-star {{ 'on' if r.vid in (favorites | default([])) else '' }}" data-vid="{{ r.vid }}" title="В избранное">★</button>
+      <a class="btn-inline" href="/vacancy/{{ r.vid }}" title="Полный анализ, пакет отклика, подготовка">Карточка</a>
+      <button class="btn-inline dismiss-btn" data-vid="{{ r.vid }}" title="Больше не показывать (вернуть можно в блоке «Пропущенные»)">Пропустить</button>
+    {% else %}
+      <form method="post" action="/radar/lead/{{ r.key }}/hide"><button type="submit" class="btn-inline" title="Скрыть лид">Скрыть</button></form>
+    {% endif %}
+  </td>
+</tr>
+{%- endmacro %}
+
+{% macro lead_scripts() -%}
+<script>
+(function () {
+  var FRESH = {{ fresh_days | default(14) }};
+  var kind = 'all', showOld = false;
+  function apply() {
+    document.querySelectorAll('tr[data-kind]').forEach(function (tr) {
+      var k = tr.dataset.kind, age = parseInt(tr.dataset.age || '0', 10);
+      var hide = (kind !== 'all' && k !== kind) || (k === 'linkedin' && age > FRESH && !showOld);
+      tr.classList.toggle('lr-hidden', hide);
+    });
+  }
+  document.querySelectorAll('.flt[data-kind]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      kind = b.dataset.kind;
+      document.querySelectorAll('.flt[data-kind]').forEach(function (x) { x.classList.toggle('on', x === b); });
+      apply();
+    });
+  });
+  var old = document.getElementById('showOld');
+  if (old) old.addEventListener('change', function () { showOld = old.checked; apply(); });
+  var sort = document.getElementById('sortBy');
+  if (sort) sort.addEventListener('change', function () {
+    var tbody = document.querySelector('table.compact tbody');
+    var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr[data-kind]'));
+    rows.sort(function (a, b) {
+      if (sort.value === 'score') return parseInt(b.dataset.score, 10) - parseInt(a.dataset.score, 10);
+      return b.dataset.date.localeCompare(a.dataset.date);
+    });
+    rows.forEach(function (r) { tbody.appendChild(r); });
+  });
+  document.querySelectorAll('.fav-star').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      fetch('/favorites/toggle/' + btn.dataset.vid, {method: 'POST'})
+        .then(function (r) { return r.json(); })
+        .then(function (d) { btn.classList.toggle('on', d.favorite); });
+    });
+  });
+  document.querySelectorAll('.dismiss-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      fetch('/vacancy/' + btn.dataset.vid + '/dismiss', {method: 'POST'})
+        .then(function () { var tr = btn.closest('tr'); if (tr) tr.remove(); });
+    });
+  });
+  document.querySelectorAll('.undismiss-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      fetch('/vacancy/' + btn.dataset.vid + '/undismiss', {method: 'POST'})
+        .then(function () { location.reload(); });
+    });
+  });
+  apply();
+})();
+</script>
+{%- endmacro %}

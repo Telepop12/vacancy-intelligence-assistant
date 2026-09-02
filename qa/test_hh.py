@@ -280,6 +280,26 @@ def _search_page(*ids):
 
 
 @pytest.mark.no_llm
+def test_search_ids_only_from_serp_cards():
+    """Страница поиска несёт ещё ~30 id из «похожих/рекомендованных» блоков и
+    JSON состояния — в выдачу должны попасть только карточки результатов."""
+    page = (
+        '<html><title>Работа</title>'
+        '<a data-qa="serp-item__title" href="https://hh.ru/vacancy/111111?query=CIO&hhtmFrom=vacancy_search_list">a</a>'
+        '<a href="https://hh.ru/vacancy/222222?hhtmFrom=vacancy_search_list" class="x" data-qa="serp-item__title">b</a>'
+        '<a href="/vacancy/999999">Главный врач (вакансия дня)</a>'
+        '<script>{"similarVacancies":[{"vacancyId":888888,"links":{"desktop":"/vacancy/888888"}}]}</script>'
+        '</html>'
+    )
+    assert hh_api._extract_search_result_ids(page) == ["111111", "222222"]
+    # Разметка без data-qa: ссылки выдачи узнаём по hhtmFrom
+    page2 = '<a href="/vacancy/333333?hhtmFrom=vacancy_search_list">c</a><a href="/vacancy/999999">promo</a>'
+    assert hh_api._extract_search_result_ids(page2) == ["333333"]
+    # Совсем чужая разметка — фолбэк на все id, как раньше
+    assert hh_api._extract_search_result_ids(_search_page("444444", "555555")) == ["444444", "555555"]
+
+
+@pytest.mark.no_llm
 def test_html_search_passes_order_param(monkeypatch):
     monkeypatch.setattr(hh_api, "_token", lambda: "")
     urls = []

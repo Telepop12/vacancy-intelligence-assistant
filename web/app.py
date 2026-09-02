@@ -21,7 +21,7 @@ from fastapi.templating import Jinja2Templates
 
 from agents import hh_api
 from agents.career_match import career_match
-from agents import monitor, vacancy_store
+from agents import mail_radar, monitor, vacancy_store
 from agents.hh_search import (
     get_state_item, load_search_config, register_vacancy,
     remove_from_state, run_search,
@@ -314,6 +314,8 @@ def vacancy_add(
         ))
 
     register_vacancy(_profile, data, vid)
+    # Если вакансию добавили по ссылке из почтового радара — закрываем лид
+    mail_radar.mark_converted_by_url(vac_url, vid)
     return RedirectResponse(url=f"/vacancy/{vid}", status_code=303)
 
 
@@ -376,6 +378,20 @@ async def favorites_toggle(vid: str):
         return {"favorite": False}
     vacancy_store.add_favorite(vid)
     return {"favorite": True}
+
+
+@app.post("/vacancy/{vid}/dismiss")
+async def vacancy_dismiss(vid: str):
+    """«Пропустить»: убрать из лент и таблиц, но оставить в состоянии поиска
+    (иначе автопоиск найдёт и загрузит её снова). Вызывается через fetch."""
+    vacancy_store.dismiss(vid)
+    return {"dismissed": True}
+
+
+@app.post("/vacancy/{vid}/undismiss")
+async def vacancy_undismiss(vid: str):
+    vacancy_store.undismiss(vid)
+    return {"dismissed": False}
 
 
 @app.post("/vacancy/{vid}/delete")
@@ -531,11 +547,115 @@ def search_run(
     result = run_search(_profile, queries=query_list or None, rescan=bool(rescan))
     return templates.TemplateResponse(request, "search_results.html", context={
         "result":       result,
+        "new_ids":      set(result.new_ids),
+        "dismissed":    set(vacancy_store.list_dismissed()),
         "score_color":  _score_color,
         "action_color": _action_color,
         "favorites":    set(vacancy_store.list_favorites()),
         "active_nav":   "search",
     })
+
+
+# ---------------------------------------------------------------------------
+# Mail Radar routes
+# ---------------------------------------------------------------------------
+
+def _radar_ctx(report=None) -> dict:
+    state = mail_radar.load_state()
+    rows = mail_radar.radar_rows()
+    counts = {k: sum(1 for r in rows if r["kind"] == k) for k in ("hh", "linkedin", "career")}
+    counts["linkedin_old"] = sum(
+        1 for r in rows if r["kind"] == "linkedin" and r["age_days"] > mail_radar.FRESH_DAYS
+    )
+    return {
+        "last_run": state.get("last_run", ""),
+        "rows": rows,
+        "counts": counts,
+        "fresh_days": mail_radar.FRESH_DAYS,
+        "li_archive": mail_radar.linkedin_leads(
+            statuses=(mail_radar.STATUS_HIDDEN, mail_radar.STATUS_CONVERTED, mail_radar.STATUS_CLOSED),
+        ),
+        "hh_errors": mail_radar.hh_error_leads(),
+        "dismissed_rows": mail_radar.dismissed_rows(),
+        "favorites": set(vacancy_store.list_favorites()),
+        "score_color": _score_color,
+        "action_color": _action_color,
+        "report": report,
+        "active_nav": "radar",
+    }
+
+
+@app.get("/radar", response_class=HTMLResponse)
+async def radar_page(request: Request):
+    """Почтовый радар: hh-вакансии из рассылок + LinkedIn-лиды."""
+    return templates.TemplateResponse(request, "radar.html", context=_radar_ctx())
+
+
+@app.post("/radar/import")
+async def radar_import(request: Request):
+    """
+    Приём писем из сессии Claude (Gmail MCP недоступен серверу напрямую).
+    Тело: JSON-список [{sender, subject, date, body}, ...] или {"emails": [...]}.
+    """
+    try:
+        payload = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Ожидается JSON-список писем")
+    emails = payload.get("emails") if isinstance(payload, dict) else payload
+    if not isinstance(emails, list):
+        raise HTTPException(status_code=400, detail="Ожидается список писем")
+    report = mail_radar.ingest_emails(emails, _profile)
+    from dataclasses import asdict as _asdict
+    return _asdict(report)
+
+
+@app.post("/radar/lead/{key}/hide")
+async def radar_lead_hide(key: str):
+    if not mail_radar.set_lead_status(key, mail_radar.STATUS_HIDDEN):
+        raise HTTPException(status_code=404, detail="Лид не найден")
+    return RedirectResponse(url="/radar", status_code=303)
+
+
+@app.post("/radar/lead/{key}/restore")
+async def radar_lead_restore(key: str):
+    if not mail_radar.set_lead_status(key, mail_radar.STATUS_NEW):
+        raise HTTPException(status_code=404, detail="Лид не найден")
+    return RedirectResponse(url="/radar", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# Career Watch routes (обходчик карьерных страниц)
+# ---------------------------------------------------------------------------
+
+def _targets_ctx(run_result=None) -> dict:
+    from agents import career_watch
+    state = career_watch.load_state()
+    return {
+        "last_run": state.get("last_run", ""),
+        "companies": career_watch.company_rows(),
+        "rows": [r for r in mail_radar.radar_rows() if r["kind"] == "career"],
+        "fresh_days": mail_radar.FRESH_DAYS,
+        "favorites": set(vacancy_store.list_favorites()),
+        "score_color": _score_color,
+        "action_color": _action_color,
+        "run_result": run_result,
+        "active_nav": "targets",
+    }
+
+
+@app.get("/targets", response_class=HTMLResponse)
+async def targets_page(request: Request):
+    """Таргет-лист компаний: состояние обхода + вакансии с карьерных страниц."""
+    return templates.TemplateResponse(request, "targets.html", context=_targets_ctx())
+
+
+@app.post("/targets/run", response_class=HTMLResponse)
+def targets_run(request: Request, company: str = Form(default="")):
+    """Обойти все компании (или одну) — синхронно, как /search/run."""
+    from agents import career_watch
+    only = [company.strip()] if company.strip() else None
+    result = career_watch.run_watch(_profile, only=only)
+    return templates.TemplateResponse(request, "targets.html", context=_targets_ctx(result))
 
 
 @app.get("/analyze/hh/{hh_id}")

@@ -121,7 +121,49 @@ def remove_favorite(vid: str) -> None:
 def delete_vacancy(vid: str) -> None:
     """Remove a vacancy everywhere: favorites + cached data (state — caller's)."""
     remove_favorite(vid)
+    undismiss(vid)
     _path(vid).unlink(missing_ok=True)
+
+
+# ---------------------------------------------------------------------------
+# Dismissed («Пропустить») — вакансия остаётся в состоянии поиска (иначе
+# автопоиск найдёт и загрузит её заново), но исчезает из лент и таблиц.
+# Отдельный файл, как избранное: переживает пересканы.
+# ---------------------------------------------------------------------------
+
+DISMISSED_PATH = BASE_DIR / "output" / "dismissed.json"
+
+
+def list_dismissed() -> list[str]:
+    if not DISMISSED_PATH.exists():
+        return []
+    try:
+        data = json.loads(DISMISSED_PATH.read_text(encoding="utf-8"))
+        return [str(v) for v in data] if isinstance(data, list) else []
+    except (json.JSONDecodeError, OSError):
+        return []
+
+
+def _save_dismissed(vids: list[str]) -> None:
+    DISMISSED_PATH.parent.mkdir(parents=True, exist_ok=True)
+    DISMISSED_PATH.write_text(json.dumps(vids, ensure_ascii=False), encoding="utf-8")
+
+
+def is_dismissed(vid: str) -> bool:
+    return str(vid) in list_dismissed()
+
+
+def dismiss(vid: str) -> None:
+    vids = list_dismissed()
+    if str(vid) not in vids:
+        vids.append(str(vid))
+        _save_dismissed(vids)
+    remove_favorite(vid)  # пропущенная не может быть избранной
+
+
+def undismiss(vid: str) -> None:
+    vids = [v for v in list_dismissed() if v != str(vid)]
+    _save_dismissed(vids)
 
 
 def manual_vacancy_dict(

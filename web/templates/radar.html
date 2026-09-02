@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Радар — Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css?v=3">
+  {% from '_lead_rows.html' import lead_styles, lead_row, lead_scripts with context %}
+  {{ lead_styles() }}
+</head>
+<body>
+<div class="page-wrapper">
+<aside class="sidebar">
+  {% include '_nav.html' %}
+</aside>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <div class="card">
+      <h2>📡 Радар источников</h2>
+      <p class="hint" style="margin-bottom:.4rem;">
+        Одна лента для всех каналов: рассылки hh и LinkedIn, карьерные сайты таргет-листа.
+        hh и сайты оценены скорингом; LinkedIn не парсится (риск блокировки аккаунта) — откройте по ссылке и вставьте текст, если интересно.
+        {% if last_run %}Последний разбор почты: <strong>{{ last_run.replace('T', ' ') }}</strong>.{% else %}Почта ещё не разбиралась.{% endif %}
+        Письма и проверку актуальности LinkedIn делает Claude в сессии («разбери почту», «проверь LinkedIn-лиды»).
+      </p>
+      {% if report %}
+      <p class="hint">
+        Разобрано писем: <strong>{{ report.emails_parsed }}</strong> из {{ report.emails_total }} ·
+        лидов: <strong>{{ report.leads_found }}</strong> · новых LinkedIn: <strong>{{ report.new_linkedin }}</strong> ·
+        hh затриажено: <strong>{{ report.triaged_hh }}</strong> · дублей: {{ report.duplicates }}
+      </p>
+      {% endif %}
+
+      <div class="flt-bar">
+        <button class="flt on" data-kind="all">Все ({{ rows | length }})</button>
+        <button class="flt" data-kind="hh">hh · рассылка ({{ counts.hh }})</button>
+        <button class="flt" data-kind="linkedin">LinkedIn ({{ counts.linkedin }})</button>
+        <button class="flt" data-kind="career">Сайты компаний ({{ counts.career }})</button>
+        <label><input type="checkbox" id="showOld"> LinkedIn старше {{ fresh_days }} дней ({{ counts.linkedin_old }})</label>
+        <label>Сортировка:
+          <select id="sortBy"><option value="date">по дате</option><option value="score">по баллу</option></select>
+        </label>
+      </div>
+
+      {% if rows %}
+      <table class="search-table compact">
+        <thead>
+          <tr><th>Балл</th><th>Источник</th><th>Вакансия</th><th>Дата</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}{{ lead_row(r) }}{% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="hint">Пока пусто — после разбора почты и обхода сайтов лента наполнится.</p>
+      {% endif %}
+    </div>
+
+    {% if hh_errors or li_archive or dismissed_rows %}
+    <div class="card">
+      <h2>Служебное</h2>
+      {% if dismissed_rows %}
+      <details style="margin-top:.4rem;">
+        <summary class="hint" style="cursor:pointer;">Пропущенные ({{ dismissed_rows | length }}) — не показываются в лентах и поиске</summary>
+        {% for d in dismissed_rows %}
+        <p class="hint" style="margin:.3rem 0 0 .5rem;">
+          <span class="score-badge {{ score_color(d.score) }}" style="font-size:.75em;">{{ d.score }}</span>
+          <a href="{{ d.url }}" target="_blank" rel="noopener">{{ d.title }}</a>{% if d.company %} · {{ d.company }}{% endif %}
+          <button class="btn-inline undismiss-btn" data-vid="{{ d.vid }}">Вернуть</button>
+        </p>
+        {% endfor %}
+      </details>
+      {% endif %}
+      {% if hh_errors %}
+      <details style="margin-top:.4rem;">
+        <summary class="hint" style="cursor:pointer;">Не загрузились с hh.ru ({{ hh_errors | length }}) — повторим при следующем разборе; ссылки живые, можно смотреть руками</summary>
+        {% for lead in hh_errors %}
+        <p class="hint" style="margin:.3rem 0 0 .5rem;">
+          <a href="{{ lead.url }}" target="_blank" rel="noopener">{{ lead.title or lead.ext_id }}</a>
+          {% if lead.company %} · {{ lead.company }}{% endif %}{% if lead.salary %} · {{ lead.salary }}{% endif %} — {{ lead.error }}
+        </p>
+        {% endfor %}
+      </details>
+      {% endif %}
+      {% if li_archive %}
+      <details style="margin-top:.4rem;">
+        <summary class="hint" style="cursor:pointer;">Архив LinkedIn: закрытые, скрытые и добавленные ({{ li_archive | length }})</summary>
+        {% for lead in li_archive %}
+        <p class="hint" style="margin:.3rem 0 0 .5rem;">
+          <a href="{{ lead.url }}" target="_blank" rel="noopener">{{ lead.title or lead.ext_id }}</a>
+          {% if lead.company %} · {{ lead.company }}{% endif %}
+          —
+          {% if lead.status == 'converted' %}добавлена в конвейер{% if lead.vid %} · <a href="/vacancy/{{ lead.vid }}">карточка</a>{% endif %}
+          {% elif lead.status == 'closed' %}{{ 'удалена с LinkedIn' if lead.closed_reason == 'удалена' else 'закрыта на LinkedIn' }}{% if lead.closed_at %} ({{ lead.closed_at[:10] }}){% endif %}
+          {% else %}скрыт{% endif %}
+          {% if lead.status == 'hidden' %}
+          <form method="post" action="/radar/lead/{{ lead.key }}/restore" style="display:inline;">
+            <button type="submit" class="btn-inline">Вернуть</button>
+          </form>
+          {% endif %}
+        </p>
+        {% endfor %}
+      </details>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant · Радар источников</div>
+</footer>
+</div>
+{{ lead_scripts() }}
+</body>
+</html>

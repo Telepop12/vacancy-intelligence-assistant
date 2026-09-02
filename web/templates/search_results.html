@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Результаты поиска — Vacancy Intelligence Assistant</title>
   <link rel="stylesheet" href="/static/style.css?v=3">
+  <style>
+    .search-table.compact td { padding: .4rem .55rem; vertical-align: top; }
+    .lr-rec { font-size: .66rem; padding: .05rem .45rem; margin-left: .45rem; vertical-align: middle; }
+    .new-badge { display: inline-block; font-size: .68rem; padding: .05rem .45rem; border-radius: .6rem;
+                 background: #1d4ed8; color: #fff; margin-left: .4rem; vertical-align: middle; }
+    .lr-act { white-space: nowrap; }
+  </style>
 </head>
 <body>
 <div class="page-wrapper">
@@ -22,13 +29,23 @@
 <main>
   <div class="container">
 
+    {% set visible = result.items | rejectattr('error') | rejectattr('hh_id', 'in', dismissed | default([])) | list %}
+    {% set shown = visible | selectattr('score', 'ge', 10) | list %}
+    {% set junk = visible | selectattr('score', 'lt', 10) | list %}
+    {% set hidden = result.items | rejectattr('error') | selectattr('hh_id', 'in', dismissed | default([])) | list %}
+
     <div class="card">
       <h2>Результаты автопоиска</h2>
       <p class="hint" style="margin-bottom:.6rem;">
         Найдено по запросам: <strong>{{ result.found_total }}</strong> ·
-        новых оценено: <strong>{{ result.new_count }}</strong>
+        новых в этом прогоне: <strong>{{ result.new_count }}</strong>
         {% if result.skipped_backlog %} · отложено до следующего запуска: <strong>{{ result.skipped_backlog }}</strong>{% endif %} ·
         всего в базе: <strong>{{ result.items | length }}</strong>
+        {% if hidden %} · пропущено вами: <strong>{{ hidden | length }}</strong>{% endif %}
+      </p>
+      <p class="hint" style="margin-bottom:.6rem;">
+        Таблица показывает всю базу, а не только новое: бейдж «новая» — вакансия загружена в этом прогоне.
+        «Пропустить» убирает вакансию из таблицы и лент насовсем (вернуть можно ниже).
       </p>
 
       {% if result.errors %}
@@ -43,43 +60,70 @@
       {% endif %}
       {% endif %}
 
-      {% if result.items %}
-      <table class="search-table">
+      {% if shown %}
+      <table class="search-table compact">
         <thead>
           <tr>
             <th>Балл</th>
-            <th>Рекомендация</th>
             <th>Вакансия</th>
+            <th>Дата</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          {% for item in result.items if not item.error %}
-          <tr>
+          {% for item in shown %}
+          <tr data-vid="{{ item.hh_id }}">
             <td><span class="score-badge {{ score_color(item.score) }}">{{ item.score }}</span></td>
-            <td><span class="rec-badge {{ action_color(item.recommendation) }}">{{ item.recommendation }}</span></td>
             <td>
               <a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.title or ('Вакансия ' ~ item.hh_id) }}</a>
+              <span class="rec-badge lr-rec {{ action_color(item.recommendation) }}">{{ item.recommendation }}</span>
+              {% if item.hh_id in (new_ids | default([])) %}<span class="new-badge">новая</span>{% endif %}
               <div class="vac-meta">
-                {{ item.company }}{% if item.area %} · {{ item.area }}{% endif %}{% if item.salary %} · {{ item.salary }}{% endif %}{% if item.published_at %} · {{ item.published_at }}{% endif %}
+                {{ item.company }}{% if item.area %} · {{ item.area }}{% endif %}{% if item.salary %} · {{ item.salary }}{% endif %}{% if item.source %} · {{ 'из рассылки' if item.source == 'mail:hh' else item.source }}{% endif %}{% if item.key_matches %} · <span class="hint">{{ item.key_matches | join(', ') }}</span>{% endif %}
               </div>
-              {% if item.key_matches %}
-              <div class="hint" style="margin-top:.15rem;">{{ item.key_matches | join(', ') }}</div>
-              {% endif %}
             </td>
-            <td style="white-space:nowrap;">
+            <td style="white-space:nowrap;font-size:.85rem;">{{ item.published_at }}</td>
+            <td class="lr-act">
               <button class="fav-star {{ 'on' if item.hh_id in (favorites | default([])) else '' }}"
                       data-vid="{{ item.hh_id }}" title="В избранное">★</button>
-              <a class="btn-inline" href="/analyze/{{ item.hh_id }}">Полный анализ</a><br>
-              <a class="btn-inline" href="/package/{{ item.hh_id }}" style="margin-top:.3rem;display:inline-block;">Пакет отклика</a><br>
-              <a class="btn-inline" href="/prep/{{ item.hh_id }}" style="margin-top:.3rem;display:inline-block;">Подготовка</a>
+              <a class="btn-inline" href="/vacancy/{{ item.hh_id }}" title="Полный анализ, пакет отклика, подготовка">Карточка</a>
+              <button class="btn-inline dismiss-btn" data-vid="{{ item.hh_id }}" title="Больше не показывать">Пропустить</button>
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
-      {% else %}
+      {% elif not visible %}
       <p>Пока ничего не найдено. Попробуйте изменить запросы.</p>
+      {% endif %}
+
+      {% if junk %}
+      <details style="margin-top:.8rem;">
+        <summary class="hint" style="cursor:pointer;">Нерелевантные, балл ниже 10 ({{ junk | length }}) — рекламные блоки hh и случайные совпадения</summary>
+        {% for item in junk %}
+        <p class="hint" style="margin:.3rem 0 0 .5rem;">
+          <span class="score-badge {{ score_color(item.score) }}" style="font-size:.75em;">{{ item.score }}</span>
+          <a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.title or ('Вакансия ' ~ item.hh_id) }}</a>
+          {% if item.company %} · {{ item.company }}{% endif %}
+          · <a class="btn-inline" href="/vacancy/{{ item.hh_id }}">карточка</a>
+          <button class="btn-inline dismiss-btn" data-vid="{{ item.hh_id }}">Пропустить</button>
+        </p>
+        {% endfor %}
+      </details>
+      {% endif %}
+
+      {% if hidden %}
+      <details style="margin-top:.6rem;">
+        <summary class="hint" style="cursor:pointer;">Пропущенные ({{ hidden | length }})</summary>
+        {% for item in hidden %}
+        <p class="hint" style="margin:.3rem 0 0 .5rem;">
+          <span class="score-badge {{ score_color(item.score) }}" style="font-size:.75em;">{{ item.score }}</span>
+          <a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.title or ('Вакансия ' ~ item.hh_id) }}</a>
+          {% if item.company %} · {{ item.company }}{% endif %}
+          <button class="btn-inline undismiss-btn" data-vid="{{ item.hh_id }}">Вернуть</button>
+        </p>
+        {% endfor %}
+      </details>
       {% endif %}
     </div>
 
@@ -98,6 +142,21 @@ document.querySelectorAll('.fav-star').forEach(function (btn) {
     fetch('/favorites/toggle/' + btn.dataset.vid, {method: 'POST'})
       .then(function (r) { return r.json(); })
       .then(function (d) { btn.classList.toggle('on', d.favorite); });
+  });
+});
+document.querySelectorAll('.dismiss-btn').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    fetch('/vacancy/' + btn.dataset.vid + '/dismiss', {method: 'POST'})
+      .then(function () {
+        var row = btn.closest('tr') || btn.closest('p');
+        if (row) row.remove();
+      });
+  });
+});
+document.querySelectorAll('.undismiss-btn').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    fetch('/vacancy/' + btn.dataset.vid + '/undismiss', {method: 'POST'})
+      .then(function () { location.reload(); });
   });
 });
 </script>

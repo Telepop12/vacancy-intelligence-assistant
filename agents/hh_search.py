@@ -59,6 +59,8 @@ class TriageItem:
     key_matches: list[str] = field(default_factory=list)
     triaged_at: str = ""
     error: str = ""
+    source: str = ""          # "" = поиск hh; "mail:hh" / "mail:linkedin" = почтовый радар
+    resume_variant: str = ""  # для каких резюме площадка подобрала вакансию (из темы письма)
 
 
 @dataclass
@@ -68,6 +70,7 @@ class SearchRunResult:
     found_total: int               # ids matched by queries this run
     skipped_backlog: int           # new ids left for the next run (max_new cap)
     errors: list[str] = field(default_factory=list)
+    new_ids: list[str] = field(default_factory=list)  # затриажены именно в этом прогоне
 
 
 def load_search_config() -> dict:
@@ -103,6 +106,8 @@ def make_triage_item(
     data: dict,
     vid: str,
     analyzer: RuleBasedAnalyzer | None = None,
+    source: str = "",
+    resume_variant: str = "",
 ) -> TriageItem:
     """Score one vacancy intake dict into a TriageItem (no LLM)."""
     analyzer = analyzer or RuleBasedAnalyzer()
@@ -121,6 +126,8 @@ def make_triage_item(
         recommendation=analysis.recommendation.value,
         key_matches=analysis.key_matches[:6],
         triaged_at=datetime.now().isoformat(timespec="seconds"),
+        source=source,
+        resume_variant=resume_variant,
     )
 
 
@@ -134,9 +141,17 @@ def get_state_item(vid: str) -> dict | None:
     return _load_state().get(str(vid))
 
 
-def register_vacancy(profile: CandidateProfile, data: dict, vid: str) -> TriageItem:
+def register_vacancy(
+    profile: CandidateProfile,
+    data: dict,
+    vid: str,
+    source: str = "",
+    resume_variant: str = "",
+) -> TriageItem:
     """Triage a single vacancy and add it to the shared search state."""
-    item = make_triage_item(profile, data, vid)
+    item = make_triage_item(
+        profile, data, vid, source=source, resume_variant=resume_variant,
+    )
     state = _load_state()
     state[vid] = asdict(item)
     _save_state(state)
@@ -219,7 +234,12 @@ def run_search(
 
     from agents import vacancy_store
     for vid, data in fetched.items():
-        state[vid] = asdict(make_triage_item(profile, data, vid, analyzer=analyzer))
+        prev = state.get(vid) or {}  # rescan не должен стирать пометку почтового радара
+        state[vid] = asdict(make_triage_item(
+            profile, data, vid, analyzer=analyzer,
+            source=prev.get("source", ""),
+            resume_variant=prev.get("resume_variant", ""),
+        ))
         vacancy_store.save_vacancy(data, vid)  # cache: no repeat hh fetches
 
     _save_state(state)
@@ -232,4 +252,5 @@ def run_search(
         found_total=len(all_ids),
         skipped_backlog=skipped_backlog,
         errors=errors,
+        new_ids=list(fetched.keys()),
     )

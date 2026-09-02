@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Компании — Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css?v=3">
+  {% from '_lead_rows.html' import lead_styles, lead_row, lead_scripts with context %}
+  {{ lead_styles() }}
+</head>
+<body>
+<div class="page-wrapper">
+<aside class="sidebar">
+  {% include '_nav.html' %}
+</aside>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <div class="card">
+      <h2>🏢 Таргет-лист компаний</h2>
+      <p class="hint" style="margin-bottom:.6rem;">
+        Обходчик читает карьерные страницы (или страницу работодателя на hh, если сайт на JS/за антиботом),
+        оставляет вакансии уровня руководителя/ИТ по фильтру названий и отправляет новые в общий триаж.
+        {% if last_run %}Последний обход: <strong>{{ last_run.replace('T', ' ') }}</strong>.{% else %}Обход ещё не запускался.{% endif %}
+        Список и фильтры — <code>config/target_companies.yaml</code>.
+      </p>
+      <form method="post" action="/targets/run" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+        <button type="submit" class="btn-submit" style="margin:0;">Обойти все компании</button>
+        <span class="hint">≈ 1–3 минуты: паузы между сайтами, hh — не больше 8 компаний за прогон</span>
+      </form>
+
+      {% if run_result %}
+      <p class="hint" style="margin-top:.6rem;">
+        Новых вакансий в триаже: <strong>{{ run_result.new_total }}</strong> ·
+        ошибок: <strong>{{ run_result.errors | length }}</strong>
+      </p>
+      {% if run_result.errors %}
+      <details>
+        <summary class="hint" style="cursor:pointer;">Ошибки обхода ({{ run_result.errors | length }})</summary>
+        {% for e in run_result.errors %}<p class="hint" style="margin:.2rem 0 0 .5rem;">{{ e }}</p>{% endfor %}
+      </details>
+      {% endif %}
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h2>С карьерных страниц — оценено ({{ rows | length }})</h2>
+      {% if rows %}
+      <table class="search-table compact">
+        <thead><tr><th>Балл</th><th>Источник</th><th>Вакансия</th><th>Найдена</th><th></th></tr></thead>
+        <tbody>
+          {% for r in rows %}{{ lead_row(r) }}{% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="hint">Пока пусто — после обхода здесь появятся вакансии руководящего уровня с сайтов компаний. Общая лента по всем источникам — на странице <a href="/radar">Радар</a>.</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h2>Компании ({{ companies | length }})</h2>
+      <table class="search-table">
+        <thead><tr><th>Группа</th><th>Компания</th><th>Канал</th><th>Последний обход</th><th></th></tr></thead>
+        <tbody>
+          {% for c in companies %}
+          <tr>
+            <td>{{ c.group }}</td>
+            <td>
+              <a href="{{ c.url }}" target="_blank" rel="noopener">{{ c.name }}</a>
+              {% if c.hr_email %}<div class="hint">✉ {{ c.hr_email }}</div>{% endif %}
+              {% if c.note %}<div class="hint">{{ c.note }}</div>{% endif %}
+            </td>
+            <td>{{ 'сайт' if c.channel == 'site' else ('hh · ' ~ c.hh_employer_id if c.channel == 'hh' else c.channel) }}</td>
+            <td>
+              {% if c.last_run %}
+                <div class="hint">{{ c.last_run[5:16].replace('T', ' ') }}</div>
+                <div class="hint">найдено {{ c.found }} · по фильтру {{ c.matched }} · в триаж {{ c.registered }}</div>
+                {% if c.error %}<div class="hint" style="color:#b00;">{{ c.error }}</div>{% endif %}
+              {% else %}<span class="hint">—</span>{% endif %}
+            </td>
+            <td style="white-space:nowrap;">
+              <form method="post" action="/targets/run" style="display:inline;">
+                <input type="hidden" name="company" value="{{ c.name }}">
+                <button type="submit" class="btn-inline">Обойти</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant · Таргет-лист компаний</div>
+</footer>
+</div>
+{{ lead_scripts() }}
+</body>
+</html>

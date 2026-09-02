@@ -1,0 +1,469 @@
+# ---------------------------------------------------------------------------
+# Таргет-лист работодателей для обходчика карьерных страниц
+# (agents/career_watch.py). Согласован заказчиком 2026-09-02: крупный бизнес,
+# три группы — 1 пром/агро/химия/добыча, 2 ИТ-интеграторы и телеком,
+# 3 финтех/логистика/прочее. Разведка страниц — 02.09.2026.
+#
+# channel:
+#   site — карьерная страница компании: ссылки на вакансии из HTML
+#          (link_pattern — регулярка по пути ссылки) и/или встроенный JSON
+#          (json_scan: true — __NEXT_DATA__/__INITIAL_STATE__; api_url — JSON API)
+#   hh   — вакансии работодателя через hh.ru (JS-сайты, антибот, «только hh»);
+#          один запрос поиска на компанию: hh_query по названию вакансии
+#   off  — временно не обходить
+#
+# Фильтр названий (регулярки, без учёта регистра): вакансия попадает в триаж,
+# если название совпало с title_include и не совпало с title_exclude.
+# ---------------------------------------------------------------------------
+
+title_include:
+  # Сильные титулы — проходят сами по себе (C-level аббревиатуры)
+  - "\\bcio\\b"
+  - "\\bcto\\b"
+  - "\\bcdo\\b"
+  - "\\bcdto\\b"
+  - "\\bcaio\\b"
+  - "\\bvp\\b"
+  - "vice president"
+  - "технический директор"
+  - "ит-директор"
+  - "it-директор"
+
+# Слабые титулы — только вместе с ИТ/цифровым контекстом (title_context).
+# «Директор» тоже слабый: у промышленных и агрохолдингов «Директор по
+# производству / по качеству» — не наш профиль.
+title_include_weak:
+  - "директор"
+  - "руководител"
+  - "начальник"
+  - "заместител"
+  - "\\bhead\\b"
+  - "\\bchief\\b"
+  - "лидер"
+
+title_context:
+  - "\\bит\\b"
+  - "\\bit\\b"
+  - "информац"
+  - "цифров"
+  - "digital"
+  - "технолог"
+  - "данн"
+  - "\\bdata\\b"
+  - "разработ"
+  - "инфраструктур"
+  - "автоматиз"
+  - "трансформац"
+  - "\\bai\\b"
+  - "\\bml\\b"
+  - "машинн"
+  - "искусственн"
+  - "аналитик"
+  - "\\berp\\b"
+  - "\\bsap\\b"
+  - "\\b1с\\b"
+  - "\\b1c\\b"
+  - "платформ"
+  - "программн"
+  - "\\bpmo\\b"
+  - "проектного офиса"
+
+title_exclude:
+  - "стаж[её]р"
+  - "junior"
+  - "младш"
+  - "оператор"
+  - "продаж"
+  - "\\bводител"   # по границе слова: иначе ловит «руко-водител-ь»
+  - "кладов"
+  - "курьер"
+  - "грузчик"
+  - "^технолог"
+  - "инженер-технолог"
+  - "лаборант"
+  - "смен[ыа]"
+  - "участк"
+  - "цех"
+
+# Запрос по названию для канала hh (синтаксис hh: OR между словами)
+hh_query_default: "директор OR руководитель OR начальник OR CIO OR CTO OR CDTO OR CDO OR head"
+
+# Не больше стольких новых вакансий загружать с одной компании за прогон
+max_new_per_company: 10
+# Не больше стольких hh-компаний опрашивать за прогон (анти-бот hh)
+max_hh_companies_per_run: 8
+
+companies:
+  # ── Группа 1: пром / агро / химия / добыча ────────────────────────────────
+  - name: "СИБУР"
+    group: 1
+    channel: site
+    urls:
+      - "https://career.sibur.ru/vacancies/?specifics[]=2060"   # СИБУР Диджитал (ИТ-сателлит)
+      - "https://career.sibur.ru/vacancies/"
+    link_pattern: "/vacancies/[^/?#]+/?$"
+    hh_employer_id: 3809
+    hr_email: "rabota@sibur.ru"
+    note: "Bitrix; ссылки /vacancies/<slug>/ вперемешку со страницами городов — их отсеет фильтр названий"
+
+  - name: "Газпром нефть"
+    group: 1
+    channel: hh
+    hh_employer_id: 39305
+    site_url: "https://career.gazprom-neft.ru/vacancies/"
+    note: "SPA (Vue), список грузится AJAX — API не установлен; пока через hh"
+
+  - name: "ЕвроХим"
+    group: 1
+    channel: hh
+    hh_employer_id: 2501
+    site_url: "https://eurochem-career.com/vacancies"
+    note: "Nuxt SPA; на сайте фактически hh-виджет"
+
+  - name: "ФосАгро"
+    group: 1
+    channel: hh
+    hh_employer_id: 2227671
+    site_url: "https://www.phosagro.ru/career-education/vacancies/"
+    note: "SPA (Bitrix+Vue, /ajax/search.php) — параметры не установлены"
+
+  - name: "Норникель"
+    group: 1
+    channel: site
+    urls:
+      - "https://career.nornickel.ru/vacancies/?OrganizationUnits=sputnik"   # Норникель Спутник (ИТ-сателлит)
+      - "https://career.nornickel.ru/vacancies/"
+    link_pattern: "/vacancy/\\d+"
+    hh_employer_id: 740
+    hr_email: "hrmoscow@nornik.ru"
+    note: "Bitrix; 669 вакансий, разделы Производство/Офис/IT; в HTML первые 66 ссылок"
+
+  - name: "Северсталь"
+    group: 1
+    channel: site
+    urls:
+      - "https://career.severstal.com/vacancies/?companies=severstal_didzhital"   # Северсталь Диджитал
+      - "https://career.severstal.com/vacancies/?direction=it"                   # Северсталь-инфоком
+      - "https://career.severstal.com/vacancies/"
+    link_pattern: "/vacancies/[^/?#]+/?$"
+    hh_employer_id: 6041
+    hr_email: "Digital@severstal.com, it@severstal.com"
+    note: "Bitrix; направления Производство 265 / IT 12 / Офис 52; ИТ-сателлит — Северсталь Диджитал (см. второй проход)"
+
+  - name: "Русагро"
+    group: 1
+    channel: site
+    urls: ["https://rabota.rusagrogroup.ru/vacancy/"]
+    link_pattern: "/vacancy/\\d+/?$"
+    hh_employer_id: 23186
+    note: "Bitrix; пагинация ?PAGEN_1=; сателлит — Русагро Тех (второй проход)"
+
+  - name: "Трансмашхолдинг"
+    group: 1
+    channel: hh
+    hh_employer_id: 3414
+    site_url: "https://tmholding.ru/jobs/"
+    note: "На сайте списка нет — разделы ведут на hh; ИТ также на career.habr.com/companies/tmholding"
+
+  - name: "Металлоинвест"
+    group: 1
+    channel: hh
+    hh_employer_id: 2814
+    site_url: "https://www.metalloinvest.com/career/"
+    note: "Антибот Qrator на сайте; hr.m-invest.ru — ДРУГАЯ компания (металлотрейдер)"
+
+  - name: "Полюс"
+    group: 1
+    channel: site
+    urls: ["https://career.polyus.com/vacancies/"]
+    link_pattern: "/vacancies/[^/?#]+/?$"
+    hh_employer_id: 97839
+    note: "Bitrix; в основном рабочие и вахта"
+
+  # ── Группа 2: ИТ-интеграторы и телеком ────────────────────────────────────
+  - name: "Ростелеком"
+    group: 2
+    channel: hh
+    hh_employer_id: 2748
+    site_url: "https://job.rt.ru/search"
+    note: "Next.js SPA, API не виден; ИТ-сателлит РТК ИТ — отдельной записью"
+
+  - name: "РТК ИТ"
+    group: 2
+    channel: hh
+    hh_employer_id: 3144945
+    note: "ИТ-дочка Ростелекома (Ростелеком Информационные Технологии)"
+
+  - name: "МТС"
+    group: 2
+    channel: site
+    api_url: "https://job.mts.ru/api/v2/vacancies?limit=500"
+    json_url_template: "https://job.mts.ru/vacancies/{slug}"
+    hh_employer_id: 3776
+    note: "Nuxt SPA; публичный JSON API проверен 02.09 (поля id, documentId, title, slug, isActive)"
+
+  - name: "МегаФон"
+    group: 2
+    channel: site
+    urls:
+      - "https://job.megafon.ru/vacancy/all/it-reshenia"
+      - "https://job.megafon.ru/vacancy"
+    link_pattern: "/vacancy/[^/]+/[^/]+/[^/?#]+-\\d+"
+    json_scan: true
+    hh_employer_id: 3127
+    note: "SSR + __INITIAL_STATE__; 1015 вакансий, раздел ИТ-решения"
+
+  - name: "Ланит"
+    group: 2
+    channel: hh
+    hh_employer_id: 733
+    site_url: "https://job.lanit.ru/"
+    note: "React SPA на SharePoint (WCF GetVacancyForWidget) — параметры не установлены"
+
+  - name: "Т1"
+    group: 2
+    channel: hh
+    hh_employer_id: 4649269
+    site_url: "https://career.t1.ru/vacancies"
+    note: "Сайт сам тянет вакансии с api.hh.ru"
+
+  - name: "Softline"
+    group: 2
+    channel: site
+    urls: ["https://softline.ru/about/vacancies"]
+    link_pattern: "vacancies/\\d+"
+    hh_employer_id: 2381
+    note: "Bitrix, страница 1.2 МБ"
+
+  - name: "КРОК"
+    group: 2
+    channel: site
+    urls: ["https://careers.croc.ru/vacancies/"]
+    link_pattern: "/vacancies/[^/?#]+/?$"
+    hh_employer_id: 2987
+    note: "Bitrix; ~73 вакансии, рубрики Кибербезопасность / Управление проектами / Аналитика"
+
+  - name: "IBS"
+    group: 2
+    channel: site
+    urls: ["https://ibs.ru/career/jobs/"]
+    link_pattern: "/career/jobs/[^/?#]+/?$"
+    hh_employer_id: 139
+    note: "Bitrix; 74 ссылки"
+
+  # ── Группа 3: финтех / логистика / прочее ─────────────────────────────────
+  - name: "Т-Банк"
+    group: 3
+    channel: hh
+    hh_employer_id: 78638
+    site_url: "https://www.tbank.ru/career/vacancies/"
+    note: "PWA, ссылок на вакансии в HTML нет; API hrsites-api-vacancies.tbank.ru — пути не установлены"
+
+  - name: "Альфа-Банк"
+    group: 3
+    channel: site
+    urls:
+      - "https://digital.alfabank.ru/vacancies"      # Alfa Digital — ссылки /vacancies/<slug>--<id>
+      - "https://job.alfabank.ru/vacancies/digital"
+      - "https://job.alfabank.ru/vacancies"
+    link_pattern: "/vacancies/[^/?#]+(--\\d+|/[^/?#]+)"
+    json_scan: true
+    hh_employer_id: 80
+    hr_email: "digital-job@alfabank.ru"
+    note: "Next.js SSR; список в __NEXT_DATA__ (items[{vacancyId, title, details}]); сертификат российского CA — config/certs"
+
+  - name: "Ozon"
+    group: 3
+    channel: hh
+    hh_employer_id: 2180
+    site_url: "https://job.ozon.ru/"
+    note: "Антибот Ozon (403 challenge); сателлит Ozon Tech — второй проход"
+
+  - name: "Wildberries"
+    group: 3
+    channel: hh
+    hh_employer_id: 87021
+    site_url: "https://job.wb.ru/"
+    note: "Антибот WB (498); hh-работодатель «RWB (Wildberries & Russ)»"
+
+  - name: "Яндекс"
+    group: 3
+    channel: site
+    urls: ["https://yandex.ru/jobs/vacancies"]
+    link_pattern: "/jobs/vacancies/[^/?#]+-\\d+"
+    hh_employer_id: 1740
+    note: "Next.js SSR; ссылки /jobs/vacancies/<slug>-<id>"
+
+  - name: "Деловые Линии"
+    group: 3
+    channel: hh
+    hh_employer_id: 29413
+    site_url: "https://job.dellin.ru/"
+    note: "WAF отдаёт 401 не-браузерам"
+
+  - name: "СДЭК"
+    group: 3
+    channel: site
+    urls:
+      - "https://rabota.cdek.ru/vacancies?direction=it"
+      - "https://rabota.cdek.ru/vacancies"
+    link_pattern: "/vacancies/item/\\d+"
+    hh_employer_id: 3530
+    note: "Vue SSR; ссылки /vacancies/item/<id>"
+
+  - name: "FESCO"
+    group: 3
+    channel: site
+    urls: ["https://fesco.huntflow.io/"]
+    link_pattern: "/vacancy/"
+    hh_employer_id: 23537
+    hr_email: "cv@fesco.com"
+    note: "Карьерная страница Huntflow; на fesco.ru карточки без отдельных URL"
+
+  - name: "РЖД"
+    group: 3
+    channel: hh
+    hh_employer_id: 23427
+    site_url: "https://team.rzd.ru/career/vacancies"
+    note: "Vite/Vue SPA, эндпоинт списка не найден; сертификат российского CA; сателлиты РЖД-Технологии / ОЦРВ — второй проход"
+
+  - name: "Почта России"
+    group: 3
+    channel: site
+    urls: ["https://www.pochta.ru/vacancy-list"]
+    link_pattern: "/vacancy-list/\\d+"
+    hh_employer_id: 4352
+    note: "Next.js SSR; ИТ-вакансии у сателлита Почтатех (pochta.tech/career) — второй проход"
+
+  # ── ИТ-сателлиты с собственными hh-аккаунтами (разведка 02.09, второй проход) ──
+  - name: "JSA Group (Металлоинвест)"
+    group: 1
+    channel: hh
+    hh_employer_id: 2851802
+    site_url: "https://career.habr.com/companies/jsa-group/vacancies"
+    note: "ООО «Металло-Тех», ИТ-компания Металлоинвеста/USM (~1500 чел.); сайт без карьерного раздела"
+
+  - name: "РТК-ЦОД (Ростелеком)"
+    group: 2
+    channel: hh
+    hh_employer_id: 852361
+    site_url: "https://rt-dc.ru/about/career/"
+    hr_email: "work@rt-dc.ru"
+    note: "Дата-центры и облако Ростелекома; на сайте списка нет"
+
+  - name: "НОРБИТ (Ланит)"
+    group: 2
+    channel: hh
+    hh_employer_id: 1716
+    site_url: "https://www.norbit.ru/karera/vakansii/"
+    hr_email: "hr@norbit.ru"
+    note: "Список рисуется JS + SmartCaptcha"
+
+  - name: "ЛАНИТ-ТЕРКОМ"
+    group: 2
+    channel: hh
+    hh_employer_id: 2651962
+    site_url: "https://career.habr.com/companies/lanit-tercom/vacancies"
+    hr_email: "hr@lanit-tercom.com"
+    note: "СПб, заказная разработка"
+
+  - name: "SL Soft (Softline)"
+    group: 2
+    channel: hh
+    hh_employer_id: 10610846
+    site_url: "https://slsoft.ru/career/"
+    hr_email: "job@slsoft.ru"
+    note: "Разработчик ПО группы Softline (ROBIN, Polymatica, БОСС)"
+
+  - name: "ОЦРВ (РЖД)"
+    group: 3
+    channel: hh
+    hh_employer_id: 231166
+    site_url: "https://ocrv.ru/career/"
+    hr_email: "hr@ocrv.ru"
+    note: "Отраслевой центр разработки и внедрения ИС РЖД, 1200+ чел."
+
+  - name: "РЖД-Технологии"
+    group: 3
+    channel: hh
+    hh_employer_id: 4208134
+    site_url: "https://rzdtech.ru/"
+    note: "Сайт отдавал 503"
+
+  - name: "РЖД-ЦПР"
+    group: 3
+    channel: hh
+    hh_employer_id: 3308706
+    site_url: "https://smarttravel.ru/"
+    hr_email: "hr@smarttravel.ru"
+    note: "Цифровые пассажирские решения РЖД"
+
+  - name: "Почтатех (Почта России)"
+    group: 3
+    channel: hh
+    hh_employer_id: 4543942
+    site_url: "https://pochta.tech/career"
+    note: "ИТ-компания Почты России; сайт отдавал 503"
+
+  # ── Химия и агрохолдинги (добавлены заказчиком 02.09) ──
+  - name: "Уралхим"
+    group: 1
+    channel: site
+    urls: ["https://www.uralchem.ru/career/vacancies/"]
+    link_pattern: "/career/vacancies/[^/?#]+/?$"
+    hh_employer_id: 67181
+    note: "Bitrix+Vue; ИТ-сателлит УралАйтех без своего сайта/hh — вакансии здесь и под «ОХК Уралхим» на hh"
+
+  - name: "Акрон"
+    group: 1
+    channel: hh
+    hh_employer_id: 44
+    site_url: "https://www.acron.ru/career/jobs/"
+    note: "На сайте вакансии без отдельных ссылок — читаем через hh 44 (ПАО Акрон); сателлит Acron Digital (ООО АйТиОфис) публикуется там же; hh 208189 «АКРОН ХОЛДИНГ» — посторонний"
+
+  - name: "Мираторг"
+    group: 1
+    channel: site
+    urls: ["https://miratorg.ru/career/vacancies/"]
+    link_pattern: "/career/vacancies/detail\\.php\\?ID=\\d+"
+    hh_employer_id: 17275
+    hr_email: "PodborRespond@agrohold.ru, hr@agrohold.ru"
+    note: "Bitrix; сателлит Мираторг Технологии без сайта/hh — вакансии под «Мираторг»"
+
+  - name: "Черкизово"
+    group: 1
+    channel: site
+    urls: ["https://vacancies.cherkizovo.com/vacancies"]
+    link_pattern: "/vacancies/\\d+"
+    hh_employer_id: 1346
+    note: "Отдельный карьерный сайт; id совпадают с hh; сателлит Черкизово-Инфотех без сайта/hh"
+
+  - name: "ЭФКО"
+    group: 1
+    channel: hh
+    hh_employer_id: 53797
+    site_url: "https://www.efko.ru/vacancy/"
+    note: "На сайте все вакансии в одном HTML без отдельных URL — читаем через hh; сателлит ЭФКО Цифровые решения (efko.digital, info@ds.efko.ru) публикуется под ЭФКО"
+
+  - name: "ЭкоНива"
+    group: 1
+    channel: hh
+    hh_employer_id: 226306
+    site_url: "https://ekoniva-apk.ru/career"
+    hr_email: "natalya.zvereva@ekoniva-apk.com"
+    note: "Страница карьеры — виджет hh"
+
+  - name: "Агрокомплекс им. Ткачёва"
+    group: 1
+    channel: hh
+    hh_employer_id: 247279
+    site_url: "https://www.zao-agrokomplex.ru/vacancy/"
+    note: "Списка на сайте нет — ссылка на hh"
+
+  - name: "Степь (АФК Система)"
+    group: 1
+    channel: hh
+    hh_employer_id: 2148279
+    site_url: "https://www.ahstep.ru/careers"
+    hr_email: "hr@ahstep.ru"
+    note: "«Направьте резюме на hr@ahstep.ru» + виджет hh"

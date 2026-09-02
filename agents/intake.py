@@ -177,9 +177,11 @@ def from_json(data: str | dict, source_name: str = "json") -> VacancyInput:
     vi.raw_text = json.dumps(parsed, ensure_ascii=False, indent=2)
 
     # Override metadata from explicit JSON fields (take priority over heuristics)
-    vi.title    = str(parsed.get("title") or parsed.get("name") or vi.title)
-    vi.company  = str(parsed.get("company") or parsed.get("employer") or vi.company)
-    vi.location = str(parsed.get("location") or parsed.get("area") or vi.location)
+    # hh.ru отдаёт названия с HTML-сущностями (&quot;Компания&quot;) — раскодируем,
+    # иначе шаблон (autoescape) покажет их буквально
+    vi.title    = _html_lib.unescape(str(parsed.get("title") or parsed.get("name") or vi.title))
+    vi.company  = _html_lib.unescape(str(parsed.get("company") or parsed.get("employer") or vi.company))
+    vi.location = _html_lib.unescape(str(parsed.get("location") or parsed.get("area") or vi.location))
     vi.salary   = _parse_json_salary(parsed) or vi.salary
     vi.url      = str(parsed.get("url") or parsed.get("alternate_url") or vi.url)
     vi.metadata.update({k: v for k, v in parsed.items() if not isinstance(v, (dict, list))})

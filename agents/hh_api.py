@@ -68,6 +68,15 @@ _JSONLD_RE = re.compile(
     r'<script type="application/ld\+json">(.*?)</script>', re.DOTALL
 )
 _SEARCH_ID_RE = re.compile(r"/vacancy/(\d{6,})")
+# Настоящие результаты выдачи: ссылка-заголовок карточки. Страница поиска
+# содержит ещё ~30 id из блоков «похожие/рекомендованные» и JSON начального
+# состояния — регулярка по всей странице тянула их в триаж (стоматологии
+# из «вакансий дня» с нулевым баллом; наблюдалось 2026-09-02).
+_SERP_TITLE_ID_RES = (
+    re.compile(r'data-qa="serp-item__title"[^>]*?href="[^"]*?/vacancy/(\d{6,})'),
+    re.compile(r'href="[^"]*?/vacancy/(\d{6,})[^"]*"[^>]*?data-qa="serp-item__title'),
+)
+_SERP_LIST_ID_RE = re.compile(r"/vacancy/(\d{6,})\?[^\"']*?hhtmFrom=vacancy_search_list")
 
 
 class HHApiError(Exception):
@@ -397,6 +406,24 @@ def _search_ids_api(text, area, max_pages, search_field, extra_params) -> list[s
 _EMPTY_SEARCH_MARKERS = ("ничего не найдено", "не нашлось ни одной вакансии")
 
 
+def _extract_search_result_ids(html: str) -> list[str]:
+    """
+    Id вакансий из выдачи в порядке страницы — только карточки результатов.
+
+    Приоритет: ссылки-заголовки карточек (data-qa="serp-item__title") →
+    ссылки с hhtmFrom=vacancy_search_list → (фолбэк на случай смены
+    разметки hh) все /vacancy/<id> на странице, как раньше.
+    """
+    found: list[str] = []
+    for rx in _SERP_TITLE_ID_RES:
+        found.extend(rx.findall(html))
+    if not found:
+        found = _SERP_LIST_ID_RE.findall(html)
+    if not found:
+        found = _SEARCH_ID_RE.findall(html)
+    return list(dict.fromkeys(found))
+
+
 def _search_ids_html(text, area, max_pages, search_field, extra_params=None) -> list[str]:
     ids: list[str] = []
     seen: set[str] = set()
@@ -408,7 +435,7 @@ def _search_ids_html(text, area, max_pages, search_field, extra_params=None) -> 
             params.update(extra_params)
         url = f"{HH_SITE_BASE}/search/vacancy?" + urllib.parse.urlencode(params)
         html = _get_html(url)
-        page_ids = [i for i in _SEARCH_ID_RE.findall(html) if i not in seen]
+        page_ids = [i for i in _extract_search_result_ids(html) if i not in seen]
         if not page_ids:
             low = html.lower()
             if page == 0 and not any(m in low for m in _EMPTY_SEARCH_MARKERS):
