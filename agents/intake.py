@@ -182,7 +182,14 @@ def from_json(data: str | dict, source_name: str = "json") -> VacancyInput:
     vi.title    = _html_lib.unescape(str(parsed.get("title") or parsed.get("name") or vi.title))
     vi.company  = _html_lib.unescape(str(parsed.get("company") or parsed.get("employer") or vi.company))
     vi.location = _html_lib.unescape(str(parsed.get("location") or parsed.get("area") or vi.location))
-    vi.salary   = _parse_json_salary(parsed) or vi.salary
+    # Явное поле salary важнее эвристики по тексту: hh отдаёт dict, письма и
+    # сайты — строку. При None (на hh зарплата не указана) остаётся строгая
+    # эвристика по описанию — иногда сумму пишут прямо в тексте.
+    sal = parsed.get("salary")
+    if isinstance(sal, dict):
+        vi.salary = _parse_json_salary(parsed)
+    elif isinstance(sal, str) and sal.strip():
+        vi.salary = _html_lib.unescape(sal.strip())
     vi.url      = str(parsed.get("url") or parsed.get("alternate_url") or vi.url)
     vi.metadata.update({k: v for k, v in parsed.items() if not isinstance(v, (dict, list))})
     return vi
@@ -253,12 +260,20 @@ def _fetch_url(url: str, timeout: int = 20) -> str:
 # Normalization pipeline
 # ---------------------------------------------------------------------------
 
+_HTML_BLOCK_RE = re.compile(r"<(?:p|br|li|ul|ol|div|h[1-6]|tr)\b[^>]*>", re.IGNORECASE)
+
+
 def _normalize(text: str) -> str:
     """Return clean text suitable for the analysis layer."""
     # Unicode NFC
     text = unicodedata.normalize("NFC", text)
     # Unescape HTML entities (&nbsp; &amp; etc.)
     text = _html_lib.unescape(text)
+    # Описания hh приходят с <p>/<ul>/<li>: блочные теги → переводы строк,
+    # иначе соседние пункты склеиваются и эвристики читают «зарплата» +
+    # следующий пункт как сумму
+    if _HTML_BLOCK_RE.search(text):
+        text = _strip_html(text)
     # Remove residual HTML tags
     text = re.sub(r"<[^>]{0,300}>", " ", text)
     # Strip invisible / zero-width chars
@@ -338,9 +353,18 @@ _LOCATION_RE = [
     r"\b(Москва|Санкт-Петербург|Новосибирск|Екатеринбург|Казань|Краснодар|Нижний\s+Новгород)\b",
 ]
 _SALARY_RE = [
-    r"(?:зарплата|з/п|компенсация|оклад|доход)[:\s]+([^\n]{3,60})",
-    r"(?:salary|compensation)[:\s]+([^\n]{3,60})",
-    r"(\d[\d\s]*(?:тыс|k|К|₽|руб)[^\n]{0,30})",
+    # После ключевого слова нужен разделитель или сумма — иначе «Конкурентная
+    # зарплата» + следующий пункт условий превращались в «зарплату».
+    # «Компенсация» в русских вакансиях — это перки (питание, связь), не оклад.
+    r"(?:зарплата|заработная плата|з/п|оклад|доход)\s*[:—–-]\s*([^\n]{3,60})",
+    r"(?:зарплата|заработная плата|з/п|оклад|доход)\s+((?:от|до)\s*\d[^\n]{0,55}|\d[^\n]{2,55})",
+    r"(?:salary|compensation)\s*[:—–-]\s*([^\n]{3,60})",
+    r"(?:salary|compensation)\s+((?:from|up\s+to)\s*\d[^\n]{0,55})",
+    # Голая сумма — только с валютой: «300 тыс. ₽», «400 000 рублей», «150 000 р.»;
+    # без валюты «300 тыс. кв м», «700 тыс. клиентов», «146к2» — не зарплата,
+    # как и «500 рублей в день» (компенсация питания).
+    r"(\d{2,}[\d\s–-]*(?:тыс\.?\s*)?(?:руб(?:лей|\.)?|₽|р\.)(?![а-яa-z0-9])"
+    r"(?!\s*(?:в\s+день|в\s+час|за\s+час|за\s+день|от\s+стоимости))[^\n]{0,30})",
 ]
 
 

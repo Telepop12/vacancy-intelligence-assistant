@@ -81,13 +81,18 @@ def call_json(
 ) -> dict:
     """One LLM call returning parsed JSON, with truncation and style retries."""
     import anthropic
-    import httpx
 
     cfg = load_llm_config()
     key = api_key or get_api_key()
     if not key:
         raise RuntimeError("ANTHROPIC_API_KEY не настроен")
-    client = anthropic.Anthropic(api_key=key, http_client=httpx.Client(trust_env=False))
+    # SDK 1.x перешёл с httpx на httpx2, поэтому свой httpx.Client больше не
+    # подходит; DefaultHttpxClient — клиент той библиотеки, на которой собран
+    # установленный SDK. trust_env=False: не читать HTTP(S)_PROXY и SSL_CERT_FILE
+    # из окружения контейнера.
+    client = anthropic.Anthropic(
+        api_key=key, http_client=anthropic.DefaultHttpxClient(trust_env=False)
+    )
     use_model = model or cfg["model"]
 
     # Sonnet 5+: адаптивное мышление включено по умолчанию и расходует
