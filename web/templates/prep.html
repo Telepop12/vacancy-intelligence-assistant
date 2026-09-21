@@ -13,7 +13,7 @@
     .qa-item{border-bottom:1px solid var(--border);padding:.8rem 0}
     .qa-item .q{font-weight:600;cursor:pointer}
     .qa-item .src{font-size:.75rem;color:var(--muted);margin:.2rem 0}
-    .qa-item .a{margin:.4rem 0 0;padding:.5rem .7rem;background:rgba(30,64,175,.05);border-radius:var(--radius);display:none}
+    .qa-item .a{margin:.4rem 0 0;padding:.5rem .7rem;background:rgba(30,64,175,.05);border-radius:var(--radius);display:none;white-space:pre-line}
     .qa-item.open .a{display:block}
     .pt-round{border:1px solid var(--border);border-radius:var(--radius);padding:.8rem 1rem;margin:.7rem 0}
     .pt-round p{margin:.35rem 0}
@@ -21,6 +21,58 @@
     .pt-def{color:var(--text)}
     .pt-jud{color:var(--muted);font-size:.85rem}
     .pt-imp{background:rgba(22,163,74,.07);padding:.5rem .7rem;border-radius:var(--radius)}
+    /* Подготовка 2.0 */
+    .toc{position:sticky;top:0;z-index:5;background:var(--bg);padding:.5rem 0 .4rem;margin:0 0 .6rem;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:.35rem}
+    .toc a{font-size:.74rem;padding:.2rem .6rem;border:1px solid var(--border);border-radius:999px;background:var(--card);color:var(--text);text-decoration:none;white-space:nowrap}
+    .toc a:hover{border-color:var(--primary);color:var(--primary)}
+    .toc a.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .toc a.cheat{border-color:var(--primary);color:var(--primary);font-weight:700}
+    .toc a.cheat.active{background:var(--primary);color:#fff}
+    .card[id]{scroll-margin-top:5rem}
+    .srcs{font-size:.72rem;color:var(--muted);margin-top:.8rem;padding-top:.5rem;border-top:1px dashed var(--border)}
+    .srcs b{font-weight:600}
+    .notice{border-left:4px solid var(--warning);background:rgba(217,119,6,.08);padding:.6rem .9rem;border-radius:var(--radius);margin-top:1rem;font-size:.9rem}
+    .notice.err{border-color:var(--danger);background:rgba(220,38,38,.07)}
+    .stage{display:grid;grid-template-columns:2.2rem 1fr;gap:.6rem;padding:.7rem 0;border-bottom:1px solid var(--border)}
+    .stage .n{width:2rem;height:2rem;border-radius:50%;background:var(--primary);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:.85rem}
+    .stage .t{font-weight:600}
+    .stage .w{font-size:.8rem;color:var(--muted);margin:.1rem 0 .35rem}
+    .stage p{margin:.2rem 0;font-size:.9rem}
+    .card h3.variant-h{margin-top:1rem}
+    .pres{white-space:pre-line;line-height:1.55}
+    .pres-box{background:rgba(30,64,175,.04);border-radius:var(--radius);padding:.7rem .9rem;margin:.4rem 0 .8rem}
+    .story{border:1px solid var(--border);border-radius:var(--radius);padding:.7rem .9rem;margin:.6rem 0}
+    .story .kind{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--primary);font-weight:700}
+    .story .ttl{font-weight:600;margin:.15rem 0 .3rem}
+    .story .origin{font-size:.72rem;padding:.1rem .5rem;border-radius:999px;margin-left:.4rem;font-weight:600}
+    .story .origin.own{background:rgba(22,163,74,.12);color:#16a34a}
+    .story .origin.skel{background:rgba(217,119,6,.12);color:#d97706}
+    .story p{margin:.25rem 0;font-size:.9rem}
+    .story .gaps{background:rgba(217,119,6,.07);padding:.4rem .6rem;border-radius:var(--radius);font-size:.85rem}
+    .days{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem}
+    .days > div{background:rgba(30,64,175,.04);border-radius:var(--radius);padding:.7rem .9rem;font-size:.9rem}
+    .days b{display:block;margin-bottom:.3rem;color:var(--primary)}
+    @media (max-width:800px){.days{grid-template-columns:1fr}}
+    .imp{border:1px solid var(--border);border-radius:var(--radius);padding:.7rem .9rem;margin:.6rem 0}
+    .imp .kind{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--primary);font-weight:700}
+    .imp .basis{font-size:.72rem;text-transform:none;letter-spacing:0;padding:.1rem .5rem;border-radius:999px;margin-left:.4rem;font-weight:600}
+    .imp .basis.vac{background:rgba(22,163,74,.12);color:#16a34a}
+    .imp .basis.co{background:rgba(30,64,175,.1);color:var(--primary)}
+    .imp .basis.ind{background:rgba(217,119,6,.12);color:#d97706}
+    .imp p{margin:.25rem 0;font-size:.9rem}
+    .imp .sig{color:var(--muted);font-size:.85rem}
+    .imp .say{background:rgba(22,163,74,.07);padding:.4rem .6rem;border-radius:var(--radius)}
+    .imp .back{font-size:.85rem}
+    .agenda-item{padding:.6rem 0;border-bottom:1px solid var(--border)}
+    .agenda-item .tp{font-weight:600}
+    .agenda-item p{margin:.3rem 0;font-size:.9rem}
+    .blitz{margin:.3rem 0 0 1.1rem;padding:0}
+    .blitz li{margin:.35rem 0;font-size:.9rem}
+    .ds{margin:.3rem 0 0 1.1rem;padding:0}
+    .ds li{margin:.3rem 0;font-size:.9rem}
+    .ds li.personal{font-weight:600}
+    .ds .why{font-weight:400;color:var(--muted);font-size:.8rem}
+    .tag-you{display:inline-block;font-size:.68rem;padding:.05rem .45rem;border-radius:999px;background:rgba(220,38,38,.1);color:#dc2626;font-weight:700;margin-right:.3rem}
   </style>
 </head>
 <body>
@@ -38,24 +90,79 @@
 
 <main>
   <div class="container">
+    {% set vid = vid if vid is defined and vid else (pkg.package_id | replace('hh_','')) %}
 
     <div class="card">
       <h2>Подготовка к интервью</h2>
       <p style="margin:.4rem 0;">
         <strong>{{ pkg.vacancy_title }}</strong>
         {% if pkg.company %} · {{ pkg.company }}{% endif %}
-        {% if pkg.vacancy_url %} · <a href="{{ pkg.vacancy_url }}" target="_blank">открыть на hh.ru</a>{% endif %}
+        {% if pkg.vacancy_url %} · <a href="{{ pkg.vacancy_url }}" target="_blank">открыть вакансию</a>{% endif %}
       </p>
-      <p class="hint">Сгенерировано: {{ pkg.generated_at }}
-        · <a href="/prep/hh/{{ pkg.package_id | replace('hh_','') }}?regenerate=true">перегенерировать</a>
-        · <a href="/output/prep/{{ pkg.package_id }}.md" target="_blank">скачать .md</a></p>
+      <p class="hint">Сгенерировано: {{ pkg.generated_at }}{% if pkg.kb_version %} · база знаний от {{ pkg.kb_version }}{% endif %}
+        · <a href="/prep/{{ vid }}?regenerate=true">перегенерировать</a>
+        · <a href="/output/prep/{{ pkg.package_id }}.md" target="_blank">скачать .md</a>
+        {% if not pkg.error and pkg.schema_version >= 2 %} · <a href="/prep/{{ vid }}/cheatsheet"><strong>шпаргалка «10 минут до звонка»</strong></a>{% endif %}
+      </p>
     </div>
 
     {% if pkg.error %}
     <div class="error-box" style="margin-top:1rem;">{{ pkg.error }}</div>
     {% else %}
 
-    <div class="card" style="margin-top:1rem;">
+    {% if pkg.schema_version < 2 %}
+    <div class="notice">Пакет собран прежней версией генератора. Разделы «Подготовки 2.0» — процесс и кто передо мной,
+      самопрезентация, истории, план 100 дней, «что бы вы улучшили», повестка 2026, блиц, «чего не говорить»,
+      шпаргалка — появятся после <a href="/prep/{{ vid }}?regenerate=true">перегенерации</a> (8 вызовов модели, несколько минут).</div>
+    {% endif %}
+    {% if pkg.stage_errors %}
+    <div class="notice err">Часть разделов не собралась: {{ pkg.stage_errors | join('; ') }}.
+      Остальное сохранено; <a href="/prep/{{ vid }}?regenerate=true">перегенерировать</a> целиком.</div>
+    {% endif %}
+
+    <nav class="toc" id="toc" style="margin-top:1rem;">
+      <a href="#process" data-target="process">Процесс</a>
+      <a href="#profile" data-target="profile">Козыри и риски</a>
+      <a href="#presentation" data-target="presentation">Самопрезентация</a>
+      <a href="#qa" data-target="qa">Вопросы по опыту</a>
+      <a href="#hr" data-target="hr">HR</a>
+      <a href="#stories" data-target="stories">Истории и кейсы</a>
+      <a href="#days100" data-target="days100">100 дней</a>
+      <a href="#improve" data-target="improve">Что улучшить</a>
+      <a href="#agenda" data-target="agenda">Повестка 2026</a>
+      <a href="#blitz" data-target="blitz">Блиц</a>
+      <a href="#user-qa" data-target="user-qa">Двойник</a>
+      <a href="#employer" data-target="employer">Работодателю</a>
+      <a href="#purple" data-target="purple">Спарринг</a>
+      <a href="#dontsay" data-target="dontsay">Не говорить</a>
+      {% if pkg.schema_version >= 2 %}<a class="cheat" href="/prep/{{ vid }}/cheatsheet" data-target="cheat" title="Открыть шпаргалку на отдельной странице">Шпаргалка ↗</a>{% endif %}
+    </nav>
+
+    {# ---------------- Процесс и кто передо мной ---------------- #}
+    <div class="card" id="process">
+      <h2>Как проходит процесс и кто передо мной</h2>
+      {% if pkg.process.stages or pkg.process.company_note %}
+      <p style="margin:.5rem 0;">{{ pkg.process.company_note }}</p>
+      {% if pkg.process.total %}<p class="hint"><strong>Итого:</strong> {{ pkg.process.total }}</p>{% endif %}
+      {% for s in pkg.process.stages %}
+      <div class="stage">
+        <div class="n">{{ loop.index }}</div>
+        <div>
+          <div class="t">{{ s.stage }}</div>
+          <div class="w">{{ s.who }}{% if s.duration %} · {{ s.duration }}{% endif %}</div>
+          <p><strong>Что проверяют:</strong> {{ s.probes }}</p>
+          <p><strong>Как готовиться:</strong> {{ s.tip }}</p>
+        </div>
+      </div>
+      {% endfor %}
+      {% if pkg.process.sources %}<div class="srcs"><b>Источники:</b> {{ pkg.process.sources | join(' · ') }}</div>{% endif %}
+      {% else %}
+      <p class="hint">Раздел появится после перегенерации пакета.</p>
+      {% endif %}
+    </div>
+
+    {# ---------------- Профиль интервьюера ---------------- #}
+    <div class="card" style="margin-top:1rem;" id="profile">
       <h2>Кто вас будет спрашивать</h2>
       <p style="margin:.5rem 0;">{{ pkg.interviewer_profile }}</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:.8rem;">
@@ -70,7 +177,25 @@
       </div>
     </div>
 
-    <div class="card" style="margin-top:1rem;">
+    {# ---------------- Самопрезентация ---------------- #}
+    <div class="card" style="margin-top:1rem;" id="presentation">
+      <h2>Самопрезентация <span class="hint" style="font-weight:normal;">— репетировать с таймером</span></h2>
+      {% if pkg.presentation.short or pkg.presentation.long %}
+      <h3 class="variant-h">1–3 минуты · скрининг</h3>
+      <div class="pres-box pres">{{ pkg.presentation.short }}</div>
+      <h3 class="variant-h">5–7 минут · финал и знакомство с командой</h3>
+      <div class="pres-box pres">{{ pkg.presentation.long }}</div>
+      {% if pkg.presentation.scope_line %}
+      <p style="margin:.4rem 0;"><strong>Руками / делегирую / контролирую:</strong> {{ pkg.presentation.scope_line }}</p>
+      {% endif %}
+      {% if pkg.presentation.sources %}<div class="srcs"><b>Источники:</b> {{ pkg.presentation.sources | join(' · ') }}</div>{% endif %}
+      {% else %}
+      <p class="hint">Раздел появится после перегенерации пакета.</p>
+      {% endif %}
+    </div>
+
+    {# ---------------- Вопросы по опыту ---------------- #}
+    <div class="card" style="margin-top:1rem;" id="qa">
       <h2>Вопросы по вашему опыту <span class="hint" style="font-weight:normal;">(клик раскрывает заготовку ответа)</span></h2>
       {% for block_key, block_title, block_hint in [
         ('strong', '🟢 Подача козырей', 'вопросы, на которых можно выиграть — готовьте сильную подачу'),
@@ -89,9 +214,11 @@
       {% endfor %}
       {% endif %}
       {% endfor %}
+      {% if pkg.qa_sources %}<div class="srcs"><b>Жанр и глубина вопросов:</b> {{ pkg.qa_sources | join(' · ') }}</div>{% endif %}
     </div>
 
-    <div class="card" style="margin-top:1rem;">
+    {# ---------------- HR ---------------- #}
+    <div class="card" style="margin-top:1rem;" id="hr">
       <h2>Общие и поведенческие вопросы <span class="hint" style="font-weight:normal;">(HR: самопрезентация, конфликты, стиль)</span></h2>
       {% for q in pkg.hr_qa %}
       <div class="qa-item" onclick="this.classList.toggle('open')">
@@ -100,8 +227,114 @@
         <div class="a">{{ q.answer }}</div>
       </div>
       {% endfor %}
+      {% if pkg.hr_sources %}<div class="srcs"><b>Стоп-слова учтены по:</b> {{ pkg.hr_sources | join(' · ') }}</div>{% endif %}
     </div>
 
+    {# ---------------- Истории и кейсы ---------------- #}
+    <div class="card" style="margin-top:1rem;" id="stories">
+      <h2>Истории и управленческие кейсы</h2>
+      {% if pkg.stories %}
+      {% if pkg.stories_origin == 'каркасы из резюме' %}
+      <div class="notice" style="margin:.4rem 0 .8rem;">Личный файл историй пуст, поэтому ниже каркасы из проектов резюме
+        с вопросами, что нужно вспомнить. Запишите свои истории в
+        <code>data/resume/stories.md</code> (там лежит шаблон с подсказками) и перегенерируйте пакет — генератор
+        отшлифует ваш рассказ под вакансию, ничего не досочиняя.</div>
+      {% else %}
+      <p class="hint">Основа — ваш файл историй; генератор только шлифует под вакансию.</p>
+      {% endif %}
+      {% for s in pkg.stories %}
+      <div class="story">
+        <div class="kind">{{ s.kind | kind_title }}
+          <span class="origin {{ 'skel' if 'каркас' in s.origin else 'own' }}">{{ s.origin }}</span></div>
+        <div class="ttl">{{ s.title }}</div>
+        <p><strong>Ситуация.</strong> {{ s.situation }}</p>
+        <p><strong>Действия.</strong> {{ s.actions }}</p>
+        <p><strong>Результат.</strong> {{ s.result }}</p>
+        <p><strong>Вывод.</strong> {{ s.lesson }}</p>
+        {% if s.gaps %}<p class="gaps"><strong>Что вспомнить:</strong> {{ s.gaps }}</p>{% endif %}
+      </div>
+      {% endfor %}
+      {% else %}
+      <p class="hint">Раздел появится после перегенерации пакета.</p>
+      {% endif %}
+    </div>
+
+    {# ---------------- 100 дней ---------------- #}
+    <div class="card" style="margin-top:1rem;" id="days100">
+      <h2>План первых 100 дней <span class="hint" style="font-weight:normal;">— ответ на «что будете делать в первые месяцы» и заготовка презентации</span></h2>
+      {% if pkg.hundred_days.block1 %}
+      <div class="days">
+        <div><b>Дни 1–30 · аудит и риски</b>{{ pkg.hundred_days.block1 }}</div>
+        <div><b>Дни 31–60 · интервью и приоритеты</b>{{ pkg.hundred_days.block2 }}</div>
+        <div><b>Дни 61–100 · дорожная карта и бюджет</b>{{ pkg.hundred_days.block3 }}</div>
+      </div>
+      {% if pkg.hundred_days.pitch %}
+      <div class="pres-box pres" style="margin-top:.8rem;"><strong>Устно, за минуту:</strong> {{ pkg.hundred_days.pitch }}</div>
+      {% endif %}
+      {% if pkg.hundred_days.sources %}<div class="srcs"><b>Источники:</b> {{ pkg.hundred_days.sources | join(' · ') }}</div>{% endif %}
+      {% else %}
+      <p class="hint">Раздел появится после перегенерации пакета.</p>
+      {% endif %}
+    </div>
+
+    {# ---------------- Что бы вы улучшили ---------------- #}
+    <div class="card" style="margin-top:1rem;" id="improve">
+      <h2>«Что бы вы улучшили у нас?» <span class="hint" style="font-weight:normal;">— гипотезы со стороны: проверяют знание отрасли, компании и вакансии</span></h2>
+      {% set im = pkg.improvements %}
+      {% if im.items or im.frame %}
+      {% if im.frame %}<div class="pres-box"><strong>Как отвечать.</strong> {{ im.frame }}</div>{% endif %}
+      {% if im.context %}<p style="margin:.4rem 0;"><strong>Отрасль и компания.</strong> {{ im.context }}</p>{% endif %}
+      {% if im.trends %}
+      <h3 class="variant-h">Тренды под эту роль</h3>
+      <ul style="margin:.3rem 0 .6rem 1.1rem;">{% for t in im.trends %}<li>{{ t }}</li>{% endfor %}</ul>
+      {% endif %}
+      {% set basis_css = {'вакансия': 'vac', 'компания': 'co', 'отрасль': 'ind'} %}
+      {% for it in im.items %}
+      <div class="imp">
+        <div class="kind">{{ it.area }}{% if it.basis %} <span class="basis {{ basis_css.get(it.basis, 'ind') }}">{{ it.basis }}</span>{% endif %}</div>
+        {% if it.signal %}<p class="sig">{{ it.signal }}</p>{% endif %}
+        <p><strong>Гипотеза.</strong> {{ it.hypothesis }}</p>
+        {% if it.phrasing %}<p class="say"><strong>Сказать вслух.</strong> {{ it.phrasing }}</p>{% endif %}
+        {% if it.check %}<p><strong>Проверить вопросом.</strong> {{ it.check }}</p>{% endif %}
+        {% if it.backing %}<p class="back"><strong>Опора в опыте.</strong> {{ it.backing }}</p>{% endif %}
+      </div>
+      {% endfor %}
+      {% if im.sources %}<div class="srcs"><b>Источники:</b> {{ im.sources | join(' · ') }}</div>{% endif %}
+      {% else %}
+      <p class="hint">Раздел появится после перегенерации пакета.</p>
+      {% endif %}
+    </div>
+
+    {# ---------------- Повестка 2026 ---------------- #}
+    <div class="card" style="margin-top:1rem;" id="agenda">
+      <h2>Повестка 2026 <span class="hint" style="font-weight:normal;">— ИБ, ИИ на практике, импортозамещение: по кейсу с цифрами</span></h2>
+      {% if pkg.agenda %}
+      {% for a in pkg.agenda %}
+      <div class="agenda-item">
+        <div class="tp">{{ a.topic }}</div>
+        <p>{{ a.thesis }}</p>
+        <p><strong>Кейс:</strong> {{ a.case }}</p>
+        {% if a.sources %}<div class="srcs" style="margin-top:.4rem;border:0;padding:0;"><b>Источники:</b> {{ a.sources | join(' · ') }}</div>{% endif %}
+      </div>
+      {% endfor %}
+      {% else %}
+      <p class="hint">Раздел появится после перегенерации пакета.</p>
+      {% endif %}
+    </div>
+
+    {# ---------------- Блиц ---------------- #}
+    <div class="card" style="margin-top:1rem;" id="blitz">
+      <h2>Блиц «экзамен» <span class="hint" style="font-weight:normal;">— определения и цифры, где ждут готового ответа</span></h2>
+      {% if pkg.blitz %}
+      <ul class="blitz">
+        {% for b in pkg.blitz %}<li><strong>{{ b.question }}</strong> — {{ b.answer }}</li>{% endfor %}
+      </ul>
+      {% else %}
+      <p class="hint">Раздел появится после перегенерации пакета.</p>
+      {% endif %}
+    </div>
+
+    {# ---------------- Двойник ---------------- #}
     <div class="card" style="margin-top:1rem;" id="user-qa">
       <h2>Спросить двойника <span class="hint" style="font-weight:normal;">— свой вопрос, ответ от вашего лица на ваших фактах</span></h2>
       {% for q in pkg.user_qa %}
@@ -113,7 +346,7 @@
         {% endif %}
       </div>
       {% endfor %}
-      <form method="post" action="/prep/{{ pkg.package_id | replace('hh_','') }}/ask" id="ask-form" style="margin-top:.8rem;">
+      <form method="post" action="/prep/{{ vid }}/ask" id="ask-form" style="margin-top:.8rem;">
         <div class="field">
           <textarea name="question" rows="2" required
             placeholder="Например: почему вы ушли с последнего места именно сейчас, в разгар AI-проектов?"
@@ -129,7 +362,8 @@
       </script>
     </div>
 
-    <div class="card" style="margin-top:1rem;">
+    {# ---------------- Вопросы работодателю ---------------- #}
+    <div class="card" style="margin-top:1rem;" id="employer">
       <h2>Ваши вопросы работодателю</h2>
       {% for q in pkg.employer_questions %}
       <div class="qa-item">
@@ -137,9 +371,11 @@
         <div class="src">{{ q.why }}</div>
       </div>
       {% endfor %}
+      {% if pkg.employer_sources %}<div class="srcs"><b>Источники:</b> {{ pkg.employer_sources | join(' · ') }}</div>{% endif %}
     </div>
 
-    <div class="card" style="margin-top:1rem;">
+    {# ---------------- Purple Team ---------------- #}
+    <div class="card" style="margin-top:1rem;" id="purple">
       <h2>Purple Team — спарринг по болевым зонам</h2>
       {% for r in pkg.purple_rounds %}
       <div class="pt-round">
@@ -154,9 +390,36 @@
       {% endfor %}
     </div>
 
+    {# ---------------- Чего не говорить ---------------- #}
+    <div class="card" style="margin-top:1rem;" id="dontsay">
+      <h2>Чего не говорить <span class="hint" style="font-weight:normal;">— словами самих работодателей и executive search</span></h2>
+      {% if pkg.dont_say %}
+      <ul class="ds">
+        {% for d in pkg.dont_say if d.personal %}
+        <li class="personal"><span class="tag-you">лично вам</span>{{ d.text }}{% if d.source %} <span class="why">— {{ d.source }}</span>{% endif %}</li>
+        {% endfor %}
+        {% for d in pkg.dont_say if not d.personal %}
+        <li>{{ d.text }}{% if d.source %} <span class="why">— {{ d.source }}</span>{% endif %}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="hint">Раздел появится после перегенерации пакета.</p>
+      {% endif %}
+    </div>
+
+    {% if pkg.schema_version >= 2 %}
+    <div class="card" style="margin-top:1rem;" id="cheat">
+      <h2>Шпаргалка «10 минут до звонка»</h2>
+      <p style="margin:.5rem 0;">Одна страница из этого пакета без обращения к модели: самопрезентация на 1–3 минуты,
+        козыри, три самых неудобных вопроса с отточенными ответами, пять цифр, вопросы работодателю, «что бы вы улучшили»
+        вслух, чего не говорить.</p>
+      <a class="btn-submit" style="text-decoration:none;display:inline-block;" href="/prep/{{ vid }}/cheatsheet">Открыть шпаргалку</a>
+    </div>
     {% endif %}
 
-    <p style="margin-top:1rem;"><a href="/search">← к результатам поиска</a></p>
+    {% endif %}
+
+    <p style="margin-top:1rem;"><a href="/vacancy/{{ vid }}">← к карточке вакансии</a> · <a href="/favorites">избранное</a></p>
   </div>
 </main>
 
@@ -164,5 +427,44 @@
   <div class="container">Vacancy Intelligence Assistant · Подготовка к интервью</div>
 </footer>
 </div>
+<script>
+// Подсветка блока, в котором находится читатель: точка отсчёта — нижний край
+// закреплённого меню; активен последний блок, чей верх поднялся выше неё.
+// Скрипт стоит в конце страницы: блоки должны быть уже разобраны браузером.
+(function () {
+  function init() {
+    var toc = document.getElementById('toc');
+    if (!toc) return;
+    var links = Array.prototype.slice.call(toc.querySelectorAll('a[data-target]'));
+    var pairs = links.map(function (a) { return [a, document.getElementById(a.dataset.target)]; })
+                     .filter(function (p) { return p[1]; });
+    if (!pairs.length) return;
+    var root = document.scrollingElement || document.documentElement;
+    var ticking = false;
+    function update() {
+      ticking = false;
+      var line = toc.getBoundingClientRect().bottom + 24;
+      var current = pairs[0][1];
+      pairs.forEach(function (p) { if (p[1].getBoundingClientRect().top <= line) current = p[1]; });
+      if (root.scrollTop + root.clientHeight >= root.scrollHeight - 2) {
+        current = pairs[pairs.length - 1][1];
+      }
+      pairs.forEach(function (p) { p[0].classList.toggle('active', p[1] === current); });
+    }
+    function onScroll() {
+      if (!ticking) { ticking = true; window.requestAnimationFrame(update); }
+    }
+    document.addEventListener('scroll', onScroll, { passive: true, capture: true });
+    window.addEventListener('resize', onScroll);
+    window.addEventListener('hashchange', onScroll);
+    update();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
 </body>
 </html>

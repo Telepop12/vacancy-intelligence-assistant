@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Шпаргалка — {{ cs.title }}</title>
+  <style>
+    :root{--ink:#1e293b;--muted:#64748b;--line:#cbd5e1;--accent:#1e40af;--warn:#b45309;--danger:#b91c1c}
+    *{box-sizing:border-box}
+    body{margin:0;background:#e2e8f0;font-family:Calibri,"Segoe UI",Arial,sans-serif;color:var(--ink);font-size:11.5px;line-height:1.35}
+    .bar{background:#fff;border-bottom:1px solid var(--line);padding:.5rem 1rem;display:flex;gap:.8rem;align-items:center;font-size:13px}
+    .bar a{color:var(--accent)}
+    .bar button{margin-left:auto;background:var(--accent);color:#fff;border:0;border-radius:6px;padding:.4rem .9rem;font-size:13px;cursor:pointer}
+    .sheet{width:210mm;min-height:297mm;margin:1rem auto;background:#fff;padding:11mm 12mm;box-shadow:0 2px 12px rgba(0,0,0,.15)}
+    h1{font-size:16px;margin:0 0 2px}
+    .sub{color:var(--muted);font-size:10.5px;margin:0 0 8px}
+    h2{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);margin:9px 0 4px;padding-bottom:2px;border-bottom:1px solid var(--line)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 9mm}
+    .box{border:1px solid var(--line);border-radius:6px;padding:6px 8px;margin:4px 0}
+    .pres{white-space:pre-line}
+    ul{margin:2px 0 0 14px;padding:0}
+    li{margin:2px 0}
+    .q{font-weight:700}
+    .a{margin:1px 0 5px 0;padding-left:10px;border-left:2px solid var(--accent)}
+    .num{font-weight:700;color:var(--accent)}
+    .ds li{color:var(--danger)}
+    .stage{color:var(--ink)}
+    .foot{margin-top:10px;font-size:9.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:4px}
+    @media print{
+      body{background:#fff}
+      .bar{display:none}
+      .sheet{width:auto;min-height:auto;margin:0;padding:0;box-shadow:none}
+      @page{size:A4;margin:11mm 12mm}
+    }
+  </style>
+</head>
+<body>
+<div class="bar">
+  <a href="/prep/{{ vid }}">← к пакету подготовки</a>
+  <span>Шпаргалка собрана из пакета от {{ cs.generated_at }}, без обращения к модели</span>
+  <button onclick="window.print()">Печать / PDF</button>
+</div>
+
+<div class="sheet">
+  <h1>10 минут до звонка · {{ cs.title }}</h1>
+  <p class="sub">{{ cs.company }}{% if cs.url %} · {{ cs.url }}{% endif %}</p>
+
+  {% if cs.presentation_short %}
+  <h2>О себе · 1–3 минуты</h2>
+  <div class="box pres">{{ cs.presentation_short }}</div>
+  {% if cs.scope_line %}<p style="margin:2px 0 0"><b>Руками / делегирую / контролирую:</b> {{ cs.scope_line }}</p>{% endif %}
+  {% endif %}
+
+  <div class="grid">
+    <div>
+      {% if cs.trumps %}
+      <h2>Козыри</h2>
+      <ul>{% for t in cs.trumps %}<li>{{ t }}</li>{% endfor %}</ul>
+      {% endif %}
+
+      {% if cs.key_numbers %}
+      <h2>Цифры наизусть</h2>
+      <ul>{% for n in cs.key_numbers %}<li><span class="num">{{ n }}</span></li>{% endfor %}</ul>
+      {% endif %}
+
+      {% if cs.employer_questions %}
+      <h2>Спросить работодателя</h2>
+      <ul>{% for q in cs.employer_questions %}<li>{{ q }}</li>{% endfor %}</ul>
+      {% endif %}
+
+      {% if cs.stages %}
+      <h2>Этапы · кто передо мной</h2>
+      <ul>{% for s in cs.stages %}<li class="stage">{{ s }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+    <div>
+      {% if cs.risk_answers %}
+      <h2>Самые неудобные вопросы</h2>
+      {% for q, a in cs.risk_answers %}
+      <div class="q">{{ q }}</div>
+      <div class="a">{{ a }}</div>
+      {% endfor %}
+      {% endif %}
+
+      {% if cs.hundred_days_pitch %}
+      <h2>Первые месяцы · за минуту</h2>
+      <div class="box pres">{{ cs.hundred_days_pitch }}</div>
+      {% endif %}
+
+      {% if cs.improve %}
+      <h2>Если спросят «что бы вы улучшили»</h2>
+      <ul>{% for line in cs.improve %}<li>{{ line }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if cs.blitz %}
+  <h2>Блиц</h2>
+  <ul>{% for b in cs.blitz %}<li><b>{{ b.question }}</b> — {{ b.answer }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  {% if cs.dont_say %}
+  <h2>Не говорить</h2>
+  <ul class="ds">{% for d in cs.dont_say %}<li>{{ d }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  <div class="foot">Камера включена, компьютер вместо телефона, тихое место, доска для схем под рукой; никаких нейросетей во время секции — «это заметно» (Т-Банк). Уложиться в тайминг; вопросы кандидата оценивают.</div>
+</div>
+</body>
+</html>

@@ -2,105 +2,205 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## What this is
+
+Vacancy Intelligence Assistant — a self-hosted, single-user job-search pipeline for a
+CIO / CTO / CDTO candidate: find vacancies (hh.ru search, e-mail alerts, employer career pages)
+→ score them (rule-based triage, LLM career match on demand) → generate application material
+(cover letter, resume variant, interview prep). Sending an application is always a manual step
+by the user. UI, LLM output and most docs are in Russian; the user is the customer.
+
+Documentation map — keep in sync:
+
+- [README.md](README.md) — user-facing usage and feature descriptions.
+- [ARCHITECTURE.md](ARCHITECTURE.md) — design decisions and *why*. Update on any design-level decision.
+- [BACKLOG.md](BACKLOG.md) — sprint plan: next sprint, queue, rejected ideas. Update when the plan changes.
+- [CHANGELOG.md](CHANGELOG.md) — one section per sprint/date. Add a section when closing a sprint.
+- [DOCS-INDEX.md](DOCS-INDEX.md) — registry of all docs; register new docs there.
+
+Work runs in sprints: the customer sets a task → sprint is built → customer acceptance → commit →
+next sprint. Do not start the next sprint before the previous one is accepted.
+
 ## Commands
 
-All commands run from `vacancy_ai_assistant/` directory.
+All commands run from `vacancy_ai_assistant/`. Python 3.11+ (Docker image is 3.11).
+**On this Windows host bare `python` is 3.13 without the dependencies — use `py -3.14 -m ...`.**
 
-**Start web server (development):**
 ```
-uvicorn web.app:app --reload --port 8000
-```
-
-**Start via Docker:**
-```
-docker compose up --build
+pip install -r requirements.txt
 ```
 
-**Run all functional tests:**
+Web server (FastAPI):
+
 ```
-python qa/run_functional_tests.py
+uvicorn web.app:app --reload --port 8000     # local
+docker compose up --build -d                 # Docker; output/, config/, data/ are volumes
 ```
 
-**List tests without running:**
+`config/` and `data/` are mounted into the container, so editing a YAML (model, search queries,
+monitor interval, target companies) needs only a restart. Code changes need a rebuild.
+
+Tests — pytest, offline by default (188 collected, 8 marked `llm`, offline run takes seconds):
+
 ```
-python qa/run_functional_tests.py --list
+pytest qa/                                   # full offline suite
+pytest qa/ -m llm                            # only tests that make live Claude calls (need the key)
+pytest qa/test_hh.py -q                      # one file
+pytest qa/test_intake.py::test_name          # one test
+pytest qa/ -k "intake or resume"
 ```
 
-**CLI vacancy analysis:**
+Legacy end-to-end runner (spawns `main.py` subprocesses for TC-01…TC-32, writes `qa/test_report.md`,
+appends to the real `output/registry.csv`):
+
 ```
-python main.py --file data/sample_vacancy.txt
-python main.py --file data/sample_vacancy.txt --no-registry
+python qa/run_functional_tests.py            # --list prints the cases without running
 ```
 
-**Smoke test (server must be running):**
+Smoke test against a running server: `python web/smoke_test.py`.
+
+CLI entry points:
+
 ```
-python web/smoke_test.py
+python main.py --file data/sample_vacancy.txt [--no-registry]   # analyze one vacancy (stdin works too)
+python -m agents.mail_radar emails.json                          # ingest LinkedIn/hh alert e-mails (JSON list)
+python -m agents.mail_radar --check-linkedin [N]                 # LinkedIn lead liveness — run on the HOST, not in Docker
+python -m agents.career_watch [Company ...]                      # crawl career pages from config/target_companies.yaml
+python -m agents.cv_export [--lang ru] [--no-pdf] [--out DIR]    # executive CV from data/resume/cv_<lang>.yaml (PDF needs Word)
 ```
 
-**hh.ru integration tests (offline, network mocked):**
-```
-python -m pytest qa/test_hh.py -q
-```
-
-## API Key
-
-Create `.env` in `vacancy_ai_assistant/`:
-```
-ANTHROPIC_API_KEY=sk-ant-...
-```
-
-All LLM calls degrade gracefully to rule-based fallbacks when the key is absent or invalid.
+Environment: `.env` in this directory holds `ANTHROPIC_API_KEY` (all LLM features degrade to
+rule-based content without it) and optional `TG_BOT_TOKEN` for monitor alerts. There is no hh.ru
+token: hh.ru closed its API to applicants in December 2025 and dev.hh.ru registers employers only.
+Do not suggest obtaining one.
 
 ## Architecture
 
-Full design rationale lives in [ARCHITECTURE.md](ARCHITECTURE.md); documentation registry — [DOCS-INDEX.md](DOCS-INDEX.md). Update ARCHITECTURE.md when making design-level decisions and CHANGELOG.md when closing a sprint.
-
-The system has four independent layers that compose at the web layer (`web/app.py`):
+Layers, composed in `web/app.py` (FastAPI + Jinja2, server-rendered, no SPA):
 
 ```
-agents/intake.py          — Vacancy normalization (text/file/html/json/url → VacancyInput)
-agents/hh_api.py          — hh.ru client: official API (token) + HTML/JSON-LD fallback
-agents/hh_search.py       — Batch discovery: queries → ids → fetch → rule-based triage
-core/                     — Vacancy analysis (keyword scoring + LLM semantic analysis)
-agents/resume_intelligence.py — Resume parsing → ResumeProfile
-agents/career_match.py    — Resume × Vacancy → CareerMatchResult (LLM, Sonnet)
+SOURCES     agents/hh_search.py      search queries → new ids → fetch → rule-based triage
+            agents/mail_radar.py     LinkedIn/hh alert e-mails → leads (hh leads fetched; LinkedIn leads stay cards)
+            agents/career_watch.py   employer career pages or hh employer search → new postings → triage
+            web  POST /vacancy/add   manual: hh link and/or pasted text
+            agents/monitor.py        background thread: search → digest → auto-packages (capped) → Telegram
+STORE       agents/vacancy_store.py  output/vacancies/{vid}.json cache, favorites, dismissed
+            agents/hh_search.py      output/hh_search_state.json — the triage ledger every source registers into
+ANALYSIS    agents/intake.py         any input → VacancyInput (normalized text, metadata, confidence)
+            core/                    keyword scoring → analyzers → recommendation_engine.synthesize()
+            agents/resume_intelligence.py   resume → ResumeProfile
+            agents/career_match.py          resume × vacancy → CareerMatchResult (LLM)
+GENERATORS  agents/resume_variants.py       5 permanent resume archetypes (cio/cto/cdto/caio/universal)
+            agents/application_package.py   cover letter + variant choice + hh AI-screener Q&A
+            agents/interview_prep.py        7-stage prep package: process map, questions, presentation, stories, 100 days, agenda, blitz, cheat sheet
+            agents/interview_kb.py          keyword-addressed slices of data/interview_kb/ for prep prompts; company process profiles
+            agents/cv_export.py             English executive CV, DOCX → PDF
+LLM         core/llm.py              the only Anthropic client; model/effort in config/llm.yaml
 ```
 
-**Data flow for `/match` (main use case):**
-1. `from_text()` / `from_file()` → `VacancyInput` (normalized, with intake confidence)
-2. `load_resume()` + `analyze_resume()` → `ResumeProfile` (rule-based + Haiku LLM)
-3. `analyze(vacancy, profile)` → `VacancyAnalysis` (keyword score, evolutionary potential, DI layer)
-4. `career_match(vacancy, resume, keyword_score)` → `CareerMatchResult` (Sonnet, full career analysis)
-5. `match_result.html` renders dual-mode dashboard (Interview / Analyst modes)
+**Vacancy identity (`vid`).** Whatever the source, a vacancy ends up in the store and as a row in
+the triage ledger with a `source` tag (`hh`, `mail:hh`, `career:<Company>`, manual). `vid` is the
+numeric hh id, `m<timestamp>` for manual entries, `c<sha1(url)>` for career-page finds.
+`vacancy_store.resolve_vacancy(vid)` returns the cached dict or fetches from hh once;
+`hh_search.register_vacancy(profile, data, vid)` scores it and writes the ledger row. All
+per-vacancy pages (`/vacancy/{vid}`, `/analyze/{vid}`, `/package/{vid}`, `/prep/{vid}`) key on
+this id; the `/.../hh/{id}` routes are legacy redirects.
 
-**Rule for LLM model selection:**
-- `claude-sonnet-4-6` — all LLM calls: resume intelligence, career match, DI layer
-- Haiku was tried for resume extraction but failed to hold full career context across companies
+**Main flow `/match`:** `from_text()/from_file()/from_url()` → `load_resume()` +
+`analyze_resume()` → `analyze(vacancy, profile)` → `career_match(...)` → `match_result.html`
+(graph "cockpit" view by default, `web/static/cockpit_graph.js`).
 
-## Key Design Decisions
+**Batch flows are LLM-free.** Search, radar, career watch and the monitor triage with
+`RuleBasedAnalyzer` only. Paid LLM analysis happens per vacancy on an explicit user action, or in
+the monitor capped by `max_packages_per_cycle`.
 
-**Intake layer is mandatory.** `analyze()` and `career_match()` never receive raw text directly — all input goes through `agents/intake.py` first. Adding a new source (e.g., hh.ru API) means adding one `from_X()` function in intake; analysis layers don't change.
+**Generators cache to `output/<kind>/{id}.json` + `.md`** (`resume_variants/`, `applications/`,
+`prep/`). Pages load the saved artifact unless `?regenerate=1`.
 
-**`from_url()` is dual-channel, but the HTML channel is the real one.** hh.ru vacancy links resolve via `agents/hh_api.py`: the public vacancy page is fetched and its JSON-LD JobPosting block is parsed. Context: in December 2025 hh.ru closed anonymous API access to `/vacancies` (HTTP 403) and discontinued the applicant API entirely (15.12.2025); app registration at dev.hh.ru is employer-only now, so do NOT suggest registering for a token. The `HH_ACCESS_TOKEN` code path is kept only in case hh.ru's policy changes. Non-hh URLs fall back to a generic HTML fetch with confidence capped at MEDIUM.
+**State is files under `output/`** (git-ignored, Docker volume): `registry.csv`,
+`hh_search_state.json`, `hh_cooldown.json`, `mail_radar_state.json`, `career_watch_state.json`
++ `career_watch/`, `monitor_digest.json`, `tg_state.json`, `favorites.json`, `dismissed.json`,
+`vacancies/`. `data/resume/` (canonical resume, facts base, CV content) is git-ignored personal
+data too.
 
-**hh.ru batch search (`agents/hh_search.py`) is deliberately LLM-free.** `run_search()` triages new vacancies with `RuleBasedAnalyzer` only — a batch of 30 would otherwise mean 30 paid Sonnet calls. Full LLM analysis is per-vacancy via `/analyze/hh/{id}`. Already-triaged ids persist in `output/hh_search_state.json`; `rescan=True` re-triages everything (needed after editing the scoring profile). Search queries/region/limits live in `config/hh_search.yaml`. Fetches are throttled (`_REQUEST_DELAY`) — do not remove the delays, hh.ru shows captcha pages to aggressive clients.
+## Rules that shape changes
 
-**DOCX resumes are converted to Markdown** inside `_from_docx()` using paragraph style names (`Heading 1` → `#`, list items → `-`). This enables `marked.js` rendering in the browser and preserves structure for LLM parsing.
+**Intake is mandatory.** `analyze()` and `career_match()` never receive raw text; every source
+goes through a `from_X()` in `agents/intake.py`. New source = new `from_X()`; analysis layers stay
+untouched.
 
-**Full resume text is passed to Sonnet without truncation.** Sonnet has a 200K token context. Truncating the resume (as done in earlier versions) caused career match to analyze only the last job. `resume.raw_text` is used uncut.
+**One LLM gateway.** Every model call goes through `core.llm.call_json(system, prompt, ...)`.
+Never instantiate `anthropic.Anthropic` elsewhere. The gateway reads the key from env or `.env`,
+uses `anthropic.DefaultHttpxClient(trust_env=False)` (SDK 1.x moved to httpx2, a hand-built httpx
+client breaks), takes the first `text` block because Sonnet 5 returns a thinking block first,
+enforces `min_max_tokens`, retries once on truncated or invalid JSON, and retries once more when
+any `banned_substrings` appear (style guard). Model `claude-sonnet-5`, effort `medium` — set in
+`config/llm.yaml`, change it there, not in code.
 
-**`parse_roles_history()` + `format_roles_for_prompt()`** extract structured career positions from raw text using date-range regexes (`_YEAR_RANGE`). The prompt instructs Sonnet to cite every company with the format `"В [Компания] ([период]) ..."` — without this constraint, the model defaults to analyzing only the most recent position.
+**Analyzer selection is per call.** `core/analyzer.py::analyze()` builds `ClaudeAnalyzer` when a
+key is present, else `HybridAnalyzer` (deterministic content plus placeholders for LLM fields).
+Hierarchy in `core/analyzers/`: `BaseAnalyzer → RuleBasedAnalyzer → HybridAnalyzer →
+ClaudeAnalyzer`. `recommendation_engine.synthesize()` may override the score-based recommendation
+(low keyword score + high evolutionary potential → `ЗАПУСТИТЬ В РАБОТУ`).
 
-**Scoring architecture:** `core/analyzers/` has `BaseAnalyzer → RuleBasedAnalyzer → HybridAnalyzer → ClaudeAnalyzer`. The `analyze()` function in `core/analyzer.py` uses `HybridAnalyzer` by default. Recommendation can be overridden by `recommendation_engine.synthesize()` based on evolutionary potential (a low keyword score + high evolutionary potential → `ЗАПУСТИТЬ В РАБОТУ`).
+**hh.ru is accessed only through public HTML pages** — JSON-LD `JobPosting` on vacancy pages, serp
+cards on search pages. The anti-bot measures in `agents/hh_api.py` are deliberate: one shared
+cookie session, randomized pauses (`_REQUEST_DELAY` plus jitter), one retry on 403/429, stop after
+3 consecutive blocks, and a 30-minute cooldown persisted in `output/hh_cooldown.json`. Do not
+remove delays or raise batch sizes casually. Search ids come only from `serp-item__title` cards —
+a page-wide regex once pulled in "similar vacancies" noise. Failed fetches are not marked as seen,
+so they retry on the next run.
 
-**Template helpers passed as callables.** In `web/app.py`, `action_color` and `p_css` are passed to Jinja2 as function references (`"action_color": _action_color`), not pre-called values. Call them in templates: `{{ action_color(label) }}`.
+**LinkedIn is never scraped with the user's account.** LinkedIn radar leads stay as cards until
+the user pastes the text. Liveness checks hit only the public guest page, from the host (the
+container has no LinkedIn access), in small batches, and stop at the first sign of blocking.
 
-**Language policy:** All LLM system prompts include a Russian language instruction block forbidding English professional jargon. Allowed exceptions: AI, ERP, MLOps, ROI, P&L, KPI, CEO, CIO, CTO, M&A, MBA. This applies to both `resume_intelligence.py` and `career_match.py`.
+**Resume facts hierarchy.** Generators may re-accent, never invent. The canonical resume in
+`data/resume/` is the master; `data/resume/facts.md` adds only items marked ✅ (🚫 sections are
+ignored). Interview stories come only from `data/resume/stories.md` (personal, git-ignored); while it
+is empty the prep generator emits skeletons labelled «каркас из резюме», never invented stories.
+Because an hh.ru application uses a resume that already exists in the account, the
+per-vacancy artifact is the cover letter (~120–150 words: about me → why me → next step), not a
+new resume.
 
-## Testing Notes
+**Full resume text goes to the LLM uncut.** `parse_roles_history()` + `format_roles_for_prompt()`
+in `agents/resume_intelligence.py` add a positions list, and the prompt requires citing every
+company as «В [Компания] ([период]) …». Without this the model analyzes only the last job.
 
-QA tests in `run_functional_tests.py` directly import from `agents/` and `core/`. The file adds `vacancy_ai_assistant/` to `sys.path` at startup — tests must be run as `python qa/run_functional_tests.py` from `vacancy_ai_assistant/`, not from `qa/`.
+**Prep prompts read the knowledge base through `agents/interview_kb.py`.** Sections are looked up by
+header keywords, never by section numbers (the base is regenerated quarterly). Every excerpt starts
+with `[источник: …]`; sources returned by the model are filtered against the excerpt and resolved via
+`resolve_sources()`. Stages 4–6 of `build_prep()` are non-fatal: a failure lands in `stage_errors`
+and the package is still saved.
 
-TC-30..32 (Career Match tests) make live LLM calls and require `ANTHROPIC_API_KEY`. They fall back gracefully but `career_match_score` will equal `keyword_score` when the key is absent.
+**Language policy.** Every system prompt carries the Russian-only block forbidding English
+professional jargon (allowed: AI, ERP, MLOps, ROI, P&L, KPI, CEO, CIO, CTO, M&A, MBA). An English
+mode for the international track is planned in BACKLOG.md, not built.
 
-`qa/sample_inputs/sample_resume.txt` is required for TC-20..24, TC-30..32. If this file doesn't exist, those tests fail with a FileNotFoundError.
+**Web layer conventions.** Routes that call the LLM or the network are plain `def` (FastAPI runs
+them in a threadpool, the event loop stays free); light routes are `async def`. Template helpers
+(`action_color`, `p_css`) are passed as callables and called in templates:
+`{{ action_color(label) }}`. Static assets are versioned in every template (`style.css?v=N`,
+`cockpit_graph.js?v=N`) — bump N when editing them. The monitor scheduler starts as a daemon
+thread on FastAPI startup; interval and threshold live in `config/monitor.yaml`.
+
+**Tests never touch real state or the LLM.** `qa/conftest.py` blanks the API key for every test
+not marked `@pytest.mark.llm`, including CLI subprocesses (it sets a placeholder value rather than
+an empty string because Windows drops empty env vars). Tests that write state monkeypatch module
+paths (`vacancy_store.STORE_DIR`, `hh_search.STATE_PATH`, `*.OUTPUT_DIR`, `monitor.DIGEST_PATH`,
+`mail_radar.STATE_PATH`, ...) to `tmp_path`; follow the same pattern. Network is mocked in
+`qa/test_hh.py`. Fixtures live in `qa/sample_inputs/`; `sample_resume.txt` there is required by the
+resume and career-match cases.
+
+## Environment gotchas
+
+- **Encoding.** Source, templates and docs contain Cyrillic. Edit with tools that write UTF-8
+  without BOM; a PowerShell `Set-Content` pass once corrupted every template. `main.py` and the
+  test runners reconfigure stdout to UTF-8 for Windows consoles.
+- **Line endings.** `.gitattributes` forces LF for all text files; Python `Path.write_text` on
+  Windows emits CRLF, so normalize or let git do it.
+- **Docker + pip.** Any change to `requirements.txt` invalidates the pip layer, and PyPI's CDN has
+  timed out from Docker on this network. `anthropic` is intentionally unpinned (`>=0.40`; the host
+  has 0.x, the image pulled 1.x); pin `>=1.3,<2` at the next planned rebuild.
+- **Russian trusted root CA** (`config/certs/russian_trusted_root_ca.pem`) is added to the SSL
+  context by `career_watch` for career pages of Alfa-Bank, RZD and Metalloinvest.

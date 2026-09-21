@@ -29,7 +29,9 @@ from agents.hh_search import (
 from agents.application_package import (
     build_package, letter_word_count, load_saved_package,
 )
-from agents.interview_prep import answer_user_question, build_prep, load_saved_prep
+from agents.interview_prep import (
+    answer_user_question, build_cheatsheet, build_prep, kind_title, load_saved_prep,
+)
 from agents.resume_variants import (
     generate_all, generate_variant, load_saved_variants,
     load_variants_config, resume_path,
@@ -59,6 +61,13 @@ app = FastAPI(title="Vacancy Intelligence Assistant")
 
 app.mount("/static", StaticFiles(directory=str(_WEB_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(_WEB_DIR / "templates"))
+templates.env.filters["kind_title"] = kind_title   # названия видов историй в пакете подготовки
+
+
+def _with_query(request: Request, path: str) -> str:
+    """Редирект со старого адреса сохраняет строку запроса (?regenerate=true)."""
+    q = request.url.query
+    return f"{path}?{q}" if q else path
 
 # ---------------------------------------------------------------------------
 # Profile (loaded once at startup)
@@ -463,8 +472,8 @@ def _package_context(pkg) -> dict:
 
 
 @app.get("/package/hh/{vacancy_id}")
-async def package_page_legacy(vacancy_id: str):
-    return RedirectResponse(url=f"/package/{vacancy_id}", status_code=307)
+async def package_page_legacy(request: Request, vacancy_id: str):
+    return RedirectResponse(url=_with_query(request, f"/package/{vacancy_id}"), status_code=307)
 
 
 @app.get("/package/{vid}", response_class=HTMLResponse)
@@ -491,8 +500,8 @@ def package_page(request: Request, vid: str, regenerate: bool = False):
 # ---------------------------------------------------------------------------
 
 @app.get("/prep/hh/{vacancy_id}")
-async def prep_page_legacy(vacancy_id: str):
-    return RedirectResponse(url=f"/prep/{vacancy_id}", status_code=307)
+async def prep_page_legacy(request: Request, vacancy_id: str):
+    return RedirectResponse(url=_with_query(request, f"/prep/{vacancy_id}"), status_code=307)
 
 
 @app.get("/prep/{vid}", response_class=HTMLResponse)
@@ -512,7 +521,19 @@ def prep_page(request: Request, vid: str, regenerate: bool = False):
             package_id=f"hh_{vid}",
         )
     return templates.TemplateResponse(
-        request, "prep.html", context={"pkg": pkg, "active_nav": "search"}
+        request, "prep.html", context={"pkg": pkg, "vid": vid, "active_nav": "search"}
+    )
+
+
+@app.get("/prep/{vid}/cheatsheet", response_class=HTMLResponse)
+async def prep_cheatsheet(request: Request, vid: str):
+    """Шпаргалка «10 минут до звонка» из сохранённого пакета — без обращения к модели."""
+    pkg = load_saved_prep(f"hh_{vid}")
+    if pkg is None or pkg.error:
+        return RedirectResponse(url=f"/prep/{vid}", status_code=303)
+    return templates.TemplateResponse(
+        request, "cheatsheet.html",
+        context={"pkg": pkg, "cs": build_cheatsheet(pkg), "vid": vid},
     )
 
 

@@ -1,11 +1,15 @@
 """
-Executive CV (English) → DOCX, опционально → PDF через установленный Word.
+Executive CV → DOCX, опционально → PDF через установленный Word.
 
-Содержимое живёт вне репозитория: data/resume/cv_en.yaml (личные данные).
-Здесь только вёрстка: две страницы A4, шапка с контактами и опциональным фото,
-секции с подчёркнутыми заголовками, настоящие списки Word.
+Содержимое живёт вне репозитория: data/resume/cv_en.yaml и cv_ru.yaml
+(личные данные). Здесь только вёрстка: две страницы A4, шапка с контактами и
+опциональным фото, секции с подчёркнутыми заголовками, настоящие списки Word.
+Язык задаёт файл содержимого, заголовки разделов и папку выгрузки; в YAML
+можно переопределить размер шрифта (`layout: {body_pt: 9.2}`), если текст
+на другом языке длиннее.
 
-    py -3.14 -m agents.cv_export                 # без фото и с фото, DOCX + PDF
+    py -3.14 -m agents.cv_export                 # английская: без фото и с фото, DOCX + PDF
+    py -3.14 -m agents.cv_export --lang ru       # русская версия
     py -3.14 -m agents.cv_export --no-pdf        # только DOCX
     py -3.14 -m agents.cv_export --out output/cv # другая папка
 """
@@ -25,8 +29,39 @@ from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-CONTENT_PATH = BASE_DIR / "data" / "resume" / "cv_en.yaml"
-DEFAULT_OUT = BASE_DIR / "data" / "resume" / "published" / "CV_EN"
+
+LANGS: dict[str, dict] = {
+    "en": {
+        "content": BASE_DIR / "data" / "resume" / "cv_en.yaml",
+        "out": BASE_DIR / "data" / "resume" / "published" / "CV_EN",
+        "basename": "Grishkin_CV_EN",
+        "labels": {
+            "summary": "Executive summary",
+            "highlights": "Career highlights",
+            "competencies": "Core competencies",
+            "experience": "Professional experience",
+            "earlier": "Earlier career",
+            "education": "Education & certifications",
+            "languages": "Languages & publications",
+        },
+    },
+    "ru": {
+        "content": BASE_DIR / "data" / "resume" / "cv_ru.yaml",
+        "out": BASE_DIR / "data" / "resume" / "published" / "CV_RU",
+        "basename": "Grishkin_CV_RU",
+        "labels": {
+            "summary": "О себе",
+            "highlights": "Ключевые результаты",
+            "competencies": "Компетенции",
+            "experience": "Опыт работы",
+            "earlier": "Предыдущий опыт",
+            "education": "Образование и сертификаты",
+            "languages": "Языки и публикации",
+        },
+    },
+}
+CONTENT_PATH = LANGS["en"]["content"]      # обратная совместимость
+DEFAULT_OUT = LANGS["en"]["out"]
 
 ACCENT = RGBColor(0x1B, 0x2B, 0x5B)   # тёмно-синий, как в материалах лаборатории
 MUTED = RGBColor(0x5C, 0x62, 0x70)
@@ -67,9 +102,12 @@ def _spacing(paragraph, before: float = 0, after: float = 0, line: float | None 
 
 
 class CvBuilder:
-    def __init__(self, data: dict, photo: Path | None):
+    def __init__(self, data: dict, photo: Path | None, labels: dict | None = None):
         self.d = data
         self.photo = photo
+        self.labels = labels or LANGS["en"]["labels"]
+        layout = data.get("layout") or {}
+        self.body_pt = float(layout.get("body_pt", BODY_PT))
         self.doc = Document()
         self._setup_page()
 
@@ -81,7 +119,7 @@ class CvBuilder:
             s.left_margin = s.right_margin = Cm(SIDE_MARGIN_CM)
         normal = self.doc.styles["Normal"]
         normal.font.name = FONT
-        normal.font.size = Pt(BODY_PT)
+        normal.font.size = Pt(self.body_pt)
         normal.element.rPr.rFonts.set(qn("w:eastAsia"), FONT)
         normal.paragraph_format.space_before = Pt(0)
         normal.paragraph_format.space_after = Pt(0)
@@ -182,20 +220,20 @@ class CvBuilder:
 
     # -- секции ------------------------------------------------------------
     def build(self) -> Document:
-        d = self.d
+        d, L = self.d, self.labels
         self.header()
 
-        self.heading("Executive summary")
+        self.heading(L["summary"])
         self.para(d["summary"], after=2)
 
-        self.heading("Career highlights")
+        self.heading(L["highlights"])
         for h in d["highlights"]:
             self.bullet(h)
 
-        self.heading("Core competencies")
+        self.heading(L["competencies"])
         self.para("  ·  ".join(d["competencies"]), after=2)
 
-        self.heading("Professional experience")
+        self.heading(L["experience"])
         for job in d["experience"]:
             self.role_line(job["company"], job.get("location", ""), job["dates"])
             self.para(job["role"], bold=True, after=1)
@@ -206,26 +244,27 @@ class CvBuilder:
             if job.get("text"):
                 self.para(job["text"], after=2)
 
-        self.heading("Earlier career")
+        self.heading(L["earlier"])
         for e in d["earlier"]:
             self.bullet(e)
 
-        self.heading("Education & certifications")
+        self.heading(L["education"])
         for e in d["education"]:
             self.para(e, after=1)
         for c in d["certifications"]:
-            self.para(c, color=MUTED, size=9.5, after=0.5)
+            self.para(c, color=MUTED, size=self.body_pt, after=0.5)
 
-        self.heading("Languages & publications")
+        self.heading(L["languages"])
         self.para(d["languages"], after=1)
         self.para(d["publications"], after=0)
         return self.doc
 
 
-def build_docx(out_path: Path, with_photo: bool) -> Path:
-    data = yaml.safe_load(CONTENT_PATH.read_text(encoding="utf-8"))
+def build_docx(out_path: Path, with_photo: bool, lang: str = "en") -> Path:
+    cfg = LANGS[lang]
+    data = yaml.safe_load(cfg["content"].read_text(encoding="utf-8"))
     photo = (BASE_DIR / data["photo"]) if with_photo and data.get("photo") else None
-    doc = CvBuilder(data, photo).build()
+    doc = CvBuilder(data, photo, cfg["labels"]).build()
     out_path.parent.mkdir(parents=True, exist_ok=True)
     doc.save(str(out_path))
     return out_path
@@ -249,14 +288,20 @@ def docx_to_pdf(docx_path: Path) -> Path:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[1])
-    ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    ap.add_argument("--lang", choices=sorted(LANGS), default="en")
+    ap.add_argument("--out", type=Path, default=None,
+                    help="папка выгрузки (по умолчанию data/resume/published/CV_<LANG>)")
     ap.add_argument("--no-pdf", action="store_true")
-    ap.add_argument("--basename", default="Grishkin_CV_EN")
+    ap.add_argument("--basename", default=None,
+                    help="имя файлов без расширения (по умолчанию Grishkin_CV_<LANG>)")
     args = ap.parse_args(argv)
+    cfg = LANGS[args.lang]
+    out_dir = args.out or cfg["out"]
+    basename = args.basename or cfg["basename"]
 
     made: list[Path] = []
     for with_photo, suffix in ((False, ""), (True, "_photo")):
-        docx_path = build_docx(args.out / f"{args.basename}{suffix}.docx", with_photo)
+        docx_path = build_docx(out_dir / f"{basename}{suffix}.docx", with_photo, args.lang)
         made.append(docx_path)
         if not args.no_pdf:
             made.append(docx_to_pdf(docx_path))
