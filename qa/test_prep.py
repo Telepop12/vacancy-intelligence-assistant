@@ -6,6 +6,7 @@ import json
 import pytest
 
 from agents import interview_prep as ip
+from agents import prep_jobs
 from agents.interview_prep import PrepPackage, PrepQA
 
 pytestmark = pytest.mark.no_llm
@@ -183,6 +184,18 @@ def test_build_prep_happy_path_v2(monkeypatch, tmp_path):
     assert loaded.improvements.trends == im.trends
 
 
+def test_prep_calls_are_tagged_prep_purpose(monkeypatch):
+    from core import llm
+    seen = {}
+
+    def fake(system, prompt, **kw):
+        seen.update(kw)
+        return {}
+    monkeypatch.setattr(llm, "call_json", fake)
+    ip._call_llm("sk-test", "s", "p", max_tokens=123)
+    assert seen["purpose"] == "prep" and seen["max_tokens"] == 123 and seen["banned_substrings"] == [", а не "]
+
+
 def test_build_prep_no_key(monkeypatch, tmp_path):
     monkeypatch.setattr(ip, "OUTPUT_DIR", tmp_path)
     monkeypatch.setattr(ip, "_get_api_key", lambda: "")
@@ -276,6 +289,43 @@ def test_build_cheatsheet_from_package():
     assert cs.improve == ["п0", "г1", "п3"]                # фраза, иначе гипотеза; пустые пропущены
 
 
+def test_ask_in_block_persists_and_deletes(monkeypatch, tmp_path):
+    _setup(monkeypatch, tmp_path, _mock_llm(ALL))
+    ip.build_prep(vacancy_text="v", title="CIO", company="Тест", package_id="hh_7",
+                  resume_text="r", stories_text="")
+    seen = {}
+
+    def fake(api_key, system, prompt, max_tokens=4000):
+        seen["system"], seen["prompt"] = system, prompt
+        return {"answer": "Через матричное управление.", "note": "уточнить численность"}
+    monkeypatch.setattr(ip, "_call_llm", fake)
+    monkeypatch.setattr(ip, "load_canonical_resume", lambda: "резюме")
+
+    item = ip.ask_in_block("hh_7", "qa", "А если спросят про 100+?", vacancy_text="Ищем CIO")
+    assert item.block == "qa" and item.answer.startswith("Через") and item.note == "уточнить численность"
+    assert "Вопросы по опыту" in seen["system"] and "интервьюер-наставник" in seen["system"]
+    assert "Как считали 99,9%?" in seen["prompt"]          # контекст раздела попал в промпт
+    assert "Ищем CIO" in seen["prompt"]
+
+    ip.ask_in_block("hh_7", "purple", "Вы не устали?", vacancy_text="")
+    assert "Вы никогда не управляли 100+." in seen["prompt"]   # контекст спарринга
+    ip.ask_in_block("hh_7", "qa", "Ещё вопрос", vacancy_text="")
+    assert "А если спросят про 100+?" in seen["prompt"]        # история раздела для связности
+
+    loaded = ip.load_saved_prep("hh_7")
+    assert [x.block for x in loaded.block_qa] == ["qa", "purple", "qa"]
+    md = (tmp_path / "hh_7.md").read_text(encoding="utf-8")
+    assert md.count("### Ваши вопросы к ИИ") == 2 and "Вы не устали?" in md
+
+    assert ip.delete_block_qa("hh_7", "qa", 0) is True
+    assert [x.question for x in ip.load_saved_prep("hh_7").block_qa if x.block == "qa"] == ["Ещё вопрос"]
+    assert ip.delete_block_qa("hh_7", "qa", 5) is False
+
+    with pytest.raises(ValueError):
+        ip.ask_in_block("hh_7", "unknown", "?")
+    assert ip.ask_in_block("hh_7", "qa", "   ").question == ""   # пустой вопрос не вызывает модель
+
+
 def test_answer_user_question_persists(monkeypatch, tmp_path):
     _setup(monkeypatch, tmp_path, _mock_llm(ALL))
     monkeypatch.setattr(ip, "load_canonical_resume", lambda: "резюме")
@@ -304,6 +354,7 @@ def _client(monkeypatch, tmp_path):
     from agents import vacancy_store as vs
     monkeypatch.setattr(vs, "STORE_DIR", tmp_path / "store")
     monkeypatch.setattr(ip, "OUTPUT_DIR", tmp_path)
+    monkeypatch.setattr(prep_jobs, "_JOBS", {})
     return TestClient(webapp.app), webapp
 
 
@@ -314,16 +365,111 @@ def test_prep_route_cold_path(monkeypatch, tmp_path):
         lambda vid: {"name": "CIO", "employer": "Тест", "description": "текст",
                      "alternate_url": "https://hh.ru/vacancy/7"},
     )
-    monkeypatch.setattr(
-        webapp, "build_prep",
-        lambda **kw: PrepPackage(package_id="hh_7", vacancy_title="CIO",
-                                 interviewer_profile="Профиль.",
-                                 qa=[PrepQA(question="Вопрос?", answer="Ответ.", severity="warn")]),
-    )
+    events = []
+
+    def fake_build(**kw):
+        kw["progress"]("qa", "start"); kw["progress"]("qa", "ok")
+        events.append(kw["package_id"])
+        pkg = PrepPackage(package_id="hh_7", vacancy_title="CIO", interviewer_profile="Профиль.",
+                          qa=[PrepQA(question="Вопрос?", answer="Ответ.", severity="warn")])
+        ip._save(pkg)
+        return pkg
+    monkeypatch.setattr(ip, "build_prep", fake_build)
+
+    # холодный вызов запускает фоновую сборку и уводит на страницу прогресса
+    resp = client.get("/prep/7", follow_redirects=False)
+    assert resp.status_code == 303 and resp.headers["location"] == "/prep/7"
+    job = prep_jobs.wait("hh_7")
+    assert job is not None and job.done and not job.error and events == ["hh_7"]
+    assert [s.status for s in job.stages][:2] == ["ok", "skip"]  # qa отчитался, остальные пропущены
+
     resp = client.get("/prep/7")
     assert resp.status_code == 200
     assert "Вопрос?" in resp.text
     assert "собран прежней версией" in resp.text            # schema_version=1 → подсказка
+    assert client.get("/prep/7/status").json()["done"] is True
+
+
+def test_prep_progress_page_and_status(monkeypatch, tmp_path):
+    import threading
+    client, webapp = _client(monkeypatch, tmp_path)
+    monkeypatch.setattr(webapp.hh_api, "fetch_vacancy_data",
+                        lambda vid: {"name": "CIO", "employer": "Тест", "description": "текст"})
+    gate = threading.Event()
+
+    def slow_build(**kw):
+        kw["progress"]("qa", "start"); kw["progress"]("qa", "ok"); kw["progress"]("hr", "start")
+        gate.wait(5)
+        raise RuntimeError("обрыв сети")
+    monkeypatch.setattr(ip, "build_prep", slow_build)
+
+    client.get("/prep/11", follow_redirects=False)
+    page = client.get("/prep/11")
+    assert page.status_code == 200 and 'id="progress"' in page.text and "Собираем пакет" in page.text
+    st = client.get("/prep/11/status").json()
+    assert st["running"] and st["stages"][0]["status"] == "ok" and st["stages"][1]["status"] == "running"
+    assert client.get("/prep/11?regenerate=true").status_code == 200   # вторую сборку не запускает
+    assert len([t for t in threading.enumerate() if t.name == "prep-hh_11"]) == 1
+
+    gate.set()
+    job = prep_jobs.wait("hh_11")
+    assert job.done and "обрыв сети" in job.error
+    assert [s.status for s in job.stages][:3] == ["ok", "fail", "skip"]
+    page = client.get("/prep/11")          # упавшая сборка не перезапускается сама
+    assert "обрыв сети" in page.text and "собрать заново" in page.text
+    assert client.get("/prep/11/status").json()["done"] is True
+
+
+def test_build_prep_reports_progress(monkeypatch, tmp_path):
+    _setup(monkeypatch, tmp_path, _mock_llm(ALL, fail_at=5))
+    events = []
+    ip.build_prep(vacancy_text="v", title="CIO", package_id="hh_12", resume_text="r",
+                  stories_text="", progress=lambda k, s, d="": events.append((k, s)))
+    keys = [k for k, _ in ip.STAGES]
+    assert [k for k, s in events if s == "start"] == keys
+    assert [s for k, s in events if k == "stories"] == ["start", "fail"]
+    assert all(s == "ok" for k, s in events if s != "start" and k != "stories")
+
+
+def test_resume_prep_runs_only_missing_stages(monkeypatch, tmp_path):
+    _setup(monkeypatch, tmp_path, _mock_llm(ALL, fail_at=5))          # истории упали
+    pkg = ip.build_prep(vacancy_text="v", title="CIO", package_id="hh_13", resume_text="r", stories_text="")
+    assert pkg.stage_errors and not pkg.stories
+    assert ip.present_stages(pkg) == {"qa", "hr", "employer", "purple", "process", "agenda", "improve"}
+
+    calls = {"n": 0}
+
+    def only_stories(api_key, system, prompt, max_tokens=4000):
+        calls["n"] += 1
+        return _STAGE5
+    monkeypatch.setattr(ip, "_call_llm", only_stories)
+    monkeypatch.setattr(ip, "load_canonical_resume", lambda: "r")
+    events = []
+    out = ip.resume_prep("hh_13", vacancy_text="v", stories_text="", progress=lambda k, s, d="": events.append((k, s)))
+    assert calls["n"] == 1 and events == [("stories", "start"), ("stories", "ok")]
+    assert out.stage_errors == [] and [s.kind for s in out.stories] == KINDS
+    assert ip.load_saved_prep("hh_13").stories                      # сохранено
+    assert sum(1 for d in out.dont_say if not d.personal) >= 10   # общий чек-лист не задвоился
+    assert ip.resume_prep("hh_nope", "v") is None
+
+
+def test_resume_route(monkeypatch, tmp_path):
+    client, _webapp = _client(monkeypatch, tmp_path)
+    _setup(monkeypatch, tmp_path, _mock_llm(ALL, fail_at=5))
+    ip.build_prep(vacancy_text="v", title="CIO", package_id="hh_14", resume_text="r", stories_text="")
+    page = client.get("/prep/14")
+    assert 'action="/prep/14/resume"' in page.text and "Дособрать упавшие этапы" in page.text
+
+    monkeypatch.setattr(ip, "_call_llm", lambda *a, **k: _STAGE5)
+    monkeypatch.setattr(ip, "load_canonical_resume", lambda: "r")
+    resp = client.post("/prep/14/resume", follow_redirects=False)
+    assert resp.status_code == 303 and resp.headers["location"] == "/prep/14"
+    job = prep_jobs.wait("hh_14")
+    assert job.kind == "resume" and job.done and not job.error
+    assert {s.key: s.status for s in job.stages}["stories"] == "ok"
+    assert {s.key: s.detail for s in job.stages}["qa"] == "уже собран"
+    assert "Провальный проект" in client.get("/prep/14").text
+    assert client.post("/prep/99/resume", follow_redirects=False).status_code == 404
 
 
 def test_prep_route_renders_v2_sections(monkeypatch, tmp_path):
@@ -349,6 +495,32 @@ def test_prep_route_renders_v2_sections(monkeypatch, tmp_path):
     assert "10 минут до звонка" in cheat.text and "Я CIO…" in cheat.text
     assert "Не занижать масштаб" in cheat.text
     assert "Если спросят «что бы вы улучшили»" in cheat.text and "Вижу в описании" in cheat.text
+
+    # окошки «Спросить ИИ» в блоках с коммуникацией
+    for block in ["presentation", "qa", "hr", "stories", "days100", "improve", "agenda", "blitz", "employer", "purple"]:
+        assert f'action="/prep/8/ask/{block}"' in resp.text, block
+    assert 'action="/prep/8/ask/process"' not in resp.text
+
+
+def test_prep_ask_block_route(monkeypatch, tmp_path):
+    client, _webapp = _client(monkeypatch, tmp_path)
+    _setup(monkeypatch, tmp_path, _mock_llm(ALL))
+    ip.build_prep(vacancy_text="v", title="CIO", company="Тест", package_id="hh_9",
+                  resume_text="r", stories_text="")
+    monkeypatch.setattr(ip, "_call_llm", lambda *a, **k: {"answer": "Ответ ИИ в блице.", "note": ""})
+    monkeypatch.setattr(ip, "load_canonical_resume", lambda: "резюме")
+
+    resp = client.post("/prep/9/ask/blitz", data={"question": "Что такое RTO?"}, follow_redirects=False)
+    assert resp.status_code == 303 and resp.headers["location"] == "/prep/9#blitz"
+    page = client.get("/prep/9").text
+    assert "Что такое RTO?" in page and "Ответ ИИ в блице." in page
+    assert 'action="/prep/9/ask/blitz/delete"' in page
+
+    resp = client.post("/prep/9/ask/blitz/delete", data={"idx": "0"}, follow_redirects=False)
+    assert resp.status_code == 303
+    assert "Ответ ИИ в блице." not in client.get("/prep/9").text
+
+    assert client.post("/prep/9/ask/nope", data={"question": "?"}, follow_redirects=False).status_code == 404
 
 
 def test_cheatsheet_without_package_redirects(monkeypatch, tmp_path):

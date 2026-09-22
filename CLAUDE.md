@@ -40,7 +40,7 @@ docker compose up --build -d                 # Docker; output/, config/, data/ a
 `config/` and `data/` are mounted into the container, so editing a YAML (model, search queries,
 monitor interval, target companies) needs only a restart. Code changes need a rebuild.
 
-Tests — pytest, offline by default (188 collected, 8 marked `llm`, offline run takes seconds):
+Tests — pytest, offline by default (205 collected, 8 marked `llm`, offline run takes seconds):
 
 ```
 pytest qa/                                   # full offline suite
@@ -92,7 +92,8 @@ ANALYSIS    agents/intake.py         any input → VacancyInput (normalized text
             agents/career_match.py          resume × vacancy → CareerMatchResult (LLM)
 GENERATORS  agents/resume_variants.py       5 permanent resume archetypes (cio/cto/cdto/caio/universal)
             agents/application_package.py   cover letter + variant choice + hh AI-screener Q&A
-            agents/interview_prep.py        7-stage prep package: process map, questions, presentation, stories, 100 days, agenda, blitz, cheat sheet
+            agents/interview_prep.py        8-stage prep package: process map, questions, presentation, stories, 100 days, agenda, blitz, improvements, cheat sheet; per-block ask-AI
+            agents/prep_jobs.py             background prep build (thread per package), progress for /prep/{vid}/status, resume of failed optional stages
             agents/interview_kb.py          keyword-addressed slices of data/interview_kb/ for prep prompts; company process profiles
             agents/cv_export.py             English executive CV, DOCX → PDF
 LLM         core/llm.py              the only Anthropic client; model/effort in config/llm.yaml
@@ -132,10 +133,14 @@ untouched.
 **One LLM gateway.** Every model call goes through `core.llm.call_json(system, prompt, ...)`.
 Never instantiate `anthropic.Anthropic` elsewhere. The gateway reads the key from env or `.env`,
 uses `anthropic.DefaultHttpxClient(trust_env=False)` (SDK 1.x moved to httpx2, a hand-built httpx
-client breaks), takes the first `text` block because Sonnet 5 returns a thinking block first,
-enforces `min_max_tokens`, retries once on truncated or invalid JSON, and retries once more when
-any `banned_substrings` appear (style guard). Model `claude-sonnet-5`, effort `medium` — set in
-`config/llm.yaml`, change it there, not in code.
+client breaks), streams every request (`messages.stream()` + `get_final_message()`, so long
+answers don't hit the HTTP timeout), takes the first `text` block because Sonnet 5 returns a
+thinking block first, enforces `min_max_tokens`, treats `stop_reason == "max_tokens"` as
+truncation, retries once on truncated or invalid JSON, raises on `refusal`, and retries once more
+when any `banned_substrings` appear (style guard). Model `claude-sonnet-5`, effort `medium` — set in
+`config/llm.yaml`, change it there, not in code. The `models:` map there overrides the model per
+call `purpose` (`prep` → `claude-opus-5` for the interview-prep generator, customer decision
+2026-09-22); pass `purpose=` from a generator's `_call_llm` wrapper, never hardcode a model id.
 
 **Analyzer selection is per call.** `core/analyzer.py::analyze()` builds `ClaudeAnalyzer` when a
 key is present, else `HybridAnalyzer` (deterministic content plus placeholders for LLM fields).
@@ -200,7 +205,7 @@ resume and career-match cases.
 - **Line endings.** `.gitattributes` forces LF for all text files; Python `Path.write_text` on
   Windows emits CRLF, so normalize or let git do it.
 - **Docker + pip.** Any change to `requirements.txt` invalidates the pip layer, and PyPI's CDN has
-  timed out from Docker on this network. `anthropic` is intentionally unpinned (`>=0.40`; the host
-  has 0.x, the image pulled 1.x); pin `>=1.3,<2` at the next planned rebuild.
+  timed out from Docker on this network. `anthropic` is pinned `>=1.7,<2` (host and image both
+  1.7.0 since 2026-09-22).
 - **Russian trusted root CA** (`config/certs/russian_trusted_root_ca.pem`) is added to the SSL
   context by `career_watch` for career pages of Alfa-Bank, RZD and Metalloinvest.

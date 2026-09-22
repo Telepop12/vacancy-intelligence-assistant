@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Сборка пакета подготовки — Vacancy Intelligence Assistant</title>
+  <link rel="stylesheet" href="/static/style.css?v=3">
+  <style>
+    .stg{display:grid;grid-template-columns:2rem 1fr auto;gap:.6rem;align-items:center;padding:.55rem 0;border-bottom:1px solid var(--border)}
+    .stg .ic{font-size:1.05rem;text-align:center}
+    .stg .t{font-weight:600}
+    .stg .d{font-size:.8rem;color:var(--muted)}
+    .stg.pending .t{font-weight:400;color:var(--muted)}
+    .stg.skip .t{color:var(--muted)}
+    .stg.fail .d{color:var(--danger)}
+    .spin{display:inline-block;width:.85rem;height:.85rem;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:sp 1s linear infinite;vertical-align:middle;margin-left:.4rem}
+    @keyframes sp{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+<aside class="sidebar">
+  {% include '_nav.html' %}
+</aside>
+
+<header>
+  <div class="container">
+    <h1>Vacancy Intelligence Assistant</h1>
+    <p class="sub">Career Intelligence Platform · CIO / CTO / CDTO</p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+    {% set icons = {'pending': '·', 'running': '⏳', 'ok': '✅', 'fail': '❌', 'skip': '—'} %}
+    <div class="card" id="progress">
+      <h2>{% if job.kind == 'resume' %}Досбираем пакет подготовки{% else %}Собираем пакет подготовки{% endif %}{% if not job.done %}<span class="spin" id="spin"></span>{% endif %}</h2>
+      <p class="hint" style="margin:.4rem 0;">Вакансия {{ vid }} · начато {{ job.started_at }} · <span id="elapsed">прошло {{ '%d' % ((job.t1 if job.done else 0) and (job.t1 - job.t0) or 0) }} с</span>.
+        {% if job.kind == 'resume' %}Собираются только недостающие этапы.{% else %}Восемь вызовов модели, обычно 10–25 минут.{% endif %}
+        Страницу можно закрыть: сборка идёт на сервере, готовый пакет откроется по этому же адресу.</p>
+      {% if job.error %}
+      <div class="error-box" style="margin:.8rem 0;">{{ job.error }} · <a href="/prep/{{ vid }}?regenerate=true">собрать заново</a></div>
+      {% endif %}
+      <div id="stages" style="margin-top:.6rem;">
+        {% for s in job.stages %}
+        <div class="stg {{ s.status }}" data-key="{{ s.key }}">
+          <div class="ic">{{ icons[s.status] }}</div>
+          <div><div class="t">{{ loop.index }}. {{ s.title }}</div><div class="d">{{ s.detail }}</div></div>
+          <div class="d sec">{% if s.seconds %}{{ s.seconds }} с{% endif %}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <p style="margin-top:1rem;"><a href="/vacancy/{{ vid }}">← к карточке вакансии</a> · <a href="/favorites">избранное</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="container">Vacancy Intelligence Assistant · Подготовка к интервью</div>
+</footer>
+</div>
+<script>
+(function () {
+  var ICON = {pending: '·', running: '⏳', ok: '✅', fail: '❌', skip: '—'};
+  var done = {{ 'true' if job.done else 'false' }};
+  function fmt(sec) {
+    var m = Math.floor(sec / 60), s = sec % 60;
+    return (m ? m + ' мин ' : '') + s + ' с';
+  }
+  function apply(d) {
+    var el = document.getElementById('elapsed');
+    if (el) el.textContent = 'прошло ' + fmt(Math.round(d.elapsed || 0));
+    (d.stages || []).forEach(function (s) {
+      var row = document.querySelector('.stg[data-key="' + s.key + '"]');
+      if (!row) return;
+      row.className = 'stg ' + s.status;
+      row.querySelector('.ic').textContent = ICON[s.status] || '·';
+      row.querySelector('.d').textContent = s.detail || '';
+      row.querySelector('.sec').textContent = s.seconds ? (s.seconds + ' с') : '';
+    });
+    if (d.done) {
+      if (d.error) { location.reload(); } else { location.href = '/prep/{{ vid }}'; }
+    }
+  }
+  function poll() {
+    fetch('/prep/{{ vid }}/status', {cache: 'no-store'})
+      .then(function (r) { return r.json(); })
+      .then(function (d) { apply(d); if (!d.done) setTimeout(poll, 4000); })
+      .catch(function () { setTimeout(poll, 8000); });
+  }
+  if (!done) setTimeout(poll, 2000);
+})();
+</script>
+</body>
+</html>

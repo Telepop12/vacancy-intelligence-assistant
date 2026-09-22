@@ -15,13 +15,13 @@ from typing import Optional
 
 import yaml
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from agents import hh_api
 from agents.career_match import career_match
-from agents import mail_radar, monitor, vacancy_store
+from agents import mail_radar, monitor, prep_jobs, vacancy_store
 from agents.hh_search import (
     get_state_item, load_search_config, register_vacancy,
     remove_from_state, run_search,
@@ -30,7 +30,8 @@ from agents.application_package import (
     build_package, letter_word_count, load_saved_package,
 )
 from agents.interview_prep import (
-    answer_user_question, build_cheatsheet, build_prep, kind_title, load_saved_prep,
+    BLOCKS, answer_user_question, ask_in_block, build_cheatsheet, build_prep,
+    delete_block_qa, kind_title, load_saved_prep,
 )
 from agents.resume_variants import (
     generate_all, generate_variant, load_saved_variants,
@@ -506,23 +507,59 @@ async def prep_page_legacy(request: Request, vacancy_id: str):
 
 @app.get("/prep/{vid}", response_class=HTMLResponse)
 def prep_page(request: Request, vid: str, regenerate: bool = False):
-    """Interview prep package for a stored/hh vacancy (independent of applying)."""
-    pkg = None if regenerate else load_saved_prep(f"hh_{vid}")
+    """
+    Interview prep package for a stored/hh vacancy (independent of applying).
+    Сборка идёт в фоне (agents/prep_jobs.py): пока задача не завершена —
+    страница прогресса; готовый пакет — по тому же адресу.
+    """
+    pid = f"hh_{vid}"
+    job = prep_jobs.get(pid)
+    if job is not None and not job.done:
+        return _progress_page(request, job, vid)
+    pkg = None if regenerate else load_saved_prep(pid)
     if pkg is None:
+        if job is not None and job.done and job.error and not regenerate:
+            # сборка упала на обязательном этапе — не перезапускать сама по себе
+            return _progress_page(request, job, vid)
         try:
             data = vacancy_store.resolve_vacancy(vid)
         except hh_api.HHApiError as exc:
             raise HTTPException(status_code=502, detail=str(exc))
-        pkg = build_prep(
-            vacancy_text=data.get("description", ""),
-            title=data.get("name", ""),
-            company=data.get("employer", ""),
-            url=data.get("alternate_url", ""),
-            package_id=f"hh_{vid}",
-        )
+        prep_jobs.start_full(pid, data)
+        return RedirectResponse(url=f"/prep/{vid}", status_code=303)
     return templates.TemplateResponse(
         request, "prep.html", context={"pkg": pkg, "vid": vid, "active_nav": "search"}
     )
+
+
+def _progress_page(request: Request, job, vid: str):
+    return templates.TemplateResponse(
+        request, "prep_progress.html", context={"job": job, "vid": vid, "active_nav": "search"}
+    )
+
+
+@app.get("/prep/{vid}/status")
+async def prep_status(vid: str):
+    """JSON-прогресс фоновой сборки для страницы ожидания."""
+    pid = f"hh_{vid}"
+    job = prep_jobs.get(pid)
+    if job is None:
+        return JSONResponse({"running": False, "done": load_saved_prep(pid) is not None,
+                             "error": "", "stages": [], "elapsed": 0})
+    return JSONResponse(prep_jobs.to_dict(job))
+
+
+@app.post("/prep/{vid}/resume")
+def prep_resume(vid: str):
+    """Досборка упавших необязательных этапов сохранённого пакета — в фоне."""
+    pid = f"hh_{vid}"
+    try:
+        vacancy_text = vacancy_store.resolve_vacancy(vid).get("description", "")
+    except Exception:  # noqa: BLE001 — текст вакансии здесь лишь контекст
+        vacancy_text = ""
+    if prep_jobs.start_resume(pid, vacancy_text) is None:
+        raise HTTPException(status_code=404, detail="нет сохранённого пакета для досборки")
+    return RedirectResponse(url=f"/prep/{vid}", status_code=303)
 
 
 @app.get("/prep/{vid}/cheatsheet", response_class=HTMLResponse)
@@ -542,6 +579,28 @@ def prep_ask(vid: str, question: str = Form(default="")):
     """Answer a user-typed interviewer question; persists into the package."""
     answer_user_question(f"hh_{vid}", question)
     return RedirectResponse(url=f"/prep/{vid}#user-qa", status_code=303)
+
+
+@app.post("/prep/{vid}/ask/{block}")
+def prep_ask_block(vid: str, block: str, question: str = Form(default="")):
+    """Вопрос кандидата к ИИ внутри раздела пакета; ответ сохраняется под разделом."""
+    if block not in BLOCKS:
+        raise HTTPException(status_code=404, detail="неизвестный раздел пакета")
+    try:
+        vacancy_text = vacancy_store.resolve_vacancy(vid).get("description", "")
+    except Exception:  # noqa: BLE001 — текст вакансии здесь лишь контекст, без него тоже работает
+        vacancy_text = ""
+    try:
+        ask_in_block(f"hh_{vid}", block, question, vacancy_text=vacancy_text)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    return RedirectResponse(url=f"/prep/{vid}#{block}", status_code=303)
+
+
+@app.post("/prep/{vid}/ask/{block}/delete")
+def prep_ask_block_delete(vid: str, block: str, idx: int = Form(...)):
+    delete_block_qa(f"hh_{vid}", block, idx)
+    return RedirectResponse(url=f"/prep/{vid}#{block}", status_code=303)
 
 
 # ---------------------------------------------------------------------------

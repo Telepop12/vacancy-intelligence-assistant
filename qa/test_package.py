@@ -20,6 +20,13 @@ _LLM_RESPONSE = {
     "recommended_variant": "cdto",
     "variant_reasoning": "Вакансия делает упор на трансформацию и данные.",
     "hooks": ["трансформация → УРАЛХИМ", "1С → МВПС-Сервис"],
+    "offers": [
+        {"task": "единая отчётность для руководства", "offer": "выстроить платформу данных",
+         "effect": "отчётность за часы вместо дней", "proof": "МВПС-Сервис: подготовка отчётности в 3 раза быстрее"},
+        {"task": "снизить простои", "offer": "внедрить предиктивную диагностику",
+         "effect": "меньше внеплановых остановок", "proof": ""},
+        "мусор",
+    ],
 }
 
 
@@ -60,6 +67,31 @@ def test_build_package_happy_path(monkeypatch, tmp_path):
     assert loaded is not None
     assert loaded.letter == pkg.letter
     assert loaded.screener_qa[0].value_added.startswith("структура")
+
+    # «что готов предложить»: разобрано, сохранено, попало в .md; мусор отброшен
+    assert [o.offer for o in pkg.offers] == ["выстроить платформу данных", "внедрить предиктивную диагностику"]
+    assert loaded.offers[0].proof.startswith("МВПС-Сервис") and loaded.offers[1].proof == ""
+    assert "## Что предлагаем в письме" in md and "внедрить предиктивную диагностику" in md
+
+
+@pytest.mark.no_llm
+def test_letter_prompt_asks_for_offers():
+    assert "«что готов предложить»" in ap._SYSTEM_PROMPT
+    assert "системы построения оптимальных маршрутов" in ap._SYSTEM_PROMPT   # образец формы буллета
+    assert "Опираясь на мой опыт, профиль вашей компании и требования" in ap._SYSTEM_PROMPT
+    assert "В РОДИТЕЛЬНОМ ПАДЕЖЕ" in ap._SYSTEM_PROMPT   # название вакансии в первой фразе
+    assert "НИКАКИХ отсылок к" in ap._SYSTEM_PROMPT and "опоры уже названы в первом абзаце" in ap._SYSTEM_PROMPT
+    assert ap._USER_TEMPLATE.index('"offers"') < ap._USER_TEMPLATE.index('"letter"')   # сначала предложения, потом письмо
+
+
+@pytest.mark.no_llm
+def test_old_package_without_offers_loads(monkeypatch, tmp_path):
+    import json
+    monkeypatch.setattr(ap, "OUTPUT_DIR", tmp_path)
+    (tmp_path / "hh_1.json").write_text(json.dumps({"package_id": "hh_1", "letter": "Добрый день!",
+                                                    "screener_qa": []}), encoding="utf-8")
+    pkg = ap.load_saved_package("hh_1")
+    assert pkg is not None and pkg.offers == [] and pkg.letter == "Добрый день!"
 
 
 @pytest.mark.no_llm

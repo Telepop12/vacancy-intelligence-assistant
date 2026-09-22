@@ -48,6 +48,30 @@ STORIES_PATH = BASE_DIR / "data" / "resume" / "stories.md"
 
 SCHEMA_VERSION = 2
 
+# Этапы сборки в порядке выполнения: ключ → название для страницы прогресса.
+# Первые четыре обязательны (без них пакета нет), остальные — необязательные.
+STAGES: list[tuple[str, str]] = [
+    ("qa", "Вопросы интервьюера по опыту"),
+    ("hr", "Общие и поведенческие вопросы HR"),
+    ("employer", "Вопросы работодателю"),
+    ("purple", "Спарринг Purple Team"),
+    ("process", "Процесс, самопрезентация, план 100 дней"),
+    ("stories", "Истории и управленческие кейсы"),
+    ("agenda", "Повестка 2026, блиц, «чего не говорить»"),
+    ("improve", "«Что бы вы улучшили у нас?»"),
+]
+_OPTIONAL_STAGES = ("process", "stories", "agenda", "improve")
+
+
+def _report(progress, key: str, status: str, detail: str = "") -> None:
+    """progress(key, status, detail) — колбэк страницы прогресса; сбои колбэка не роняют сборку."""
+    if progress is None or not key:
+        return
+    try:
+        progress(key, status, detail)
+    except Exception:  # noqa: BLE001
+        pass
+
 _LANG_RULES = """\
 Отвечай исключительно на деловом русском языке, живо и без канцелярита.
 Допустимые термины: AI, ERP, MES, BI, ITSM, ITIL, DevOps, MLOps, ROI, P&L, KPI,
@@ -183,6 +207,16 @@ class Improvements:
 
 
 @dataclass
+class BlockQA:
+    """Вопрос кандидата к ИИ внутри конкретного раздела пакета."""
+    block: str = ""       # ключ раздела: qa | hr | stories | purple | …
+    question: str = ""
+    answer: str = ""
+    note: str = ""        # что уточнить / чем ответ подкреплён слабо
+    asked_at: str = ""
+
+
+@dataclass
 class PrepPackage:
     package_id: str = ""
     vacancy_title: str = ""
@@ -206,6 +240,7 @@ class PrepPackage:
     dont_say: list[DontSayItem] = field(default_factory=list)
     key_numbers: list[str] = field(default_factory=list)
     improvements: Improvements = field(default_factory=Improvements)
+    block_qa: list[BlockQA] = field(default_factory=list)   # вопросы к ИИ по разделам
     qa_sources: list[str] = field(default_factory=list)
     hr_sources: list[str] = field(default_factory=list)
     employer_sources: list[str] = field(default_factory=list)
@@ -759,8 +794,14 @@ def build_prep(
     resume_text: str | None = None,
     purple_rounds: int = 3,
     stories_text: str | None = None,
+    progress=None,
 ) -> PrepPackage:
-    """Generate the full interview prep package for one vacancy."""
+    """
+    Generate the full interview prep package for one vacancy.
+
+    progress(key, status, detail) — необязательный колбэк для страницы
+    прогресса (см. agents/prep_jobs.py): status ∈ {start, ok, fail}.
+    """
     pkg = PrepPackage(
         package_id=package_id or datetime.now().strftime("prep_%Y%m%d_%H%M%S"),
         vacancy_title=title,
@@ -786,7 +827,17 @@ def build_prep(
     vac = vacancy_text[:6000]
     t, c = title or "—", company or "—"
 
+    cur = ""
+
+    def begin(key: str) -> None:
+        nonlocal cur
+        if cur:
+            _report(progress, cur, "ok")
+        cur = key
+        _report(progress, cur, "start")
+
     try:
+        begin("qa")
         # Stage 1 — interviewer QA (+ банк реальных вопросов)
         kb_questions = kb.question_bank() or "— база знаний недоступна —"
         data = _call_llm(api_key, _QA_SYSTEM, _QA_USER.format(
@@ -802,6 +853,7 @@ def build_prep(
             "executive_search.md — «Банк вопросов от executive search и CEO»",
         )
 
+        begin("hr")
         # Stage 1b — general / behavioral HR questions (+ стоп-слова)
         kb_stop = kb.stop_words() or "— база знаний недоступна —"
         data1b = _call_llm(api_key, _HR_SYSTEM, _HR_USER.format(
@@ -813,6 +865,7 @@ def build_prep(
             "executive_search.md — «Типичные ошибки кандидатов C-level»",
         )
 
+        begin("employer")
         # Stage 2 — employer questions (+ правила базы)
         brief = f"{title}; козыри: {'; '.join(pkg.top_trumps[:3])}; риски: {'; '.join(pkg.top_risks[:3])}"
         kb_emp = kb.employer_rules() or "— база знаний недоступна —"
@@ -826,6 +879,7 @@ def build_prep(
             "real_stories.md — п. 5, 13",
         )
 
+        begin("purple")
         # Stage 3 — Purple Team
         data3 = _call_llm(api_key, _PURPLE_SYSTEM, _PURPLE_USER.format(
             title=t, company=c,
@@ -837,32 +891,91 @@ def build_prep(
 
         if not pkg.qa:
             pkg.error = "LLM вернул пустой список вопросов — повторите генерацию"
+            _report(progress, cur, "fail", pkg.error)
             return pkg
+        _report(progress, cur, "ok")
     except Exception as exc:
         pkg.error = f"Ошибка генерации: {exc}"
+        _report(progress, cur, "fail", str(exc))
         return pkg
 
     # --- Подготовка 2.0: этапы 4–6 не роняют пакет ---
-    _stage(pkg, "процесс, самопрезентация, 100 дней",
-           lambda: _stage_process(pkg, api_key, vac, t, c, resume, facts))
-    _stage(pkg, "истории и кейсы",
-           lambda: _stage_stories(pkg, api_key, vac, t, c, resume, facts, stories_text))
-    _stage(pkg, "повестка 2026, блиц, «чего не говорить»",
-           lambda: _stage_agenda(pkg, api_key, vac, t, c, resume, facts))
-    _stage(pkg, "«что бы вы улучшили у нас»",
-           lambda: _stage_improve(pkg, api_key, vac, t, c, resume, facts))
-    pkg.dont_say = [d for d in pkg.dont_say if d.personal] \
-        + [DontSayItem(text=x, source=s, personal=False) for x, s in kb.dont_say_checklist()]
+    for key, name, fn in _optional_plan(pkg, api_key, vac, t, c, resume, facts, stories_text):
+        _stage(pkg, name, fn, progress, key)
+    _merge_dont_say(pkg)
 
     _save(pkg)
     return pkg
 
 
-def _stage(pkg: PrepPackage, name: str, fn) -> None:
+def _optional_plan(pkg, api_key, vac, t, c, resume, facts, stories_text):
+    """Необязательные этапы в порядке выполнения: (ключ, название, вызов)."""
+    return [
+        ("process", "процесс, самопрезентация, 100 дней",
+         lambda: _stage_process(pkg, api_key, vac, t, c, resume, facts)),
+        ("stories", "истории и кейсы",
+         lambda: _stage_stories(pkg, api_key, vac, t, c, resume, facts, stories_text)),
+        ("agenda", "повестка 2026, блиц, «чего не говорить»",
+         lambda: _stage_agenda(pkg, api_key, vac, t, c, resume, facts)),
+        ("improve", "«что бы вы улучшили у нас»",
+         lambda: _stage_improve(pkg, api_key, vac, t, c, resume, facts)),
+    ]
+
+
+def _merge_dont_say(pkg: PrepPackage) -> None:
+    """Личные пункты от модели — первыми, затем общий чек-лист базы."""
+    pkg.dont_say = [d for d in pkg.dont_say if d.personal] \
+        + [DontSayItem(text=x, source=s, personal=False) for x, s in kb.dont_say_checklist()]
+
+
+def _stage(pkg: PrepPackage, name: str, fn, progress=None, key: str = "") -> None:
+    _report(progress, key, "start")
     try:
         fn()
+        _report(progress, key, "ok")
     except Exception as exc:  # noqa: BLE001 — этап необязательный, причина в stage_errors
         pkg.stage_errors.append(f"{name}: {exc}")
+        _report(progress, key, "fail", str(exc))
+
+
+def present_stages(pkg: PrepPackage) -> set[str]:
+    """Какие этапы уже есть в пакете (по содержимому, не по журналу ошибок)."""
+    have = {
+        "qa": bool(pkg.qa), "hr": bool(pkg.hr_qa),
+        "employer": bool(pkg.employer_questions), "purple": bool(pkg.purple_rounds),
+        "process": bool(pkg.process.stages or pkg.presentation.short),
+        "stories": bool(pkg.stories), "agenda": bool(pkg.agenda),
+        "improve": bool(pkg.improvements.items),
+    }
+    return {k for k, v in have.items() if v}
+
+
+def resume_prep(package_id: str, vacancy_text: str = "", stories_text: str | None = None,
+                progress=None) -> PrepPackage | None:
+    """
+    Досборка: только те необязательные этапы, которых нет в сохранённом пакете
+    (упали по сети и т. п.). Обязательные этапы не пересобираются; пакета нет
+    или он с ошибкой — вернуть None (нужна полная сборка).
+    """
+    pkg = load_saved_prep(package_id)
+    if pkg is None or pkg.error:
+        return None
+    api_key = _get_api_key()
+    if not api_key:
+        pkg.stage_errors = ["Нет ANTHROPIC_API_KEY — досборка требует LLM"]
+        return pkg
+    resume = load_canonical_resume()
+    facts = load_facts() or "— факт-база пуста —"
+    vac = (vacancy_text or "")[:6000]
+    t, c = pkg.vacancy_title or "—", pkg.company or "—"
+    have = present_stages(pkg)
+    pkg.stage_errors = []
+    for key, name, fn in _optional_plan(pkg, api_key, vac, t, c, resume, facts, stories_text):
+        if key not in have:
+            _stage(pkg, name, fn, progress, key)
+    _merge_dont_say(pkg)
+    _save(pkg)
+    return pkg
 
 
 def _stage_process(pkg, api_key, vac, title, company, resume, facts) -> None:
@@ -1085,6 +1198,7 @@ def _package_from_dict(data: dict) -> PrepPackage:
     im = d.get("improvements") or {}
     d["improvements"] = Improvements(**{**_only(Improvements, im),
                                         "items": [_mk(Improvement, x) for x in im.get("items") or []]})
+    d["block_qa"] = [_mk(BlockQA, x) for x in d.get("block_qa") or []]
     return PrepPackage(**_only(PrepPackage, d))
 
 
@@ -1212,6 +1326,188 @@ def answer_user_question(package_id: str, question: str) -> PrepQA:
 
 
 # ---------------------------------------------------------------------------
+# Вопрос к ИИ внутри раздела («окошко» в блоках с коммуникацией)
+# ---------------------------------------------------------------------------
+
+BLOCKS: dict[str, tuple[str, str]] = {
+    "presentation": ("Самопрезентация",
+        "Помогаешь с самопрезентацией: варианты под тайминг и аудиторию, акценты, "
+        "порядок фактов. Если просят текст — пиши от первого лица кандидата, готовым "
+        "к произнесению, и укажи ориентировочный хронометраж."),
+    "qa": ("Вопросы по опыту",
+        "Ты — интервьюер-наставник. Вопрос интервьюера → заготовка ответа от первого "
+        "лица, 2–5 предложений на фактах, с пометкой, где подача сильная, а где "
+        "граница. Просьба «ещё вопросы» → 3–5 вопросов с короткими заготовками."),
+    "hr": ("Общие и поведенческие вопросы",
+        "HR-вопросы: мотивация, стиль, конфликты, деньги, причины ухода. Ответ от "
+        "первого лица без стоп-слов работодателей: без критики бывших, «мы» вместо "
+        "«я», «NDA» вместо масштаба."),
+    "stories": ("Истории и кейсы",
+        "Помогаешь оформить историю по схеме ситуация → действия → результат с "
+        "цифрами → вывод из того, что кандидат сам рассказал в вопросе или в файле "
+        "историй. Ничего не досочинять: чего не хватает — спросить списком в note."),
+    "days100": ("План первых 100 дней",
+        "Уточняешь и перестраиваешь план первых 100 дней под вопрос кандидата, "
+        "привязывая к задачам вакансии и ожиданиям первого лица."),
+    "improve": ("Что бы вы улучшили",
+        "Гипотезы со стороны: наблюдение → гипотеза → вопрос собеседнику, без "
+        "критики компании; помечай, на чём гипотеза основана: вакансия, компания "
+        "или отрасль."),
+    "agenda": ("Повестка 2026",
+        "Позиция кандидата по теме на языке бизнес-рисков и денег плюс кейс с "
+        "цифрами из резюме либо честный пробел и чем его закрыть."),
+    "blitz": ("Блиц",
+        "Короткий точный ответ на определение или цифру, 1–3 фразы, чтобы "
+        "«отскакивало»; здесь допустимы общие знания отрасли, это не факты кандидата."),
+    "employer": ("Вопросы работодателю",
+        "Предлагаешь вопросы работодателю с пояснением, что каждый даёт кандидату "
+        "и как звучит для нанимающего; либо оцениваешь вопрос, который принёс кандидат."),
+    "purple": ("Спарринг",
+        "Проводишь раунд спарринга: вопрос кандидата — это выпад рекрутёра. Дай "
+        "ответ двойника от первого лица, разбор судьи (что убедительно, что плывёт) "
+        "и отточенный ответ."),
+}
+
+_BLOCK_SYSTEM = _LANG_RULES + """
+
+Ты — наставник кандидата (ИТ-директор уровня CIO/CDTO) внутри пакета
+подготовки к собеседованию, раздел «%(title)s». Твоя роль в этом разделе:
+%(role)s
+Кандидат задаёт свой вопрос или просьбу по ходу подготовки. Отвечай по
+существу, в жанре раздела, согласованно с тем, что в разделе уже есть:
+не повторяй готовое, дополняй. Факты кандидата — только из резюме, факт-базы
+и его собственных слов в вопросе; чего не хватает — попроси уточнить в note.
+Текст для произнесения — от первого лица. Отвечай строго валидным JSON."""
+
+_BLOCK_USER = """\
+ВАКАНСИЯ: {title} · {company}
+---
+{vacancy_text}
+---
+Профиль интервьюера: {interviewer_profile}
+Козыри: {trumps}
+Болевые зоны: {risks}
+
+РЕЗЮМЕ КАНДИДАТА:
+---
+{resume_text}
+---
+
+ФАКТ-БАЗА (статусы соблюдать):
+---
+{facts}
+---
+{extra}
+ЧТО УЖЕ ЕСТЬ В РАЗДЕЛЕ «{block_title}»:
+---
+{block_context}
+---
+
+ПРЕДЫДУЩИЕ ВОПРОСЫ КАНДИДАТА В ЭТОМ РАЗДЕЛЕ (для связности):
+---
+{history}
+---
+
+ВОПРОС КАНДИДАТА:
+«{question}»
+
+Верни ТОЛЬКО валидный JSON:
+{{
+  "answer": "ответ по существу в жанре раздела; абзацы через перенос строки",
+  "note": "что уточнить у кандидата или чем ответ подкреплён слабо; пустая строка, если всё на фактах"
+}}"""
+
+
+def _cut(text, n: int = 220) -> str:
+    t = " ".join(str(text or "").split())
+    return t if len(t) <= n else t[:n] + "…"
+
+
+def _block_context(pkg: PrepPackage, block: str) -> str:
+    """Сжатое содержимое раздела — чтобы ответ ИИ дополнял его, а не повторял."""
+    if block == "presentation":
+        lines = [f"1–3 минуты: {pkg.presentation.short}",
+                 f"Руками / делегирую / контролирую: {pkg.presentation.scope_line}"]
+    elif block == "qa":
+        lines = [f"- [{q.severity}] {q.question} → {_cut(q.answer)}" for q in pkg.qa]
+    elif block == "hr":
+        lines = [f"- {q.question} → {_cut(q.answer)}" for q in pkg.hr_qa]
+    elif block == "stories":
+        lines = [f"- {kind_title(s.kind)}: {s.title} ({s.origin}); что вспомнить: {_cut(s.gaps, 150)}"
+                 for s in pkg.stories]
+    elif block == "days100":
+        h = pkg.hundred_days
+        lines = [f"Дни 1–30: {h.block1}", f"Дни 31–60: {h.block2}", f"Дни 61–100: {h.block3}",
+                 f"Устно: {h.pitch}"]
+    elif block == "improve":
+        lines = [f"- {i.area} [{i.basis}]: {_cut(i.hypothesis)}" for i in pkg.improvements.items]
+    elif block == "agenda":
+        lines = [f"- {a.topic}: {_cut(a.thesis)} / кейс: {_cut(a.case)}" for a in pkg.agenda]
+    elif block == "blitz":
+        lines = [f"- {b.question} — {b.answer}" for b in pkg.blitz]
+    elif block == "employer":
+        lines = [f"- {q.question} ({_cut(q.why, 120)})" for q in pkg.employer_questions]
+    elif block == "purple":
+        lines = [f"- Выпад: {r.attack} → отточенный ответ: {_cut(r.improved_answer)}"
+                 for r in pkg.purple_rounds]
+    else:
+        lines = []
+    text = "\n".join(ln for ln in lines if ln.strip())
+    return text[:6000] or "— раздел пуст —"
+
+
+def ask_in_block(package_id: str, block: str, question: str, vacancy_text: str = "") -> BlockQA:
+    """Ответ ИИ на вопрос кандидата в жанре раздела; сохраняется в пакет."""
+    if block not in BLOCKS:
+        raise ValueError(f"неизвестный раздел: {block}")
+    question = (question or "").strip()
+    if not question:
+        return BlockQA(block=block)
+    pkg = load_saved_prep(package_id)
+    if pkg is None:
+        raise ValueError(f"пакет {package_id} не найден")
+    api_key = _get_api_key()
+    if not api_key:
+        raise RuntimeError("Нет ANTHROPIC_API_KEY")
+    resume = load_canonical_resume()
+    title, role = BLOCKS[block]
+    prev = [x for x in pkg.block_qa if x.block == block][-3:]
+    history = "\n".join(f"- {x.question} → {_cut(x.answer, 200)}" for x in prev) or "— нет —"
+    extra = ""
+    if block == "stories":
+        stories = load_stories()
+        extra = f"\nФАЙЛ ИСТОРИЙ КАНДИДАТА:\n---\n{stories or '— пусто —'}\n---\n"
+    data = _call_llm(api_key, _BLOCK_SYSTEM % {"title": title, "role": role}, _BLOCK_USER.format(
+        title=pkg.vacancy_title or "—", company=pkg.company or "—",
+        vacancy_text=(vacancy_text or "— текст вакансии недоступен —")[:6000],
+        interviewer_profile=pkg.interviewer_profile or "—",
+        trumps="; ".join(pkg.top_trumps) or "—", risks="; ".join(pkg.top_risks) or "—",
+        resume_text=resume, facts=load_facts() or "— факт-база пуста —",
+        extra=extra, block_title=title, block_context=_block_context(pkg, block),
+        history=history, question=question,
+    ), max_tokens=3000)
+    item = BlockQA(block=block, question=question, answer=str(data.get("answer", "")),
+                   note=str(data.get("note") or "").strip(),
+                   asked_at=datetime.now().isoformat(timespec="minutes"))
+    pkg.block_qa.append(item)
+    _save(pkg)
+    return item
+
+
+def delete_block_qa(package_id: str, block: str, idx: int) -> bool:
+    """Удалить idx-й (внутри раздела) вопрос к ИИ; True, если что-то удалено."""
+    pkg = load_saved_prep(package_id)
+    if pkg is None:
+        return False
+    own = [i for i, x in enumerate(pkg.block_qa) if x.block == block]
+    if not 0 <= idx < len(own):
+        return False
+    del pkg.block_qa[own[idx]]
+    _save(pkg)
+    return True
+
+
+# ---------------------------------------------------------------------------
 # Internals
 # ---------------------------------------------------------------------------
 
@@ -1286,6 +1582,18 @@ def _src_line(sources: list[str]) -> list[str]:
     return [f"_Источники: {'; '.join(sources)}_", ""] if sources else []
 
 
+def _bqa_md(pkg: PrepPackage, block: str) -> list[str]:
+    items = [x for x in pkg.block_qa if x.block == block]
+    if not items:
+        return []
+    out = ["### Ваши вопросы к ИИ", ""]
+    for x in items:
+        out += [f"**Вы:** {x.question}", "", x.answer, ""]
+        if x.note:
+            out += [f"_Примечание: {x.note}_", ""]
+    return out
+
+
 def _save(pkg: PrepPackage) -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     sid = _safe_id(pkg.package_id)
@@ -1328,14 +1636,17 @@ def _save(pkg: PrepPackage) -> None:
             md += [f"**Руками / делегирую / контролирую:** {pkg.presentation.scope_line}", ""]
         md += _src_line(pkg.presentation.sources)
 
+    md += _bqa_md(pkg, "presentation")
     md += ["## Вопросы интервьюера и заготовки ответов", ""]
     for i, q in enumerate(pkg.qa, 1):
         md += [f"### {i}. {q.question}", f"_Источник: {q.source} · зона: {q.severity}_", "", q.answer, ""]
     md += _src_line(pkg.qa_sources)
+    md += _bqa_md(pkg, "qa")
     md += ["## Общие и поведенческие вопросы (HR)", ""]
     for i, q in enumerate(pkg.hr_qa, 1):
         md += [f"### {i}. {q.question}", f"_Тема: {q.source}_", "", q.answer, ""]
     md += _src_line(pkg.hr_sources)
+    md += _bqa_md(pkg, "hr")
 
     if pkg.stories:
         md += ["## Истории и управленческие кейсы", "",
@@ -1347,6 +1658,7 @@ def _save(pkg: PrepPackage) -> None:
             if s.gaps:
                 md += [f"**Что вспомнить:** {s.gaps}", ""]
 
+    md += _bqa_md(pkg, "stories")
     if pkg.hundred_days.block1:
         md += ["## План первых 100 дней", "",
                f"**Дни 1–30.** {pkg.hundred_days.block1}", "",
@@ -1355,6 +1667,7 @@ def _save(pkg: PrepPackage) -> None:
                f"**Устно, за минуту:** {pkg.hundred_days.pitch}", ""]
         md += _src_line(pkg.hundred_days.sources)
 
+    md += _bqa_md(pkg, "days100")
     im = pkg.improvements
     if im.items or im.frame:
         md += ["## «Что бы вы улучшили у нас?»", ""]
@@ -1371,17 +1684,20 @@ def _save(pkg: PrepPackage) -> None:
                    f"**Опора в опыте.** {it.backing}", ""]
         md += _src_line(im.sources)
 
+    md += _bqa_md(pkg, "improve")
     if pkg.agenda:
         md += ["## Повестка 2026", ""]
         for a in pkg.agenda:
             md += [f"### {a.topic}", "", a.thesis, "", f"**Кейс:** {a.case}", ""]
             md += _src_line(a.sources)
 
+    md += _bqa_md(pkg, "agenda")
     if pkg.blitz:
         md += ["## Блиц «экзамен»", ""]
         md += [f"- **{b.question}** — {b.answer}" for b in pkg.blitz]
         md += [""]
 
+    md += _bqa_md(pkg, "blitz")
     if pkg.user_qa:
         md += ["## Ваши собственные вопросы (спрошено у двойника)", ""]
         for q in pkg.user_qa:
@@ -1392,11 +1708,13 @@ def _save(pkg: PrepPackage) -> None:
     for q in pkg.employer_questions:
         md += [f"- **{q.question}**", f"  _{q.why}_", ""]
     md += _src_line(pkg.employer_sources)
+    md += _bqa_md(pkg, "employer")
     md += ["## Purple Team — спарринг", ""]
     for i, r in enumerate(pkg.purple_rounds, 1):
         md += [f"### Раунд {i}", f"**🔴 Рекрутёр:** {r.attack}", "", f"**🔵 Вы:** {r.defense}", "",
                f"**⚖ Судья:** {r.verdict}", "", f"**Отточенный ответ:** {r.improved_answer}", ""]
 
+    md += _bqa_md(pkg, "purple")
     if pkg.dont_say:
         md += ["## Чего не говорить", ""]
         for d in pkg.dont_say:
@@ -1428,7 +1746,7 @@ def _call_llm(api_key: str, system: str, prompt: str, max_tokens: int = 4000) ->
     """Thin wrapper over the shared gateway (kept for test monkeypatching)."""
     from core import llm
     return llm.call_json(system, prompt, max_tokens=max_tokens, api_key=api_key,
-                         banned_substrings=[", а не "])
+                         banned_substrings=[", а не "], purpose="prep")
 
 
 def _get_api_key() -> str:

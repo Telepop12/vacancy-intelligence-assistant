@@ -63,6 +63,14 @@
     .imp .sig{color:var(--muted);font-size:.85rem}
     .imp .say{background:rgba(22,163,74,.07);padding:.4rem .6rem;border-radius:var(--radius)}
     .imp .back{font-size:.85rem}
+    .askbox{margin-top:.9rem;padding-top:.6rem;border-top:1px dashed var(--border)}
+    .askbox .ask-form{display:flex;gap:.5rem;align-items:flex-start;margin-top:.5rem}
+    .askbox textarea{flex:1;font:inherit;font-size:.9rem;padding:.4rem .6rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);color:var(--text)}
+    .askbox .btn-ask{white-space:nowrap}
+    .askbox .bq .q{cursor:default}
+    .bq-del{display:inline;margin-left:.4rem}
+    .bq-del button{background:none;border:0;color:var(--muted);cursor:pointer;font-size:1rem;line-height:1;padding:0 .2rem}
+    .bq-del button:hover{color:var(--danger)}
     .agenda-item{padding:.6rem 0;border-bottom:1px solid var(--border)}
     .agenda-item .tp{font-weight:600}
     .agenda-item p{margin:.3rem 0;font-size:.9rem}
@@ -92,6 +100,27 @@
   <div class="container">
     {% set vid = vid if vid is defined and vid else (pkg.package_id | replace('hh_','')) %}
 
+    {# Окошко «Спросить ИИ» внутри раздела: ответы сохраняются в пакете под разделом #}
+    {% macro askbox(pkg, vid, block, placeholder) %}
+    <div class="askbox">
+      {% set items = pkg.block_qa | selectattr('block', 'equalto', block) | list %}
+      {% if items %}<h3 class="variant-h">Ваши вопросы к ИИ</h3>{% endif %}
+      {% for x in items %}
+      <div class="qa-item open bq">
+        <div class="q">{{ x.question }}
+          <form method="post" action="/prep/{{ vid }}/ask/{{ block }}/delete" class="bq-del"><input type="hidden" name="idx" value="{{ loop.index0 }}"><button type="submit" title="Удалить этот вопрос">×</button></form>
+        </div>
+        <div class="a" style="display:block;">{{ x.answer }}</div>
+        {% if x.note %}<div class="src" style="margin-top:.3rem;">⚠ {{ x.note }}</div>{% endif %}
+      </div>
+      {% endfor %}
+      <form method="post" action="/prep/{{ vid }}/ask/{{ block }}" class="ask-form">
+        <textarea name="question" rows="2" required placeholder="{{ placeholder }}"></textarea>
+        <button type="submit" class="btn-submit btn-ask">Спросить ИИ (~30 сек)</button>
+      </form>
+    </div>
+    {% endmacro %}
+
     <div class="card">
       <h2>Подготовка к интервью</h2>
       <p style="margin:.4rem 0;">
@@ -117,7 +146,9 @@
     {% endif %}
     {% if pkg.stage_errors %}
     <div class="notice err">Часть разделов не собралась: {{ pkg.stage_errors | join('; ') }}.
-      Остальное сохранено; <a href="/prep/{{ vid }}?regenerate=true">перегенерировать</a> целиком.</div>
+      Остальное сохранено.
+      <form method="post" action="/prep/{{ vid }}/resume" style="display:inline;margin:0 .3rem;"><button type="submit" class="btn-submit" style="padding:.15rem .7rem;font-size:.85rem;">Дособрать упавшие этапы</button></form>
+      или <a href="/prep/{{ vid }}?regenerate=true">перегенерировать</a> целиком.</div>
     {% endif %}
 
     <nav class="toc" id="toc" style="margin-top:1rem;">
@@ -192,6 +223,7 @@
       {% else %}
       <p class="hint">Раздел появится после перегенерации пакета.</p>
       {% endif %}
+      {{ askbox(pkg, vid, 'presentation', 'Например: сделай вариант на одну минуту с упором на AI-лабораторию') }}
     </div>
 
     {# ---------------- Вопросы по опыту ---------------- #}
@@ -215,6 +247,7 @@
       {% endif %}
       {% endfor %}
       {% if pkg.qa_sources %}<div class="srcs"><b>Жанр и глубина вопросов:</b> {{ pkg.qa_sources | join(' · ') }}</div>{% endif %}
+      {{ askbox(pkg, vid, 'qa', 'Например: если спросят, почему без опыта C++ я претендую на техническое руководство?') }}
     </div>
 
     {# ---------------- HR ---------------- #}
@@ -228,6 +261,7 @@
       </div>
       {% endfor %}
       {% if pkg.hr_sources %}<div class="srcs"><b>Стоп-слова учтены по:</b> {{ pkg.hr_sources | join(' · ') }}</div>{% endif %}
+      {{ askbox(pkg, vid, 'hr', 'Например: как ответить про причину ухода, если спросят жёстко?') }}
     </div>
 
     {# ---------------- Истории и кейсы ---------------- #}
@@ -257,6 +291,7 @@
       {% else %}
       <p class="hint">Раздел появится после перегенерации пакета.</p>
       {% endif %}
+      {{ askbox(pkg, vid, 'stories', 'Например: помоги оформить историю: в 2023 спорил с CFO о бюджете MES…') }}
     </div>
 
     {# ---------------- 100 дней ---------------- #}
@@ -275,6 +310,7 @@
       {% else %}
       <p class="hint">Раздел появится после перегенерации пакета.</p>
       {% endif %}
+      {{ askbox(pkg, vid, 'days100', 'Например: что изменить в плане, если ГД ждёт результата к концу квартала?') }}
     </div>
 
     {# ---------------- Что бы вы улучшили ---------------- #}
@@ -303,6 +339,7 @@
       {% else %}
       <p class="hint">Раздел появится после перегенерации пакета.</p>
       {% endif %}
+      {{ askbox(pkg, vid, 'improve', 'Например: а если спросят про импортозамещение в ПАК?') }}
     </div>
 
     {# ---------------- Повестка 2026 ---------------- #}
@@ -320,6 +357,7 @@
       {% else %}
       <p class="hint">Раздел появится после перегенерации пакета.</p>
       {% endif %}
+      {{ askbox(pkg, vid, 'agenda', 'Например: какую позицию занять по ИИ в закрытом контуре?') }}
     </div>
 
     {# ---------------- Блиц ---------------- #}
@@ -332,6 +370,7 @@
       {% else %}
       <p class="hint">Раздел появится после перегенерации пакета.</p>
       {% endif %}
+      {{ askbox(pkg, vid, 'blitz', 'Например: что такое RTO и RPO, одной фразой') }}
     </div>
 
     {# ---------------- Двойник ---------------- #}
@@ -372,6 +411,7 @@
       </div>
       {% endfor %}
       {% if pkg.employer_sources %}<div class="srcs"><b>Источники:</b> {{ pkg.employer_sources | join(' · ') }}</div>{% endif %}
+      {{ askbox(pkg, vid, 'employer', 'Например: какие вопросы задать про бюджет и право найма?') }}
     </div>
 
     {# ---------------- Purple Team ---------------- #}
@@ -388,6 +428,7 @@
         </details>
       </div>
       {% endfor %}
+      {{ askbox(pkg, vid, 'purple', 'Например: «Вы 29 лет в ИТ, не устали?» — проведи раунд') }}
     </div>
 
     {# ---------------- Чего не говорить ---------------- #}
@@ -465,6 +506,14 @@
     init();
   }
 })();
+</script>
+<script>
+document.querySelectorAll('form.ask-form').forEach(function (f) {
+  f.addEventListener('submit', function () {
+    var b = f.querySelector('button[type=submit]');
+    b.disabled = true; b.textContent = 'ИИ думает…';
+  });
+});
 </script>
 </body>
 </html>

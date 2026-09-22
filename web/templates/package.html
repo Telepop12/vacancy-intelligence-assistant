@@ -53,6 +53,15 @@
     <div class="card" style="margin-top:1rem;">
       <h2>Сопроводительное письмо <span class="hint" style="font-weight:normal;">({{ word_count }} слов — клик по тексту копирует)</span></h2>
       <div class="copy-block" data-copy style="margin-top:.5rem;">{{ pkg.letter }}</div>
+      {% if pkg.offers %}
+      <h3 class="variant-h" style="margin-top:1rem;">Что предлагаем в письме <span class="hint" style="font-weight:normal;text-transform:none;letter-spacing:0;">— задача вакансии → предложение → эффект</span></h3>
+      <ul style="margin:.3rem 0 0 1.1rem;">
+        {% for o in pkg.offers %}
+        <li style="margin:.3rem 0;"><strong>{{ o.offer }}</strong> — {{ o.effect }}<br>
+          <span class="hint">задача: {{ o.task }}{% if o.proof %} · опора: {{ o.proof }}{% endif %}</span></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
     </div>
 
     {% if pkg.screener_qa %}
