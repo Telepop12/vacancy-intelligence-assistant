@@ -51,14 +51,22 @@
     </div>
 
     <div class="card" style="margin-top:1rem;">
-      <h2>Сопроводительное письмо <span class="hint" style="font-weight:normal;">({{ word_count }} слов — клик по тексту копирует)</span></h2>
+      <h2>Сопроводительное письмо <span class="hint" style="font-weight:normal;">— рамка «3+3» · {{ word_count }} слов · клик по тексту копирует</span></h2>
       <div class="copy-block" data-copy style="margin-top:.5rem;">{{ pkg.letter }}</div>
+      {% if pkg.competencies %}
+      <h3 class="variant-h" style="margin-top:1rem;">Три требования → три доказательства <span class="hint" style="font-weight:normal;text-transform:none;letter-spacing:0;">— оси роли</span></h3>
+      <ol style="margin:.3rem 0 0 1.1rem;">
+        {% for c in pkg.competencies %}
+        <li style="margin:.3rem 0;"><strong>{{ c.title }}</strong><br><span class="hint">{{ c.points | join(' ') }}</span></li>
+        {% endfor %}
+      </ol>
+      {% endif %}
       {% if pkg.offers %}
-      <h3 class="variant-h" style="margin-top:1rem;">Что предлагаем в письме <span class="hint" style="font-weight:normal;text-transform:none;letter-spacing:0;">— задача вакансии → предложение → эффект</span></h3>
+      <h3 class="variant-h" style="margin-top:1rem;">Три дела после выхода <span class="hint" style="font-weight:normal;text-transform:none;letter-spacing:0;">— требование вакансии → предложение → ось</span></h3>
       <ul style="margin:.3rem 0 0 1.1rem;">
         {% for o in pkg.offers %}
-        <li style="margin:.3rem 0;"><strong>{{ o.offer }}</strong> — {{ o.effect }}<br>
-          <span class="hint">задача: {{ o.task }}{% if o.proof %} · опора: {{ o.proof }}{% endif %}</span></li>
+        <li style="margin:.3rem 0;"><strong>{{ o.offer }}</strong>{% if o.effect %} — {{ o.effect }}{% endif %}<br>
+          <span class="hint">требование: {{ o.task }}{% if o.proof %} · опора: {{ o.proof }}{% endif %}</span></li>
         {% endfor %}
       </ul>
       {% endif %}

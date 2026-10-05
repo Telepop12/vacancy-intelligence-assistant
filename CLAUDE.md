@@ -40,7 +40,7 @@ docker compose up --build -d                 # Docker; output/, config/, data/ a
 `config/` and `data/` are mounted into the container, so editing a YAML (model, search queries,
 monitor interval, target companies) needs only a restart. Code changes need a rebuild.
 
-Tests — pytest, offline by default (205 collected, 8 marked `llm`, offline run takes seconds):
+Tests — pytest, offline by default (209 collected, 8 marked `llm`, offline run takes seconds):
 
 ```
 pytest qa/                                   # full offline suite
