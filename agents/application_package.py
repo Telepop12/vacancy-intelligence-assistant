@@ -362,7 +362,7 @@ def build_package(
 
     api_key = _get_api_key()
     if not api_key:
-        pkg.error = "Нет ANTHROPIC_API_KEY — генерация пакета отклика требует LLM"
+        pkg.error = "Локальная LLM недоступна — проверьте Ollama"
         return pkg
 
     try:

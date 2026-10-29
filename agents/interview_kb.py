@@ -34,7 +34,10 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
+
+import yaml
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 KB_DIR = BASE_DIR / "data" / "interview_kb"
@@ -355,6 +358,21 @@ def improve_rules(max_chars: int = 7_000) -> str:
     return excerpt(_join(*parts), max_chars)
 
 
+def team_rules(max_chars: int = 7_000) -> str:
+    """«Структура и персонал»: как оценивают управление людьми — граница
+    «руками / делегирую / контролирую», референсы у бывших подчинённых,
+    ассессмент (микроменеджмент, делегирование), красные флаги, кейсы о
+    сопротивлении изменениям и реструктуризациях."""
+    parts = [
+        rules("stories", 3, 12),
+        _block(find("search", "референс-чек", level=3)),
+        _block(find("search", "красные флаги", level=3)),
+        _block(find("search", "кейс-вопросы", level=3)),
+        _block(find("search", "компетенции и критерии", level=3)),
+    ]
+    return excerpt(_join(*parts), max_chars)
+
+
 # ---------------------------------------------------------------------------
 # Профиль процесса компании
 # ---------------------------------------------------------------------------
@@ -632,3 +650,59 @@ def kb_version() -> str:
         return ""
     m = re.search(r"\d{4}-\d{2}-\d{2}", readme.read_text(encoding="utf-8")[:600])
     return m.group(0) if m else ""
+
+
+def quantitative_context(question: str, context: str = "", *, today: date | None = None,
+                         max_chars: int = 6000) -> str:
+    """Local numeric references, with complete source metadata; no network/LLM.
+
+    Human review establishes the facts. Code checks metadata completeness,
+    review dates and topic match, and never truncates a reference's caveats.
+    """
+    try:
+        cards = yaml.safe_load((KB_DIR / "benchmarks.yaml").read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError):
+        return ""
+    if not isinstance(cards, list):
+        return ""
+    now = today or date.today()
+    query = question.casefold()
+    full_context = (question + "\n" + context).casefold()
+
+    def matches(terms, text):
+        if not isinstance(terms, list) or not all(isinstance(t, str) and t.strip() for t in terms):
+            return False
+        return any(re.search(r"(?<!\w)" + re.escape(t.casefold()) + r"(?!\w)", text)
+                   if len(t) <= 3 else t.casefold() in text for t in terms)
+
+    required = ("id", "statement", "denominator", "period", "sample", "limits", "source", "url")
+    blocks = []
+    used = set()
+    size = 0
+    for card in cards:
+        if not isinstance(card, dict) or not all(isinstance(card.get(k), str) and card[k].strip()
+                                               for k in required):
+            continue
+        if card["id"] in used or not card["url"].startswith("https://"):
+            continue
+        try:
+            checked = date.fromisoformat(str(card["checked_on"]))
+            review = date.fromisoformat(str(card["review_after"]))
+        except (KeyError, ValueError, TypeError):
+            continue
+        if not checked <= now <= review or not matches(card.get("question_terms"), query):
+            continue
+        if card.get("context_terms") and not matches(card["context_terms"], full_context):
+            continue
+        block = (f"[{card['id']}] {card['statement']}\n"
+                 f"База расчёта: {card['denominator']}\n"
+                 f"Период данных: {card['period']}; выборка: {card['sample']}\n"
+                 f"Ограничения: {card['limits']}\n"
+                 f"Источник: {card['source']} — {card['url']}\n"
+                 f"Проверено: {checked.isoformat()}; пересмотреть до: {review.isoformat()}")
+        if size + len(block) + (2 if blocks else 0) > max_chars:
+            continue
+        blocks.append(block)
+        used.add(card["id"])
+        size += len(block) + (2 if len(blocks) > 1 else 0)
+    return "\n\n".join(blocks)

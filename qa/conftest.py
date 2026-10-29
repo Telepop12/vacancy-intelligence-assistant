@@ -21,22 +21,34 @@ import pytest
 @pytest.fixture(autouse=True)
 def _no_llm_key_by_default(request, monkeypatch):
     """
-    Force-disable the API key for every test NOT marked `llm`.
+    Force-disable every LLM provider for tests NOT marked `llm`.
 
     Without this, tests running through the full pipeline silently made live
-    Sonnet calls whenever a real key sat in .env: the "offline" suite took
-    7 minutes and cost money per run. Tests that genuinely need the LLM must
-    carry @pytest.mark.llm.
+    Earlier the suite could make paid API calls when a real key sat in .env.
+    With Ollama as the default it could also silently call the local model.
+    Tests that genuinely need an LLM must carry @pytest.mark.llm.
     """
     if request.node.get_closest_marker("llm"):
         yield
         return
     from core import llm
-    monkeypatch.setattr(llm, "get_api_key", lambda: "")
-    # Заглушку в окружении наследуют CLI-подпроцессы функциональных тестов.
-    # Именно заглушка, НЕ пустая строка: Windows удаляет пустые переменные
-    # окружения при передаче в подпроцесс, и тот прочитал бы реальный ключ
-    # из .env. Значение с префиксом «sk-ant-ВАШ» get_api_key считает
-    # ненастроенным ключом.
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-ВАШ-disabled-in-tests")
+    monkeypatch.setattr(llm, "get_api_key", lambda purpose=None: "")
+    # Флаг наследуют CLI-подпроцессы; он запрещает и OpenAI, и локальный
+    # Ollama, поэтому офлайн-suite остаётся детерминированным.
+    monkeypatch.setenv("LLM_DISABLED", "1")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-proj-ВАШ-disabled-in-tests")
+    yield
+
+
+@pytest.fixture(autouse=True)
+def _company_archive_in_tmp(tmp_path, monkeypatch):
+    """
+    Архив справок по компаниям (output/companies/) в тестах — во временной
+    папке: сборка пакета подготовки пишет туда результат ресёрча, и без
+    подмены тесты засоряли бы настоящий архив выдуманными компаниями.
+    """
+    from agents import company_research as cr
+    from agents import practice_research as pr
+    monkeypatch.setattr(cr, "ARCHIVE_DIR", tmp_path / "_companies_archive")
+    monkeypatch.setattr(pr, "CACHE_DIR", tmp_path / "_practice_research")
     yield

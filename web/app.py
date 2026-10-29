@@ -29,9 +29,10 @@ from agents.hh_search import (
 from agents.application_package import (
     build_package, letter_word_count, load_saved_package,
 )
+from agents.company_research import url_domain
 from agents.interview_prep import (
     BLOCKS, answer_user_question, ask_in_block, build_cheatsheet, build_prep,
-    delete_block_qa, kind_title, load_saved_prep,
+    answer_parts, delete_block_qa, kind_title, load_saved_prep, refresh_company,
 )
 from agents.resume_variants import (
     generate_all, generate_variant, load_saved_variants,
@@ -63,6 +64,8 @@ app = FastAPI(title="Vacancy Intelligence Assistant")
 app.mount("/static", StaticFiles(directory=str(_WEB_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(_WEB_DIR / "templates"))
 templates.env.filters["kind_title"] = kind_title   # названия видов историй в пакете подготовки
+templates.env.filters["answer_parts"] = answer_parts   # «Моё понимание» + «Мой опыт» в порядке подачи
+templates.env.filters["url_domain"] = url_domain       # подпись ссылки на источник: «rusprofile.ru»
 
 
 def _with_query(request: Request, path: str) -> str:
@@ -560,6 +563,25 @@ def prep_resume(vid: str):
     if prep_jobs.start_resume(pid, vacancy_text) is None:
         raise HTTPException(status_code=404, detail="нет сохранённого пакета для досборки")
     return RedirectResponse(url=f"/prep/{vid}", status_code=303)
+
+
+@app.post("/prep/{vid}/company/refresh")
+def prep_company_refresh(vid: str):
+    """
+    «Обновить ресёрч»: свежий веб-поиск мимо архива компаний (1–3 минуты);
+    обновляются архив и раздел «О компании», остальные разделы — нет.
+    """
+    try:
+        vacancy_text = vacancy_store.resolve_vacancy(vid).get("description", "")
+    except Exception:  # noqa: BLE001 — текст вакансии здесь лишь контекст
+        vacancy_text = ""
+    try:
+        pkg = refresh_company(f"hh_{vid}", vacancy_text)
+    except Exception as exc:  # noqa: BLE001 — сеть или модель; пакет не тронут
+        raise HTTPException(status_code=502, detail=f"ресёрч компании не удался: {exc}")
+    if pkg is None:
+        raise HTTPException(status_code=404, detail="нет сохранённого пакета")
+    return RedirectResponse(url=f"/prep/{vid}#company", status_code=303)
 
 
 @app.get("/prep/{vid}/cheatsheet", response_class=HTMLResponse)

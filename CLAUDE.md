@@ -40,11 +40,11 @@ docker compose up --build -d                 # Docker; output/, config/, data/ a
 `config/` and `data/` are mounted into the container, so editing a YAML (model, search queries,
 monitor interval, target companies) needs only a restart. Code changes need a rebuild.
 
-Tests — pytest, offline by default (209 collected, 8 marked `llm`, offline run takes seconds):
+Tests — pytest (264 collected, 8 marked `llm`; offline suite: 256 tests as of 2026-10-29):
 
 ```
-pytest qa/                                   # full offline suite
-pytest qa/ -m llm                            # only tests that make live Claude calls (need the key)
+pytest qa/ -m 'not llm'                      # full offline suite
+pytest qa/ -m llm                            # only live LLM tests (Ollama/OpenAI)
 pytest qa/test_hh.py -q                      # one file
 pytest qa/test_intake.py::test_name          # one test
 pytest qa/ -k "intake or resume"
@@ -69,9 +69,10 @@ python -m agents.career_watch [Company ...]                      # crawl career 
 python -m agents.cv_export [--lang ru] [--no-pdf] [--out DIR]    # executive CV from data/resume/cv_<lang>.yaml (PDF needs Word)
 ```
 
-Environment: `.env` in this directory holds `ANTHROPIC_API_KEY` (all LLM features degrade to
-rule-based content without it) and optional `TG_BOT_TOKEN` for monitor alerts. There is no hh.ru
-token: hh.ru closed its API to applicants in December 2025 and dev.hh.ru registers employers only.
+Environment: `.env` holds `OPENAI_API_KEY` for interview preparation and optional
+`TG_BOT_TOKEN` for monitor alerts. Normal LLM work uses local Ollama without a key.
+Docker Compose sets `OLLAMA_BASE_URL=http://host.docker.internal:11434`. There is no hh.ru token:
+hh.ru closed its API to applicants in December 2025 and dev.hh.ru registers employers only.
 Do not suggest obtaining one.
 
 ## Architecture
@@ -92,11 +93,13 @@ ANALYSIS    agents/intake.py         any input → VacancyInput (normalized text
             agents/career_match.py          resume × vacancy → CareerMatchResult (LLM)
 GENERATORS  agents/resume_variants.py       5 permanent resume archetypes (cio/cto/cdto/caio/universal)
             agents/application_package.py   cover letter + variant choice + hh AI-screener Q&A
-            agents/interview_prep.py        8-stage prep package: process map, questions, presentation, stories, 100 days, agenda, blitz, improvements, cheat sheet; per-block ask-AI
+            agents/interview_prep.py        10-stage prep package: company research, 3-min story, questions with «understanding + experience» answers, team & people management, stories, 100 days, agenda, blitz, improvements, cheat sheet; per-block ask-AI
+            agents/company_research.py      company research via server-side web search; cited URLs verified against what the search returned; digest() feeds other prep stages; archive output/companies/ checked first (6-month TTL)
+            agents/practice_research.py     external practices filtered by vacancy + company anchors and exact returned URLs; 14-day context/model-specific cache; feeds improve only
             agents/prep_jobs.py             background prep build (thread per package), progress for /prep/{vid}/status, resume of failed optional stages
             agents/interview_kb.py          keyword-addressed slices of data/interview_kb/ for prep prompts; company process profiles
             agents/cv_export.py             English executive CV, DOCX → PDF
-LLM         core/llm.py              the only Anthropic client; model/effort in config/llm.yaml
+LLM         core/llm.py              public gateway; Ollama/OpenAI routes in core/llm_router.py
 ```
 
 **Vacancy identity (`vid`).** Whatever the source, a vacancy ends up in the store and as a row in
@@ -131,21 +134,23 @@ goes through a `from_X()` in `agents/intake.py`. New source = new `from_X()`; an
 untouched.
 
 **One LLM gateway.** Every model call goes through `core.llm.call_json(system, prompt, ...)`.
-Never instantiate `anthropic.Anthropic` elsewhere. The gateway reads the key from env or `.env`,
-uses `anthropic.DefaultHttpxClient(trust_env=False)` (SDK 1.x moved to httpx2, a hand-built httpx
-client breaks), streams every request (`messages.stream()` + `get_final_message()`, so long
-answers don't hit the HTTP timeout), takes the first `text` block because Sonnet 5 returns a
-thinking block first, enforces `min_max_tokens`, treats `stop_reason == "max_tokens"` as
-truncation, retries once on truncated or invalid JSON, raises on `refusal`, and retries once more
-when any `banned_substrings` appear (style guard). Model `claude-sonnet-5`, effort `medium` — set in
-`config/llm.yaml`, change it there, not in code. The `models:` map there overrides the model per
-call `purpose` (`prep` → `claude-opus-5` for the interview-prep generator, customer decision
-2026-09-22); pass `purpose=` from a generator's `_call_llm` wrapper, never hardcode a model id.
+Provider implementations live in `core/llm_router.py`; do not instantiate SDK clients elsewhere.
+`config/llm.yaml` is the source of truth: the default route is local Ollama (`qwen3.8:27b`), while
+`purpose="prep"` selects OpenAI Responses API (`gpt-6-astra`). Never hardcode a model in an
+agent. Ollama uses `/api/chat` with JSON mode and `think: false`; OpenAI uses JSON mode,
+`reasoning.effort`, `store: false`, and `OPENAI_API_KEY`. Both routes enforce a minimum output
+budget, retry truncated/invalid JSON once, and apply the optional style guard.
+`core.llm.call_research()` is OpenAI-only and uses the hosted `web_search` tool; it returns URLs
+from `web_search_call.action.sources` and citations so callers can drop invented links.
+`cached_prefix=` puts the shared resume/fact block first for consistent context and OpenAI prompt
+caching. In Docker, Ollama is reached through `host.docker.internal`; host Python uses localhost.
+Company research still goes through `get_company_profile()`: archive first, web search only on a
+miss; `qa/conftest.py` redirects `ARCHIVE_DIR` to a temp folder for every test.
 
-**Analyzer selection is per call.** `core/analyzer.py::analyze()` builds `ClaudeAnalyzer` when a
-key is present, else `HybridAnalyzer` (deterministic content plus placeholders for LLM fields).
-Hierarchy in `core/analyzers/`: `BaseAnalyzer → RuleBasedAnalyzer → HybridAnalyzer →
-ClaudeAnalyzer`. `recommendation_engine.synthesize()` may override the score-based recommendation
+**Analyzer selection is per call.** `core/analyzer.py::analyze()` uses the local Ollama marker to
+build the existing `ClaudeAnalyzer` compatibility adapter; call failures degrade to
+`HybridAnalyzer` content. Interview preparation obtains `get_api_key("prep")`, so it stops
+clearly when `OPENAI_API_KEY` is absent. `recommendation_engine.synthesize()` may override the score-based recommendation
 (low keyword score + high evolutionary potential → `ЗАПУСТИТЬ В РАБОТУ`).
 
 **hh.ru is accessed only through public HTML pages** — JSON-LD `JobPosting` on vacancy pages, serp
@@ -175,8 +180,11 @@ company as «В [Компания] ([период]) …». Without this the mode
 **Prep prompts read the knowledge base through `agents/interview_kb.py`.** Sections are looked up by
 header keywords, never by section numbers (the base is regenerated quarterly). Every excerpt starts
 with `[источник: …]`; sources returned by the model are filtered against the excerpt and resolved via
-`resolve_sources()`. Stages 4–6 of `build_prep()` are non-fatal: a failure lands in `stage_errors`
-and the package is still saved.
+`resolve_sources()`. Only qa, hr, employer and purple are mandatory in `build_prep()`; every other
+stage (company research included) is non-fatal: a failure lands in `stage_errors`, the package is
+still saved and `resume_prep()` rebuilds the missing stages. The five stages after the mandatory
+ones run in parallel (`PARALLEL_STAGES`), so prep tests mock the model by system prompt, not by
+call order. Answers carry `understanding` + `lead` («понимание + опыт», `_UNDERSTANDING_RULE`).
 
 **Language policy.** Every system prompt carries the Russian-only block forbidding English
 professional jargon (allowed: AI, ERP, MLOps, ROI, P&L, KPI, CEO, CIO, CTO, M&A, MBA). An English
@@ -189,9 +197,9 @@ them in a threadpool, the event loop stays free); light routes are `async def`. 
 `cockpit_graph.js?v=N`) — bump N when editing them. The monitor scheduler starts as a daemon
 thread on FastAPI startup; interval and threshold live in `config/monitor.yaml`.
 
-**Tests never touch real state or the LLM.** `qa/conftest.py` blanks the API key for every test
-not marked `@pytest.mark.llm`, including CLI subprocesses (it sets a placeholder value rather than
-an empty string because Windows drops empty env vars). Tests that write state monkeypatch module
+**Tests never touch real state or the LLM.** `qa/conftest.py` sets `LLM_DISABLED=1` for every
+test not marked `@pytest.mark.llm`, including CLI subprocesses. This blocks both OpenAI and
+local Ollama. Tests that write state monkeypatch module
 paths (`vacancy_store.STORE_DIR`, `hh_search.STATE_PATH`, `*.OUTPUT_DIR`, `monitor.DIGEST_PATH`,
 `mail_radar.STATE_PATH`, ...) to `tmp_path`; follow the same pattern. Network is mocked in
 `qa/test_hh.py`. Fixtures live in `qa/sample_inputs/`; `sample_resume.txt` there is required by the
@@ -205,7 +213,6 @@ resume and career-match cases.
 - **Line endings.** `.gitattributes` forces LF for all text files; Python `Path.write_text` on
   Windows emits CRLF, so normalize or let git do it.
 - **Docker + pip.** Any change to `requirements.txt` invalidates the pip layer, and PyPI's CDN has
-  timed out from Docker on this network. `anthropic` is pinned `>=1.7,<2` (host and image both
-  1.7.0 since 2026-09-22).
+  timed out from Docker on this network. OpenAI SDK is pinned to major 2 (`>=2,<3`).
 - **Russian trusted root CA** (`config/certs/russian_trusted_root_ca.pem`) is added to the SSL
   context by `career_watch` for career pages of Alfa-Bank, RZD and Metalloinvest.

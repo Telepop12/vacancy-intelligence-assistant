@@ -87,7 +87,7 @@ def test_generate_without_api_key(monkeypatch, tmp_path):
     monkeypatch.setattr(rv, "_get_api_key", lambda: "")
     v = rv.generate_variant("cio", resume_text="текст")
     assert v.error
-    assert "ANTHROPIC_API_KEY" in v.error
+    assert "Ollama" in v.error
     assert not (tmp_path / "cio.json").exists()
 
 

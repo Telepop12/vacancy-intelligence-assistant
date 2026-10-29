@@ -45,19 +45,23 @@
   <h1>10 минут до звонка · {{ cs.title }}</h1>
   <p class="sub">{{ cs.company }}{% if cs.url %} · {{ cs.url }}{% endif %}</p>
 
-  {% if cs.presentation_short %}
-  <h2>О себе · 1–3 минуты</h2>
+  {% if cs.company_facts %}
+  <h2>О компании · что упомянуть</h2>
+  <ul>{% for f in cs.company_facts %}<li>{{ f }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  {% if cs.presentation_parts %}
+  <h2>Рассказ о себе · 3 минуты</h2>
+  <div class="box pres">{% for label, text in cs.presentation_parts %}<b>{{ label }}.</b> {{ text }}{% if not loop.last %}
+
+{% endif %}{% endfor %}</div>
+  {% elif cs.presentation_short %}
+  <h2>О себе</h2>
   <div class="box pres">{{ cs.presentation_short }}</div>
-  {% if cs.scope_line %}<p style="margin:2px 0 0"><b>Руками / делегирую / контролирую:</b> {{ cs.scope_line }}</p>{% endif %}
   {% endif %}
 
   <div class="grid">
     <div>
-      {% if cs.trumps %}
-      <h2>Козыри</h2>
-      <ul>{% for t in cs.trumps %}<li>{{ t }}</li>{% endfor %}</ul>
-      {% endif %}
-
       {% if cs.key_numbers %}
       <h2>Цифры наизусть</h2>
       <ul>{% for n in cs.key_numbers %}<li><span class="num">{{ n }}</span></li>{% endfor %}</ul>
@@ -68,10 +72,6 @@
       <ul>{% for q in cs.employer_questions %}<li>{{ q }}</li>{% endfor %}</ul>
       {% endif %}
 
-      {% if cs.stages %}
-      <h2>Этапы · кто передо мной</h2>
-      <ul>{% for s in cs.stages %}<li class="stage">{{ s }}</li>{% endfor %}</ul>
-      {% endif %}
     </div>
     <div>
       {% if cs.risk_answers %}

@@ -1,5 +1,5 @@
 """
-ClaudeAnalyzer — HybridAnalyzer backed by Claude API.
+ClaudeAnalyzer — backward-compatible HybridAnalyzer adapter for the LLM gateway.
 
 Fills both semantic insight fields and Evolutionary Potential layer.
 Falls back to placeholder text on any error so the rest of the analysis is never lost.
@@ -60,7 +60,7 @@ _USER_TEMPLATE = """\
 
 
 class ClaudeAnalyzer(HybridAnalyzer):
-    """HybridAnalyzer that replaces placeholder fields with real Claude insights."""
+    """HybridAnalyzer that replaces placeholders with provider-neutral LLM insights."""
 
     def __init__(
         self,
@@ -97,7 +97,7 @@ class ClaudeAnalyzer(HybridAnalyzer):
 
         except Exception as exc:
             import traceback
-            print(f"[ClaudeAnalyzer] LLM call failed: {exc}")
+            print(f"[LLMAnalyzer] LLM call failed: {exc}")
             traceback.print_exc()
 
     def _call_claude(self, analysis: VacancyAnalysis, vacancy_text: str) -> dict[str, Any]:

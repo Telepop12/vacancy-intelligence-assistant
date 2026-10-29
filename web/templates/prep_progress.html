@@ -36,7 +36,7 @@
     <div class="card" id="progress">
       <h2>{% if job.kind == 'resume' %}Досбираем пакет подготовки{% else %}Собираем пакет подготовки{% endif %}{% if not job.done %}<span class="spin" id="spin"></span>{% endif %}</h2>
       <p class="hint" style="margin:.4rem 0;">Вакансия {{ vid }} · начато {{ job.started_at }} · <span id="elapsed">прошло {{ '%d' % ((job.t1 if job.done else 0) and (job.t1 - job.t0) or 0) }} с</span>.
-        {% if job.kind == 'resume' %}Собираются только недостающие этапы.{% else %}Восемь вызовов модели, обычно 10–25 минут.{% endif %}
+        {% if job.kind == 'resume' %}Собираются только недостающие этапы.{% else %}Десять этапов: сначала ресёрч компании с веб-поиском, затем вопросы; последние пять разделов собираются параллельно. Обычно 15–25 минут.{% endif %}
         Страницу можно закрыть: сборка идёт на сервере, готовый пакет откроется по этому же адресу.</p>
       {% if job.error %}
       <div class="error-box" style="margin:.8rem 0;">{{ job.error }} · <a href="/prep/{{ vid }}?regenerate=true">собрать заново</a></div>

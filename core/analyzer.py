@@ -1,9 +1,8 @@
 """
 Public analyze() entry point — backward-compatible.
 
-Auto-detects ANTHROPIC_API_KEY (from environment or .env file) and uses
-ClaudeAnalyzer when available; falls back to HybridAnalyzer (placeholder
-LLM fields) when the key is absent or invalid.
+Uses the provider-neutral gateway (local Ollama by default) and falls back
+to HybridAnalyzer when LLM access is explicitly disabled.
 """
 from __future__ import annotations
 
@@ -13,7 +12,7 @@ from pathlib import Path
 from core.models import CandidateProfile, VacancyAnalysis
 
 # ---------------------------------------------------------------------------
-# Build analyzer — ClaudeAnalyzer if API key present, else HybridAnalyzer.
+# Build analyzer — the legacy-named ClaudeAnalyzer is now a gateway adapter.
 # Built lazily per call (NOT at import): key detection goes through the
 # shared gateway, so tests can disable the LLM with a monkeypatch and the
 # key can be added/removed without restarting the process.

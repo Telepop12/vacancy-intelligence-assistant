@@ -38,3 +38,11 @@ output/prep/
 output/vacancies/
 output/vacancies/
 output/career_watch/
+
+# Company research archive (generated, public data; refreshed every 6 months)
+output/companies/
+output/practice_research/
+output/prep_snapshots/
+output/prep_experiments/
+output/review_*/test_outputs/
+output/review_*/cleanup.json

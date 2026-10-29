@@ -3,6 +3,8 @@ pytest: загрузчик базы знаний о собеседованиях
 data/interview_kb/ (они в репозитории).
 """
 import pytest
+import yaml
+from datetime import date
 
 from agents import interview_kb as kb
 
@@ -49,7 +51,7 @@ def test_slices_within_budget_and_tagged():
         (kb.question_bank, 12_000), (kb.stop_words, 10_000), (kb.employer_rules, 8_000),
         (kb.presentation_rules, 6_000), (kb.hundred_days_rules, 5_000),
         (kb.stories_rules, 7_000), (kb.agenda_rules, 8_000), (kb.typical_process, 10_000),
-        (kb.improve_rules, 7_000),
+        (kb.improve_rules, 7_000), (kb.team_rules, 7_000),
     ]
     for fn, cap in budgets:
         text = fn()
@@ -135,3 +137,56 @@ def test_improve_rules_cover_homework_and_case_bank():
     assert "Банк кейсов и домашних заданий" in text         # real_stories §4
     assert "S12" in text and "Домашние задания, презентации" in text
 
+
+
+def test_team_rules_cover_delegation_and_references():
+    text = kb.team_rules()
+    assert "руками / делегирую / контролирую" in text            # real_stories, правило 3
+    assert "бывших подчинённых" in text                           # референсы у подчинённых
+    assert "микроменеджмент" in text and "делегированием" in text  # ассессмент, executive_search 2.3
+    assert "Красные флаги" in text and "Кейс-вопросы" in text
+
+
+def test_numeric_references_match_question_and_sector():
+    now = date(2026, 10, 29)
+    question = "Бюджет 300 млн, ФОТ 50 процентов: много или мало?"
+    medical = kb.quantitative_context(question, "Сеть медицинских клиник", today=now)
+    assert all(f"[B{i}]" in medical for i in (1, 2, 3))
+    assert "https://" in medical and "NPR" in medical
+    assert "Год выборки в открытой карточке не указан" in medical
+    other = kb.quantitative_context(question, "Завод промышленного оборудования", today=now)
+    assert "[B1]" in other and "[B3]" in other and "[B2]" not in other
+    assert kb.quantitative_context("Расскажите о себе", "Сеть клиник, бюджет 300 млн", today=now) == ""
+    assert kb.quantitative_context("Фото команды", today=now) == ""
+    assert kb.quantitative_context("Как структурировать ответ на собеседовании?", today=now) == ""
+
+
+@pytest.mark.parametrize("now", [date(2026, 10, 28), date(2027, 4, 30)])
+def test_numeric_references_exclude_unreviewed_and_expired(now):
+    assert kb.quantitative_context("Бюджет и зарплаты", "Сеть клиник", today=now) == ""
+
+
+def test_numeric_reference_is_never_cut_before_caveats_or_url():
+    args = dict(today=date(2026, 10, 29))
+    full = kb.quantitative_context("Бюджет", **args)
+    assert full and "https://www.apqc.org/" in full
+    assert kb.quantitative_context("Бюджет", max_chars=len(full)-1, **args) == ""
+
+
+@pytest.mark.parametrize("kind", ["missing", "broken_yaml", "wrong_shape", "no_source", "bad_date"])
+def test_numeric_reference_errors_do_not_break_answer(monkeypatch, tmp_path, kind):
+    cards = yaml.safe_load((kb.KB_DIR / "benchmarks.yaml").read_text(encoding="utf-8"))
+    card = cards[0].copy()
+    monkeypatch.setattr(kb, "KB_DIR", tmp_path)
+    if kind == "missing":
+        pass
+    elif kind == "broken_yaml":
+        (tmp_path / "benchmarks.yaml").write_text("[invalid", encoding="utf-8")
+    else:
+        if kind == "no_source":
+            card.pop("url")
+        if kind == "bad_date":
+            card["review_after"] = "unknown"
+        content = {"unexpected": 1} if kind == "wrong_shape" else [card]
+        (tmp_path / "benchmarks.yaml").write_text(yaml.safe_dump(content), encoding="utf-8")
+    assert kb.quantitative_context("Бюджет", today=date(2026, 10, 29)) == ""

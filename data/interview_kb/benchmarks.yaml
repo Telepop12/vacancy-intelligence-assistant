@@ -1,0 +1,65 @@
+# Human-reviewed references, not industry norms. Review dates are access
+# dates, not the period of the survey. Expired cards are excluded from prompts.
+- id: B1
+  question_terms: [бюджет, расход, затрат, инвестиц, стоимост, revenue]
+  statement: >-
+    APQC, показатель 105009: медиана общих ИТ-затрат — 24 доллара
+    на 1000 долларов выручки. Пересчёт: 24 / 1000 × 100 = 2,4 процента.
+  denominator: >-
+    Годовая выручка business entity; в ИТ-затратах операционные и капитальные
+    денежные расходы, без амортизации. Это не только OPEX.
+  period: Год выборки в открытой карточке не указан.
+  sample: 7356 компаний, All Companies; отраслевая и страновая разбивка не раскрыта.
+  limits: >-
+    Межотраслевой ориентир, не норма здравоохранения и не норматив для РФ.
+    Медиана не доказывает оптимальность. Период и состав затрат должны быть
+    сопоставимы; дата проверки не является годом выборки.
+  source: APQC Open Standards Benchmarking, measure 105009
+  url: https://www.apqc.org/resources/benchmarking/open-standards-benchmarking/measures/total-it-cost-excluding
+  checked_on: "2026-10-29"
+  review_after: "2027-04-29"
+
+- id: B2
+  question_terms: [бюджет, расход, затрат, инвестиц, стоимост, revenue]
+  context_terms: [медицин, здравоохран, клиник, больниц, healthcare, hospital]
+  statement: >-
+    В опросе CereCore/CHIME 2026 года 33 процента респондентов указали,
+    что выделяют на ИТ 5 процентов net patient revenue (NPR).
+    Это доля выбравших конкретный уровень, не среднее по отрасли.
+  denominator: >-
+    Net patient revenue — чистая выручка от медицинских услуг;
+    не подменять общей выручкой группы или чистой прибылью.
+  period: Опрос 2026 года; публикация 13 марта 2026 года.
+  sample: >-
+    24 руководителя здравоохранения, члены CHIME; 53 процента представляли
+    организации на 250 и более коек. География респондентов не раскрыта.
+  limits: >-
+    Маленькая выборка с существенной долей больничных организаций; спонсор
+    и издатель — поставщик услуг CereCore. Это не репрезентативная оценка
+    российских амбулаторных сетей. Не превращать результат в утверждение
+    «в медицине нормальны 3–5 процентов от выручки» или обещание эффекта.
+  source: CereCore / CHIME, Inside the CIO Playbook, 2026
+  url: https://cerecore.net/resources/inside-the-cio-playbook-strategies-fueling-health-it-growth?hs_amp=true
+  checked_on: "2026-10-29"
+  review_after: "2027-04-29"
+
+- id: B3
+  question_terms: [зарплат, фот, аутсорс, трудозатрат]
+  statement: >-
+    В открытой карточке APQC 107897 медиана внутренних затрат на персонал,
+    включая выплаты и льготы, — 50 процентов общих ИТ-затрат.
+  denominator: >-
+    Общие ИТ-затраты без амортизации, с денежными операционными и капитальными
+    расходами; числитель — внутренний персонал с выплатами и льготами,
+    не только зарплата на руки и не весь внешний труд.
+  period: Год выборки в открытой карточке не указан.
+  sample: 2145 компаний, All Companies; состав по отраслям и странам не раскрыт.
+  limits: >-
+    Только иллюстрация того, почему 50 процентов не являются автоматическим
+    признаком избытка; не целевая доля ФОТ. Описание карточки содержит
+    несогласованную привязку к Manage IT resilience and risk: до уточнения
+    методики и периода не применять как строгий сравнительный норматив.
+  source: APQC Open Standards Benchmarking, measure 107897
+  url: https://www.apqc.org/what-we-do/benchmarking/open-standards-benchmarking/measures/internal-personnel-cost-including
+  checked_on: "2026-10-29"
+  review_after: "2027-04-29"

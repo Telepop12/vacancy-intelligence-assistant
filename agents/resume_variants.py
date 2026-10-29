@@ -341,7 +341,7 @@ def generate_variant(key: str, resume_text: str | None = None) -> ResumeVariant:
 
     api_key = _get_api_key()
     if not api_key:
-        variant.error = "Нет ANTHROPIC_API_KEY — генерация вариантов требует LLM"
+        variant.error = "Локальная LLM недоступна — проверьте Ollama"
         return variant
 
     published_text, published_at = load_published(vcfg)

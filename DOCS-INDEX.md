@@ -24,6 +24,7 @@
 | `data/interview_kb/employers_official.md` | Официальные страницы процесса найма у 58 работодателей: этапы, тайминги, рекомендации дословно |
 | `data/interview_kb/executive_search.md` | Отбор C-level глазами executive search и CIO-сообществ: процесс, компетенции, ошибки, рынок |
 | `data/interview_kb/real_stories.md` | Реальные истории собеседований CIO/CTO/CDTO: банки вопросов и кейсов, паттерны процесса |
+| `data/interview_kb/benchmarks.yaml` | Проверенные числовые ориентиры с источниками, ограничениями и сроками пересмотра |
 
 ## Тестирование (`qa/`)
 
@@ -31,6 +32,7 @@
 |---|---|
 | [qa/test_cases.md](qa/test_cases.md) | Описание тест-кейсов функционального контура (TC-01…TC-32) |
 | [qa/test_report.md](qa/test_report.md) | Отчёт последнего прогона `run_functional_tests.py` (генерируется) |
+| [output/review_2026-10-29/REPORT.md](output/review_2026-10-29/REPORT.md) | Исторический снимок ревью до миграции LLM; рядом regressions.py с воспроизведениями |
 
 ## Генерируемые артефакты (не документация)
 
